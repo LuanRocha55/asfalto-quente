@@ -18,6 +18,7 @@ export const trees=[];
 export const zones=[];
 export const phones=[];
 export const lamps=[];
+export const pumps=[];
 export let hospitalSpot, policeSpot;
 export const special={};
 
@@ -41,7 +42,7 @@ export function genMap(){
         map[y*W+x]=(lx===0||lx===11||ly===0||ly===11)?SIDE:GRASS;}
     }
   }
-  const specials={'2,2':'hospital','11,3':'policia','5,9':'pintura','10,11':'pintura2','3,11':'ze','6,3':'estac','12,8':'estac2','7,12':'estac3','9,6':'armas'};
+  const specials={'2,2':'hospital','11,3':'policia','5,9':'pintura','10,11':'pintura2','3,11':'ze','6,3':'estac','12,8':'estac2','7,12':'estac3','9,6':'armas','4,5':'posto','10,2':'posto2'};
   for(let bj=0;bj<NI-1;bj++)for(let bi=0;bi<NI-1;bi++){
     const ix=O+bi*PER+BAND+1, iy=O+bj*PER+BAND+1; // interior 10x10
     const key=bi+','+bj; const sp=specials[key];
@@ -54,6 +55,16 @@ export function genMap(){
       const spot={x:(ix+5)*T,y:(iy+10)*T+T*1.5};
       if(sp==='hospital')hospitalSpot=spot;else policeSpot=spot;
       continue;
+    }
+    if(sp==='posto'||sp==='posto2'){
+      for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);
+      fillLot(ix,iy,10,2,BUILD);
+      buildings.push({x0:ix*T,y0:iy*T,x1:(ix+10)*T,y1:(iy+2)*T,h:16,wall:'#e9e2d0',roof:'#c9342a',kind:'lojaposto',seed:rng()});
+      // cobertura das bombas: não é sólida, os carros passam por baixo
+      buildings.push({x0:(ix+1.5)*T,y0:(iy+3.5)*T,x1:(ix+8.5)*T,y1:(iy+8.5)*T,h:20,wall:'#dddddd',roof:'#f2f2ee',kind:'canopy',seed:rng()});
+      for(let i=0;i<3;i++)pumps.push({x:(ix+3+i*2)*T,y:(iy+6)*T});
+      const z={x0:(ix+1.5)*T,y0:(iy+3.5)*T,x1:(ix+8.5)*T,y1:(iy+8.5)*T,type:'posto',label:'CONSERTO $150'};
+      zones.push(z); special[sp]=z; continue;
     }
     if(sp==='armas'){
       for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);
@@ -102,6 +113,16 @@ export function genMap(){
         for(let y=iy+ly;y<iy+ly+lh;y++)for(let x=ix+lx;x<ix+lx+lw;x++)if(map[y*W+x]===GRASS)setT(x,y,rng()<.5?GRASS:SIDE);
       }
     }
+  }
+  // alguns prédios viram comércio com placa no telhado
+  const POI={farmacia:{roof:'#f2f2ee',wall:'#d9e8d9'},mercadinho:{roof:'#e8a33a',wall:'#f0d9a8'},padaria:{roof:'#b9824a',wall:'#efdcc0'},
+    escola:{roof:'#3f6fb0',wall:'#e7e0c9'},lanchonete:{roof:'#c0392b',wall:'#f3d36b'}};
+  for(const b of buildings){
+    if(b.kind!=='b')continue;
+    const w=(b.x1-b.x0)/T, h=(b.y1-b.y0)/T; if(w<4||h<4)continue;
+    const r=rng(); let k=null;
+    if(r<0.05)k='farmacia';else if(r<0.10)k='mercadinho';else if(r<0.14)k='padaria';else if(r<0.18&&w>=5&&h>=5)k='escola';else if(r<0.22)k='lanchonete';
+    if(k){b.kind=k;b.roof=POI[k].roof;b.wall=POI[k].wall;b.h=Math.min(b.h,24);}
   }
   // árvores na orla
   for(let i=0;i<90;i++){

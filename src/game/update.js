@@ -50,6 +50,7 @@ export function update(dt){
     else c.physics(0,0,true,dt);
     if(!c.wreck&&c.health<c.t.hp*0.35&&Math.random()<0.15&&onScreen(c.x,c.y))S.parts.push({x:c.x+Math.cos(c.a)*c.t.len*0.35,y:c.y+Math.sin(c.a)*c.t.len*0.35,vx:rand(-10,10),vy:rand(-10,10),life:1.2,max:1.2,size:rand(6,11),col:'rgba(70,70,70,',smoke:true,up:true});
   }
+  if(S.cars.some(c=>c.remove))S.cars=S.cars.filter(c=>!c.remove||c===player.car||c.mission);
   collideCars();
   updatePeds(dt);
   // fumaça do carro do jogador
@@ -95,6 +96,12 @@ export function update(dt){
             for(const c of S.cars)if(c.ai==='police'){c.ai='traffic';recoverCar(c);}
             big('PINTURA NOVA','A polícia perdeu teu rastro','#3cff9a',2.2);sfxTone(700,0.2,0.1);}
           else msg('Pintura custa $500. Tu tá liso!');S.zoneCd=3;}
+      } else if(z.type==='posto'){
+        const c=player.car;
+        if(c.health<c.t.hp-0.5||c.burnT>0){
+          if(player.money>=150){player.money-=150;c.health=c.t.hp;c.burnT=0;c._warn=false;big('CARRO CONSERTADO','-$150 no Posto Maresia','#ffd83c',2);sfxTone(600,0.1,0.1);sfxTone(900,0.15,0.1,'square',0.1);}
+          else msg('Conserto custa $150. Tu tá liso!');
+          S.zoneCd=3;}
       } else if(z.type==='ze'&&(!S.mission||player.car.mission!==S.mission)){
         const c=player.car;if(c.health>c.t.hp*0.4&&!c.wreck&&c.burnT<=0){const v=Math.round(c.t.val*(c.health/c.t.hp));player.money+=v;
           big('DESMANCHE DO ZÉ','+'+fmtMoney(v)+' pelo '+c.t.name,'#ff9a3c',2.2);sfxTone(520,0.15,0.1);sfxTone(780,0.2,0.1,'square',0.12);

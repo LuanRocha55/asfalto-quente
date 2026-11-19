@@ -8,6 +8,10 @@ import { S, player, cam } from '../core/state.js';
 import { VERSION } from '../core/version.js';
 import { clockText, darkness } from '../world/time.js';
 import { WEAPONS } from '../game/weapons.js';
+import { districtAt, streetAt } from '../world/districts.js';
+import { buildings, zones } from '../world/map.js';
+let lastDistrict='', districtFlash=0, lastFrame=performance.now();
+const POI_ICONS={hospital:['+','#e53935'],policia:['★','#3a6bff'],ze:['Z','#ff9a3c'],pintura:['P','#3cff9a'],pintura2:['P','#3cff9a'],armas:['A','#ff4a3c'],lojaposto:['G','#ffd83c']};
 
 export function drawHUD(g,tgt){
   g.setTransform(DPR,0,0,DPR,0,0);
@@ -26,6 +30,12 @@ export function drawHUD(g,tgt){
     drawStar(g,x,y,12,on?(blink?'#ffffff':'#ffd84a'):'rgba(255,255,255,0.15)');}
   txt('Recorde: '+fmtMoney(S.best),CW-20,108,12,'#cfcfcf','right');
   txt((darkness()>0.5?'☾ ':'☀ ')+clockText(),CW-20,132,16,'#ffe9a0','right');
+  // bairro e rua
+  {const now=performance.now(), fdt=Math.min(0.1,(now-lastFrame)/1000); lastFrame=now;
+    const D=districtAt(player.x,player.y); const st=streetAt(player.x,player.y);
+    txt(D.name,CW-20,156,13,'#ffffff','right'); if(st)txt(st,CW-20,174,12,'rgba(255,255,255,0.75)','right');
+    if(D.name!==lastDistrict){if(lastDistrict)districtFlash=2.6;lastDistrict=D.name;}
+    if(districtFlash>0){districtFlash-=fdt;g.globalAlpha=clamp(districtFlash,0,1);txt(D.name,CW/2,CH*0.2,30,'#ffe9a0','center');g.globalAlpha=1;}}
   {const w=WEAPONS[player.weapon];const ay=player.car?112:72;
     txt(w.name+(player.weapon!=='punho'?'  '+(player.ammo[player.weapon]||0):''),22,ay,15,player.weapon==='punho'?'#dddddd':'#ff9a80');
     txt(player.car?'X atira pra frente · Q/E troca':'ESPAÇO usa · Q/E troca',22,ay+16,10,'rgba(255,255,255,0.55)');}
@@ -50,6 +60,10 @@ export function drawHUD(g,tgt){
   g.drawImage(mini,ptx-VIEW/2,pty-VIEW/2,VIEW,VIEW,mx,my2,MS,MS);
   const toM=(x,y)=>[mx+(x/T-ptx+VIEW/2)*MS/VIEW,my2+(y/T-pty+VIEW/2)*MS/VIEW];
   for(const ph of phones){const p=toM(ph.x,ph.y);g.fillStyle=(!S.mission&&S.phoneCd<=0)?'#ffd84a':'#8a7a3a';g.fillRect(p[0]-3,p[1]-3,6,6);}
+  g.font='bold 11px "Courier New",monospace';g.textAlign='center';
+  for(const b of buildings){const ic=POI_ICONS[b.kind];if(!ic)continue;const p=toM((b.x0+b.x1)/2,(b.y0+b.y1)/2);
+    if(p[0]<mx-8||p[0]>mx+MS+8||p[1]<my2-8||p[1]>my2+MS+8)continue;
+    g.fillStyle='rgba(0,0,0,0.75)';g.beginPath();g.arc(p[0],p[1],7,0,Math.PI*2);g.fill();g.fillStyle=ic[1];g.fillText(ic[0],p[0],p[1]+4);}
   for(const c of S.cars){if(c.ai!=='police')continue;const p=toM(c.x,c.y);g.fillStyle=Math.floor(S.gameTime*6)%2?'#ff3030':'#3a6bff';g.fillRect(p[0]-2.5,p[1]-2.5,5,5);}
   g.fillStyle='#ff9a3c';g.font='bold 9px monospace';
   g.fillStyle='#fff';const pp=toM(player.x,player.y);g.save();g.translate(pp[0],pp[1]);g.rotate(player.a);g.beginPath();g.moveTo(6,0);g.lineTo(-4,-4);g.lineTo(-4,4);g.closePath();g.fill();g.restore();
@@ -67,7 +81,7 @@ export function drawTitle(){
   txt('ASFALTO QUENTE',CW/2,CH*0.24,Math.round(70*s),'#ff8a1a');
   txt('Vila Maresia, 1997',CW/2,CH*0.24+40,Math.round(20*s),'#ffe9a0');
   txt('versão '+VERSION,CW/2,CH*0.24+66,Math.round(14*s),'rgba(255,255,255,0.55)');
-  const lines=['WASD / setas  —  dirigir ou andar','ESPAÇO  —  freio de mão (carro) / soco (a pé)','F ou ENTER  —  entrar / sair / roubar carro','SHIFT  —  correr a pé     H  —  buzina','Q / E ou 1-4  —  trocar arma     X  —  atirar do carro','','Orelhões amarelos tocando = missões','PINTURA EXPRESS ($500) apaga as estrelas','OFICINA DO ZÉ compra carro roubado','ARMAS DO TONHÃO vende pistola, escopeta e SMG'];
-  lines.forEach((l,i)=>txt(l,CW/2,CH*0.42+i*26*s,Math.round(16*s),'#e8e8e8'));
+  const lines=['WASD / setas  —  dirigir ou andar','ESPAÇO  —  freio de mão (carro) / soco (a pé)','F ou ENTER  —  entrar / sair / roubar carro','SHIFT  —  correr a pé     H  —  buzina','Q / E ou 1-4  —  trocar arma     X  —  atirar do carro','','Orelhões amarelos tocando = missões','PINTURA EXPRESS ($500) apaga as estrelas','OFICINA DO ZÉ compra carro roubado','ARMAS DO TONHÃO vende armas · POSTO conserta o carro ($150)','Minimapa:  + hospital  ★ polícia  Z Zé  P pintura  A armas  G posto'];
+  lines.forEach((l,i)=>txt(l,CW/2,CH*0.40+i*23*s,Math.round(16*s),'#e8e8e8'));
   if(Math.floor(performance.now()/500)%2===0)txt(S.paused?'PAUSADO — ESC, P, ENTER ou clique pra voltar':'Aperta ENTER pra começar',CW/2,CH*0.86,Math.round(24*s),'#7dff6b');
 }

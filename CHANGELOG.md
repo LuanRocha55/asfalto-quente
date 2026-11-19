@@ -5,6 +5,21 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.4.0 — 19/11/2026
+**Sinalização dos lugares**
+- Cada lugar especial tem telhado próprio com ícone e placa: estrela na Polícia, chave inglesa na Oficina do Zé, faixas de tinta na Pintura Express, mira nas Armas do Tonhão
+- Comércios novos espalhados pela cidade: farmácia, mercadinho, padaria, escola (com quadra no telhado) e lanchonete
+- 2 Postos Maresia: passa de carro debaixo da cobertura pra consertar o carro por $150 (apaga até fogo)
+- Ícones no minimapa: + hospital, ★ polícia, Z Zé, P pintura, A armas, G posto
+
+**Bairros e ruas**
+- 5 bairros com visual próprio: Centro (lajes), Orla (calçadão de ondas e ciclofaixa), Vila Velha (paralelepípedo e calçada de tijolo), Alto do Cajueiro (asfalto remendado e buracos), Jardim Maresia (canteiro de grama e lombadas)
+- Avenidas (Av. Central, Av. Maresia etc.) com faixa dupla amarela, bordas brancas e setas
+- Semáforos nos cruzamentos de avenida; o trânsito para no vermelho
+- PARE pintado onde rua comum encontra avenida
+- Nomes de rua e bairro no canto da tela; o nome do bairro aparece grande ao entrar nele
+- Carros não entram mais no cruzamento se não couberem do outro lado, e engarrafamentos travados fora da tela se desfazem
+
 ## 0.3.0 — 19/11/2026
 **Armas**
 - Pistola, escopeta e submetralhadora (SMG), com munição

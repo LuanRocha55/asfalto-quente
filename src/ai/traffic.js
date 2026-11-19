@@ -3,6 +3,7 @@ import { clamp, normA } from '../core/utils.js';
 import { T, NI, O, PX, ROAD, roadPx, LANE_OFF, DX, DY, tileAt } from '../world/map.js';
 import { sfxHorn } from '../audio/audio.js';
 import { onScreen } from '../game/world.js';
+import { signalized, signalState } from '../world/districts.js';
 import { S, player } from '../core/state.js';
 
 export function alongOf(c){return c.dir%2===0?c.x:c.y;}
@@ -73,8 +74,21 @@ export function updateTraffic(c,dt){
     else if(dist<-60){c.plan=null;planCar(c);}
   }
   const sp=Math.max(0,c.fwdSpeed());
-  const obs=obstacleAhead(c,40+sp*0.7);
-  if(obs<Infinity){desired=Math.min(desired,Math.max(0,(obs-12)*2.2));
+  const obs=obstacleAhead(c,Math.max(40+sp*0.7,260));
+  // próximo cruzamento: semáforo e "não trancar o cruzamento"
+  if(c.plan){const key=c.plan.key, ix=key%NI, iy=Math.floor(key/NI);
+    const base=roadPx(horiz?ix:iy), entry=s>0?base:base+128;
+    const df=(entry-alongOf(c))*s-c.t.len/2;
+    if(df>-4&&df<95){
+      let stop=false;
+      if(signalized(ix,iy)){const st=signalState(ix,iy,horiz?'h':'v');if(st==='r'||(st==='y'&&df>28))stop=true;}
+      // fila do outro lado: só entra se couber depois do cruzamento
+      if(obs<Infinity&&obs>df&&obs<df+128+c.t.len*0.8)stop=true;
+      if(stop)desired=Math.min(desired,Math.max(0,(df-8)*2.2));
+    }}
+  // engarrafamento travado: fora da tela o carro some (outro nasce em outro lugar)
+  if(c.blockT>12&&!onScreen(c.x,c.y,200))c.remove=true;
+  if(obs<40+sp*0.7+60){desired=Math.min(desired,Math.max(0,(obs-12)*2.2));
     if(obs<40&&sp<10){c.blockT+=dt;if(c.blockT>1.4&&c.honkCd<=0&&onScreen(c.x,c.y)){sfxHorn();c.honkCd=4;}}}
   else c.blockT=0;
   c.honkCd-=dt;
