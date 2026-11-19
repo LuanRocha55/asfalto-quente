@@ -1,0 +1,76 @@
+// Tipos de veículo e física dos carros
+import { rand, pick, clamp, lerp, hyp } from '../core/utils.js';
+import { SAND, GRASS, tileAt, solidAt } from '../world/map.js';
+import { sfxNoise } from '../audio/audio.js';
+import { addHeat, onScreen } from '../game/world.js';
+import { addSkid } from '../game/effects.js';
+import { S, player } from '../core/state.js';
+
+export const CT={
+  jegue:{name:'Jegue 1.0',len:36,wid:18,maxSpd:260,accel:220,brake:460,grip:7,turn:2.7,hp:100,mass:1,val:200,colors:['#c0392b','#2980b9','#ecf0f1','#7f8c8d','#16a085','#d35400','#8e44ad']},
+  brisa:{name:'Brisa GT',len:40,wid:19,maxSpd:430,accel:360,brake:560,grip:8.5,turn:2.9,hp:90,mass:1,val:900,colors:['#e74c3c','#f1c40f','#2c3e50','#ecf0f1']},
+  taxi:{name:'Táxi',len:38,wid:18,maxSpd:290,accel:240,brake:480,grip:7.5,turn:2.7,hp:110,mass:1.1,val:300,colors:['#f4f4f0']},
+  camin:{name:'Caminhonete',len:46,wid:22,maxSpd:255,accel:210,brake:440,grip:7,turn:2.2,hp:180,mass:1.7,val:500,colors:['#5d4037','#455a64','#827717','#37474f']},
+  bugue:{name:'Bugue',len:32,wid:19,maxSpd:330,accel:340,brake:480,grip:6.2,turn:3.3,hp:80,mass:0.8,val:600,colors:['#ff7043','#26c6da','#ffca28','#9ccc65'],sand:true},
+  busao:{name:'Busão',len:84,wid:26,maxSpd:200,accel:130,brake:340,grip:7,turn:1.7,hp:320,mass:4,val:800,colors:['#1565c0','#e65100','#2e7d32']},
+  viatura:{name:'Viatura',len:40,wid:19,maxSpd:390,accel:330,brake:560,grip:8.6,turn:2.9,hp:150,mass:1.3,val:1200,colors:['#20242c']},
+};
+export const TRAFFIC_MIX=['jegue','jegue','jegue','jegue','taxi','taxi','camin','camin','brisa','bugue','busao'];
+
+export class Car{
+  constructor(type,x,y,a,color){
+    this.id=S.NEXT_ID++;this.t=CT[type];this.type=type;this.x=x;this.y=y;this.a=a;this.vx=0;this.vy=0;
+    this.color=color||pick(this.t.colors);this.health=this.t.hp;this.driver=null;this.ai=null;
+    this.dir=0;this.lane=0;this.plan=null;this.lastInter=-1;this.stuckT=0;this.revT=0;this.cruise=rand(110,165);
+    this.wreck=false;this.burnT=0;this.steerVis=0;this.brakeLight=false;this.honkCd=0;this.mission=null;this.blockT=0;this.hitCd=0;
+    const n=Math.max(2,Math.ceil(this.t.len/this.t.wid));this.nc=n;
+  }
+  get speed(){return hyp(this.vx,this.vy);}
+  fwdSpeed(){return this.vx*Math.cos(this.a)+this.vy*Math.sin(this.a);}
+  circles(){const out=[];const n=this.nc,L=this.t.len,r=this.t.wid/2+1;const c=Math.cos(this.a),s=Math.sin(this.a);
+    for(let i=0;i<n;i++){const off=n===1?0:(-L/2+r)+(L-2*r)*i/(n-1);out.push([this.x+c*off,this.y+s*off,r]);}return out;}
+  pts(x,y,a){const c=Math.cos(a),s=Math.sin(a),hl=this.t.len/2,hw=this.t.wid/2;const out=[];
+    const nl=Math.ceil(this.t.len/16);
+    for(let i=0;i<=nl;i++){const f=-hl+this.t.len*i/nl;out.push([x+c*f-s*hw,y+s*f+c*hw]);out.push([x+c*f+s*hw,y+s*f-c*hw]);}
+    return out;}
+  hits(x,y,a){for(const p of this.pts(x,y,a))if(solidAt(p[0],p[1]))return true;return false;}
+  damage(v,src){if(this.wreck)return;this.health-=v;if(this.health<=0&&this.burnT<=0){this.health=0;this.burnT=3.2;
+      if(src==='player'){addHeat(this.ai==='police'?150:40);if(this.mission)this.mission.onDestroyed&&this.mission.onDestroyed(this);}
+      else if(this.mission&&this.mission.onDestroyed)this.mission.onDestroyed(this);}}
+  physics(thr,steer,hb,dt){
+    if(this.wreck){thr=0;steer=0;hb=true;}
+    const t=this.t;const c=Math.cos(this.a),s=Math.sin(this.a);
+    let vF=this.vx*c+this.vy*s, vR=-this.vx*s+this.vy*c;
+    const ground=tileAt(this.x,this.y);
+    let gripM=1,dragM=1,spdM=1;
+    if(ground===SAND&&!t.sand){gripM=0.5;dragM=2.2;spdM=0.6;}
+    else if(ground===SAND&&t.sand){gripM=0.9;spdM=1.05;}
+    else if(ground===GRASS){gripM=0.75;dragM=1.8;spdM=0.75;}
+    const maxS=t.maxSpd*spdM*(this.health<t.hp*0.25?0.75:1);
+    this.brakeLight=false;
+    if(thr>0){ if(vF<-5){vF+=t.brake*dt;this.brakeLight=true;} else if(vF<maxS)vF+=t.accel*thr*dt*(1-vF/maxS*0.55); }
+    else if(thr<0){ if(vF>5){vF-=t.brake*dt*(-thr);this.brakeLight=true;} else if(vF>-maxS*0.35)vF-=t.accel*0.6*dt; }
+    else vF*=Math.max(0,1-0.9*dragM*dt);
+    if(vF>maxS*1.05)vF-=(vF-maxS)*2*dt;
+    const grip=(hb?1.4:t.grip)*gripM;
+    vR*=Math.max(0,1-grip*dt);
+    if(hb){vF*=Math.max(0,1-1.3*dt);this.brakeLight=true;}
+    const sf=clamp(Math.abs(vF)/110,0,1)*Math.sign(vF);
+    this.steerVis=lerp(this.steerVis,steer,0.2);
+    let na=this.a+t.turn*steer*sf*(hb?1.45:1)*dt;
+    const nvx=c*vF-s*vR, nvy=s*vF+c*vR; this.vx=nvx;this.vy=nvy;
+    // skid
+    if((Math.abs(vR)>110||(this.brakeLight&&Math.abs(vF)>200&&hb))&&!this.wreck)addSkid(this,ground===SAND);
+    // rotação
+    if(!this.hits(this.x,this.y,na))this.a=na;
+    // mover com colisão
+    let nx=this.x+this.vx*dt, ny=this.y+this.vy*dt; let impact=0;
+    if(!this.hits(nx,this.y,this.a))this.x=nx;else{impact+=Math.abs(this.vx);this.vx*=-0.25;}
+    if(!this.hits(this.x,ny,this.a))this.y=ny;else{impact+=Math.abs(this.vy);this.vy*=-0.25;}
+    if(this.hits(this.x,this.y,this.a))this.unstick();
+    if(impact>90){this.damage((impact-90)*0.09,this.driver==='player'?'self':null);
+      if(onScreen(this.x,this.y))sfxNoise(0.25,clamp(impact/600,0.05,0.5),900);
+      if(this.driver==='player')S.shake=Math.min(12,impact/40);}
+  }
+  unstick(){for(let r=4;r<60;r+=4)for(let k=0;k<8;k++){const ang=k*Math.PI/4;const x=this.x+Math.cos(ang)*r,y=this.y+Math.sin(ang)*r;if(!this.hits(x,y,this.a)){this.x=x;this.y=y;return;}}}
+}
