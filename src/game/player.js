@@ -45,10 +45,12 @@ export function punch(){
 }
 export function wasted(){if(player.state!=='play')return;player.state='wasted';player.stateT=3.2;
   if(player.car){player.car.driver=null;player.car=null;}
-  big('VOCÊ SE LASCOU','-$300 de hospital','#ff5050',3.2);sfxFail();failMission('Missão falhou.');}
+  player.ammo={};player.weapon='punho';
+  big('VOCÊ SE LASCOU','-$300 de hospital e as armas','#ff5050',3.2);sfxFail();failMission('Missão falhou.');}
 export function busted(){if(player.state!=='play')return;player.state='busted';player.stateT=3.2;
   if(player.car){player.car.driver=null;player.car.vx*=0.2;player.car.vy*=0.2;player.car=null;}
-  big('EM CANA!','-$500 de fiança','#5aa0ff',3.2);sfxFail();failMission('Missão falhou.');}
+  player.ammo={};player.weapon='punho';
+  big('EM CANA!','-$500 de fiança e as armas','#5aa0ff',3.2);sfxFail();failMission('Missão falhou.');}
 export function respawn(where){
   player.x=where.x;player.y=where.y;player.health=100;player.heat=0;player.state='play';player.inv=2;player.bustT=0;
   for(const c of S.cars)if(c.ai==='police'){c.ai='traffic';recoverCar(c);}

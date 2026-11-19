@@ -17,6 +17,7 @@ export const buildings=[];
 export const trees=[];
 export const zones=[];
 export const phones=[];
+export const lamps=[];
 export let hospitalSpot, policeSpot;
 export const special={};
 
@@ -40,7 +41,7 @@ export function genMap(){
         map[y*W+x]=(lx===0||lx===11||ly===0||ly===11)?SIDE:GRASS;}
     }
   }
-  const specials={'2,2':'hospital','11,3':'policia','5,9':'pintura','10,11':'pintura2','3,11':'ze','6,3':'estac','12,8':'estac2','7,12':'estac3'};
+  const specials={'2,2':'hospital','11,3':'policia','5,9':'pintura','10,11':'pintura2','3,11':'ze','6,3':'estac','12,8':'estac2','7,12':'estac3','9,6':'armas'};
   for(let bj=0;bj<NI-1;bj++)for(let bi=0;bi<NI-1;bi++){
     const ix=O+bi*PER+BAND+1, iy=O+bj*PER+BAND+1; // interior 10x10
     const key=bi+','+bj; const sp=specials[key];
@@ -53,6 +54,14 @@ export function genMap(){
       const spot={x:(ix+5)*T,y:(iy+10)*T+T*1.5};
       if(sp==='hospital')hospitalSpot=spot;else policeSpot=spot;
       continue;
+    }
+    if(sp==='armas'){
+      for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);
+      fillLot(ix,iy,10,3,BUILD);
+      buildings.push({x0:ix*T,y0:iy*T,x1:(ix+10)*T,y1:(iy+3)*T,h:24,wall:'#8a3b2f',roof:'#4a2420',kind:'armas',seed:rng()});
+      const z={x0:(ix+1)*T,y0:(iy+4)*T,x1:(ix+9)*T,y1:(iy+9)*T,type:'armas',label:'A PÉ: PISA NA ARMA PRA COMPRAR',pads:[]};
+      ['pistola','escopeta','smg'].forEach((w,i)=>z.pads.push({x0:(ix+1.5+i*2.5)*T,y0:(iy+5)*T,x1:(ix+3.5+i*2.5)*T,y1:(iy+8)*T,weapon:w}));
+      zones.push(z); special.armas=z; continue;
     }
     if(sp==='pintura'||sp==='pintura2'||sp==='ze'){
       for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);
@@ -105,6 +114,17 @@ export function genMap(){
   for(const [bi,bj] of phoneBlocks){
     const x=O+bi*PER+BAND, y=O+bj*PER+BAND; // canto da calçada
     phones.push({x:(x+.5)*T,y:(y+.5)*T});
+  }
+  // postes de luz nas calçadas (cantos e meio de cada quarteirão)
+  for(let j=0;j<NI-1;j++)for(let i=0;i<NI-1;i++){
+    const bx=O+i*PER+BAND, by=O+j*PER+BAND;
+    const pts=[[bx,by],[bx+11,by],[bx,by+11],[bx+11,by+11],[bx+6,by],[bx+6,by+11],[bx,by+6],[bx+11,by+6]];
+    for(const [x,y] of pts){
+      if(map[y*W+x]!==SIDE)continue;
+      const lx=(x+.5)*T, ly=(y+.5)*T;
+      if(phones.some(p=>Math.abs(p.x-lx)<20&&Math.abs(p.y-ly)<20))continue;
+      lamps.push({x:lx,y:ly});
+    }
   }
 }
 export function fillLot(x0,y0,w,h,t){for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++)setT(x,y,t);}

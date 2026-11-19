@@ -52,5 +52,5 @@ export const mini=document.createElement('canvas');mini.width=W;mini.height=H;
   const MC={[WATER]:[31,80,120],[SAND]:[214,196,140],[ROAD]:[70,70,78],[SIDE]:[150,150,145],[GRASS]:[80,140,60],[BUILD]:[120,110,100],[TREE]:[50,110,45],[PARK]:[90,90,98]};
   for(let i=0;i<W*H;i++){const c=MC[map[i]];img.data[i*4]=c[0];img.data[i*4+1]=c[1];img.data[i*4+2]=c[2];img.data[i*4+3]=255;}
   g.putImageData(img,0,0);
-  for(const z of zones){g.fillStyle=z.type==='ze'?'#ff9a3c':'#3cff9a';g.fillRect(z.x0/T,z.y0/T,(z.x1-z.x0)/T,(z.y1-z.y0)/T);}
+  for(const z of zones){g.fillStyle=z.type==='ze'?'#ff9a3c':z.type==='armas'?'#ff4a3c':'#3cff9a';g.fillRect(z.x0/T,z.y0/T,(z.x1-z.x0)/T,(z.y1-z.y0)/T);}
 })();

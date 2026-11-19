@@ -2,7 +2,7 @@
 
 Jogo top-down de mundo aberto feito em JavaScript puro com Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
-Versão atual: **0.2.1** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **0.3.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
 ## Como rodar
 
@@ -21,7 +21,9 @@ No VS Code, a extensão **Live Server** também resolve.
 | Tecla | Ação |
 |---|---|
 | WASD / setas | dirigir ou andar |
-| Espaço | freio de mão (carro) / soco (a pé) |
+| Espaço | freio de mão (carro) / usar arma ou soco (a pé) |
+| X ou Ctrl | atirar do carro |
+| Q / E ou 1-4 | trocar de arma |
 | F ou Enter | entrar, sair ou roubar carro |
 | Shift | correr a pé |
 | H | buzina |
@@ -43,6 +45,7 @@ src/
   world/
     map.js              geração da cidade (tiles, prédios, zonas, orelhões)
     chunks.js           cache do chão em blocos e minimapa
+    time.js             relógio e ciclo de dia e noite
   entities/
     vehicles.js         tipos de veículo e física dos carros
     peds.js             pedestres
@@ -53,11 +56,13 @@ src/
     world.js            procurado, mensagens, spawn
     player.js           ações do jogador, morte e prisão
     effects.js          explosões, marcas de pneu, atropelamentos
+    weapons.js          armas, tiros, loja e inimigos atirando
     missions.js         missões dos orelhões
     update.js           atualização do mundo e colisões
   render/
     draw.js             mundo: carros, pessoas, prédios em perspectiva
     hud.js              interface, minimapa e tela de título
+    lighting.js         escuridão da noite e pontos de luz
   audio/
     audio.js            motor, sirene e efeitos sintetizados
 ```
@@ -66,7 +71,5 @@ Todo estado que muda durante o jogo (listas de carros, pedestres, missão atual,
 
 ## Ideias pra próximas versões
 
-- Armas e tiroteio
 - Rádio com trilhas geradas por código
-- Ciclo dia e noite
 - Mais missões, com historinha encadeada

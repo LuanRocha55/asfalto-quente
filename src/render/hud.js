@@ -6,6 +6,8 @@ import { mini } from '../world/chunks.js';
 import { heatStars } from '../game/world.js';
 import { S, player, cam } from '../core/state.js';
 import { VERSION } from '../core/version.js';
+import { clockText, darkness } from '../world/time.js';
+import { WEAPONS } from '../game/weapons.js';
 
 export function drawHUD(g,tgt){
   g.setTransform(DPR,0,0,DPR,0,0);
@@ -23,6 +25,10 @@ export function drawHUD(g,tgt){
   for(let i=0;i<5;i++){const x=CW-28-i*30,y=72;const on=i<st;const blink=on&&st>0&&Math.floor(S.gameTime*4)%2===0;
     drawStar(g,x,y,12,on?(blink?'#ffffff':'#ffd84a'):'rgba(255,255,255,0.15)');}
   txt('Recorde: '+fmtMoney(S.best),CW-20,108,12,'#cfcfcf','right');
+  txt((darkness()>0.5?'☾ ':'☀ ')+clockText(),CW-20,132,16,'#ffe9a0','right');
+  {const w=WEAPONS[player.weapon];const ay=player.car?112:72;
+    txt(w.name+(player.weapon!=='punho'?'  '+(player.ammo[player.weapon]||0):''),22,ay,15,player.weapon==='punho'?'#dddddd':'#ff9a80');
+    txt(player.car?'X atira pra frente · Q/E troca':'ESPAÇO usa · Q/E troca',22,ay+16,10,'rgba(255,255,255,0.55)');}
   // vida
   g.fillStyle='rgba(0,0,0,0.5)';g.fillRect(18,18,184,16);g.fillStyle=player.health>35?'#e53935':'#ff1744';g.fillRect(20,20,180*player.health/100,12);
   txt('VIDA',22,50,12,'#fff');
@@ -61,7 +67,7 @@ export function drawTitle(){
   txt('ASFALTO QUENTE',CW/2,CH*0.24,Math.round(70*s),'#ff8a1a');
   txt('Vila Maresia, 1997',CW/2,CH*0.24+40,Math.round(20*s),'#ffe9a0');
   txt('versão '+VERSION,CW/2,CH*0.24+66,Math.round(14*s),'rgba(255,255,255,0.55)');
-  const lines=['WASD / setas  —  dirigir ou andar','ESPAÇO  —  freio de mão (carro) / soco (a pé)','F ou ENTER  —  entrar / sair / roubar carro','SHIFT  —  correr a pé     H  —  buzina','','Orelhões amarelos tocando = missões','PINTURA EXPRESS ($500) apaga as estrelas','OFICINA DO ZÉ compra carro roubado'];
+  const lines=['WASD / setas  —  dirigir ou andar','ESPAÇO  —  freio de mão (carro) / soco (a pé)','F ou ENTER  —  entrar / sair / roubar carro','SHIFT  —  correr a pé     H  —  buzina','Q / E ou 1-4  —  trocar arma     X  —  atirar do carro','','Orelhões amarelos tocando = missões','PINTURA EXPRESS ($500) apaga as estrelas','OFICINA DO ZÉ compra carro roubado','ARMAS DO TONHÃO vende pistola, escopeta e SMG'];
   lines.forEach((l,i)=>txt(l,CW/2,CH*0.42+i*26*s,Math.round(16*s),'#e8e8e8'));
   if(Math.floor(performance.now()/500)%2===0)txt(S.paused?'PAUSADO — ESC, P, ENTER ou clique pra voltar':'Aperta ENTER pra começar',CW/2,CH*0.86,Math.round(24*s),'#7dff6b');
 }
