@@ -5,7 +5,7 @@ import { sfxNoise, sfxTone } from '../audio/audio.js';
 import { heatStars, addHeat, msg, big, onScreen } from './world.js';
 import { killPed, hurtPlayer } from './effects.js';
 import { inZone } from './missions.js';
-import { S, player, keys } from '../core/state.js';
+import { S, player, keys, mouse, mouseWorld } from '../core/state.js';
 
 export const WEAPONS = {
   punho:    { name:'Punho' },
@@ -85,9 +85,9 @@ export function fire(x,y,a,w,fromPlayer,shooterCar){
 }
 
 // mira automática leve: puxa o tiro pro alvo mais próximo dentro de um cone à frente
-function autoAim(x,y,a,range){
+function autoAim(x,y,a,range,cone=0.38){
   let best=null, bd=1e9;
-  const consider=(tx,ty)=>{ const d=hyp(tx-x,ty-y); if(d>range||d<8)return; const da=Math.abs(normA(Math.atan2(ty-y,tx-x)-a)); if(da<0.38&&d+da*400<bd){bd=d+da*400;best=Math.atan2(ty-y,tx-x);} };
+  const consider=(tx,ty)=>{ const d=hyp(tx-x,ty-y); if(d>range||d<8)return; const da=Math.abs(normA(Math.atan2(ty-y,tx-x)-a)); if(da<cone&&d+da*400<bd){bd=d+da*400;best=Math.atan2(ty-y,tx-x);} };
   for(const p of S.peds) if(p.state!=='dead'&&p.state!=='gone'&&p.state!=='dead2') consider(p.x,p.y);
   for(const c of S.cars) if(!c.wreck&&c.driver==='ai') consider(c.x,c.y);
   return best===null?a:best;
@@ -98,11 +98,19 @@ function playerShoot(){
   if((player.ammo[player.weapon]||0)<=0){ msg('Sem munição!',1.2); player.fireCd=0.4; cycleWeapon(-1); return; }
   player.ammo[player.weapon]--;
   player.fireCd=w.rate;
+  const useMouse=mouse.down&&mouse.active;
   if(player.car){
-    const c=player.car, a=c.a;
-    fire(c.x+Math.cos(a)*(c.t.len/2+4), c.y+Math.sin(a)*(c.t.len/2+4), a, w, true, c);
+    const c=player.car;
+    if(useMouse){ // do carro, atira na direção da mira (pela janela)
+      const m=mouseWorld(), a=Math.atan2(m.y-c.y,m.x-c.x);
+      fire(c.x+Math.cos(a)*(c.t.wid/2+6), c.y+Math.sin(a)*(c.t.wid/2+6), a, w, true, c);
+    } else {
+      const a=c.a;
+      fire(c.x+Math.cos(a)*(c.t.len/2+4), c.y+Math.sin(a)*(c.t.len/2+4), a, w, true, c);
+    }
   } else {
-    const a=autoAim(player.x,player.y,player.a,w.range);
+    // com mouse a mira é exata (ajuda bem pequena); no teclado, mira automática mais forte
+    const a=mouse.active?autoAim(player.x,player.y,player.a,w.range,0.08):autoAim(player.x,player.y,player.a,w.range,0.38);
     fire(player.x,player.y,a,w,true,null);
   }
   addHeat(3);
@@ -152,7 +160,7 @@ export function updateWeapons(dt){
   S.tracers=S.tracers.filter(t=>t.life>0);
   if(player.state==='play'){
     const w=WEAPONS[player.weapon];
-    const trigger=player.car ? (keys['KeyX']||keys['ControlLeft']||keys['ControlRight']) : keys['Space'];
+    const trigger=(player.car ? (keys['KeyX']||keys['ControlLeft']||keys['ControlRight']) : keys['Space']) || mouse.down;
     if(player.weapon!=='punho' && trigger && player.fireCd<=0 && (w.auto || !player.triggerLatch)) playerShoot();
     player.triggerLatch=!!trigger;
   }

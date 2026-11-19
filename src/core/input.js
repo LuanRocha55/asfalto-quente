@@ -3,7 +3,7 @@ import { cv } from './canvas.js';
 import { AU, initAudio, sfxHorn } from '../audio/audio.js';
 import { msg } from '../game/world.js';
 import { enterExit, punch } from '../game/player.js';
-import { S, keys, player } from './state.js';
+import { S, keys, player, mouse } from './state.js';
 import { cycleWeapon, selectWeapon } from '../game/weapons.js';
 
 window.addEventListener('keydown',e=>{
@@ -23,5 +23,16 @@ window.addEventListener('keydown',e=>{
   if(e.code==='KeyN'){AU.muted=!AU.muted;msg(AU.muted?'Som desligado':'Som ligado',1.5);}
 });
 window.addEventListener('keyup',e=>{keys[e.code]=false;});
-window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
-cv.addEventListener('pointerdown',()=>{if(!S.started){S.started=true;initAudio();}else if(S.paused)S.paused=false;});
+window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.down=false;});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true;});
+cv.addEventListener('pointerdown',e=>{
+  mouse.x=e.clientX;mouse.y=e.clientY;
+  if(!S.started){S.started=true;initAudio();return;}   // primeiro clique só começa o jogo
+  if(S.paused){S.paused=false;return;}
+  mouse.active=true;
+  if(e.button===0){mouse.down=true;if(!player.car&&player.weapon==='punho')punch();}
+  else if(e.button===2)enterExit();
+});
+window.addEventListener('pointerup',e=>{if(e.button===0)mouse.down=false;});
+cv.addEventListener('wheel',e=>{e.preventDefault();if(S.started&&!S.paused)cycleWeapon(e.deltaY>0?1:-1);},{passive:false});

@@ -10,7 +10,7 @@ import { computeFlow, updatePolice } from '../ai/police.js';
 import { explode, killPed, hurtPlayer } from './effects.js';
 import { wasted, busted, respawn } from './player.js';
 import { startMission, finishMission, failMission, inZone } from './missions.js';
-import { S, player, cam, keys } from '../core/state.js';
+import { S, player, cam, keys, mouse, mouseWorld } from '../core/state.js';
 import { advanceTime } from '../world/time.js';
 import { updateWeapons } from './weapons.js';
 
@@ -33,6 +33,8 @@ export function update(dt){
     if(mx||my){const l=hyp(mx,my);mx/=l;my/=l;const sp=(keys['ShiftLeft']||keys['ShiftRight'])?160:95;
       player.a=Math.atan2(my,mx);const nx=player.x+mx*sp*dt,ny=player.y+my*sp*dt;
       if(!solidAt(nx,player.y))player.x=nx;if(!solidAt(player.x,ny))player.y=ny;player.anim+=dt*sp*0.12;}
+    // com mouse: o personagem olha pra mira (anda com WASD e mira com o mouse)
+    if(mouse.active){const m=mouseWorld();player.a=Math.atan2(m.y-player.y,m.x-player.x);}
   }
   advanceTime(dt);
   updateWeapons(dt);

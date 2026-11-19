@@ -10,9 +10,23 @@ import { clockText, darkness } from '../world/time.js';
 import { WEAPONS } from '../game/weapons.js';
 import { districtAt, streetAt } from '../world/districts.js';
 import { buildings, zones } from '../world/map.js';
+import { mouse } from '../core/state.js';
+import { cv } from '../core/canvas.js';
 let lastDistrict='', districtFlash=0, lastFrame=performance.now();
 const POI_ICONS={hospital:['+','#e53935'],policia:['★','#3a6bff'],ze:['Z','#ff9a3c'],pintura:['P','#3cff9a'],pintura2:['P','#3cff9a'],armas:['A','#ff4a3c'],lojaposto:['G','#ffd83c']};
 
+// mira na posição do mouse (esconde o cursor do sistema durante o jogo)
+function drawCrosshair(g){
+  const playing=S.started&&!S.paused&&player.state==='play';
+  cv.style.cursor=(playing&&mouse.active)?'none':'default';
+  if(!playing||!mouse.active)return;
+  const x=mouse.x,y=mouse.y,armed=player.weapon!=='punho';
+  const col=armed?'#ff5a4a':'#ffffff';
+  g.strokeStyle='rgba(0,0,0,0.7)';g.lineWidth=4;g.beginPath();g.arc(x,y,9,0,Math.PI*2);g.stroke();
+  g.strokeStyle=col;g.lineWidth=2;g.beginPath();g.arc(x,y,9,0,Math.PI*2);g.stroke();
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){g.beginPath();g.moveTo(x+dx*5,y+dy*5);g.lineTo(x+dx*14,y+dy*14);g.stroke();}
+  if(mouse.down&&armed){g.fillStyle=col;g.beginPath();g.arc(x,y,2.5,0,Math.PI*2);g.fill();}
+}
 export function drawHUD(g,tgt){
   g.setTransform(DPR,0,0,DPR,0,0);
   const txt=(t,x,y,size,col,align)=>{g.font='bold '+size+'px "Courier New",monospace';g.textAlign=align||'left';g.fillStyle='rgba(0,0,0,0.75)';g.fillText(t,x+2,y+2);g.fillStyle=col;g.fillText(t,x,y);};
@@ -38,7 +52,7 @@ export function drawHUD(g,tgt){
     if(districtFlash>0){districtFlash-=fdt;g.globalAlpha=clamp(districtFlash,0,1);txt(D.name,CW/2,CH*0.2,30,'#ffe9a0','center');g.globalAlpha=1;}}
   {const w=WEAPONS[player.weapon];const ay=player.car?112:72;
     txt(w.name+(player.weapon!=='punho'?'  '+(player.ammo[player.weapon]||0):''),22,ay,15,player.weapon==='punho'?'#dddddd':'#ff9a80');
-    txt(player.car?'X atira pra frente · Q/E troca':'ESPAÇO usa · Q/E troca',22,ay+16,10,'rgba(255,255,255,0.55)');}
+    txt(player.car?'clique atira na mira · X pra frente':'clique ou ESPAÇO usa · roda troca',22,ay+16,10,'rgba(255,255,255,0.55)');}
   // vida
   g.fillStyle='rgba(0,0,0,0.5)';g.fillRect(18,18,184,16);g.fillStyle=player.health>35?'#e53935':'#ff1744';g.fillRect(20,20,180*player.health/100,12);
   txt('VIDA',22,50,12,'#fff');
@@ -70,6 +84,7 @@ export function drawHUD(g,tgt){
   if(tgt){const p=toM(tgt.x,tgt.y);const cp=[clamp(p[0],mx+4,mx+MS-4),clamp(p[1],my2+4,my2+MS-4)];g.fillStyle='#ffe14a';g.beginPath();g.arc(cp[0],cp[1],5,0,Math.PI*2);g.fill();g.strokeStyle='#000';g.lineWidth=1;g.stroke();}
   g.restore();
   txt('N mudo · P pausa · v'+VERSION,mx,my2-10,11,'rgba(255,255,255,0.6)');
+  drawCrosshair(g);
 }
 export function drawStar(g,x,y,r,col){g.fillStyle=col;g.strokeStyle='rgba(0,0,0,0.6)';g.lineWidth=2;g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*0.45:r;g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}g.closePath();g.fill();g.stroke();}
 
@@ -81,7 +96,7 @@ export function drawTitle(){
   txt('ASFALTO QUENTE',CW/2,CH*0.24,Math.round(70*s),'#ff8a1a');
   txt('Vila Maresia, 1997',CW/2,CH*0.24+40,Math.round(20*s),'#ffe9a0');
   txt('versão '+VERSION,CW/2,CH*0.24+66,Math.round(14*s),'rgba(255,255,255,0.55)');
-  const lines=['WASD / setas  —  dirigir ou andar','ESPAÇO  —  freio de mão (carro) / soco (a pé)','F ou ENTER  —  entrar / sair / roubar carro','SHIFT  —  correr a pé     H  —  buzina','Q / E ou 1-4  —  trocar arma     X  —  atirar do carro','','Orelhões amarelos tocando = missões','PINTURA EXPRESS ($500) apaga as estrelas','OFICINA DO ZÉ compra carro roubado','ARMAS DO TONHÃO vende armas · POSTO conserta o carro ($150)','Minimapa:  + hospital  ★ polícia  Z Zé  P pintura  A armas  G posto'];
+  const lines=['WASD / setas  —  dirigir ou andar','ESPAÇO  —  freio de mão (carro) / soco (a pé)','F ou ENTER  —  entrar / sair / roubar carro','SHIFT  —  correr a pé     H  —  buzina','Q / E ou 1-4  —  trocar arma     X  —  atirar do carro',"MOUSE: mira · clique esquerdo atira/soca · direito entra/sai do carro · roda troca arma",'','Orelhões amarelos tocando = missões','PINTURA EXPRESS ($500) apaga as estrelas','OFICINA DO ZÉ compra carro roubado','ARMAS DO TONHÃO vende armas · POSTO conserta o carro ($150)','Minimapa:  + hospital  ★ polícia  Z Zé  P pintura  A armas  G posto'];
   lines.forEach((l,i)=>txt(l,CW/2,CH*0.40+i*23*s,Math.round(16*s),'#e8e8e8'));
   if(Math.floor(performance.now()/500)%2===0)txt(S.paused?'PAUSADO — ESC, P, ENTER ou clique pra voltar':'Aperta ENTER pra começar',CW/2,CH*0.86,Math.round(24*s),'#7dff6b');
 }

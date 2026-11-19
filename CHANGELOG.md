@@ -5,6 +5,16 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.5.0 — 19/11/2026
+**Controles no mouse**
+- A pé: o personagem olha pra mira do mouse enquanto anda com WASD
+- Clique esquerdo atira (segurar = rajada da SMG); com o punho, dá soco
+- Do carro: clique esquerdo atira na direção da mira, pela janela (X continua atirando pra frente)
+- Clique direito entra, sai ou rouba carro
+- Roda do mouse troca de arma
+- Mira desenhada na tela; o cursor do sistema some durante o jogo
+- Com o mouse a mira é precisa; no teclado continua a mira automática
+
 ## 0.4.0 — 19/11/2026
 **Sinalização dos lugares**
 - Cada lugar especial tem telhado próprio com ícone e placa: estrela na Polícia, chave inglesa na Oficina do Zé, faixas de tinta na Pintura Express, mira nas Armas do Tonhão

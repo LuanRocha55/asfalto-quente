@@ -13,3 +13,6 @@ export const player={x:0,y:0,a:0,health:100,car:null,money:0,heat:0,anim:0,punch
   weapon:'pistola', ammo:{pistola:12}, fireCd:0, triggerLatch:false};
 export const cam={x:0,y:0,zoom:1};
 export const keys={};
+// mouse: posição na tela, botões e se o jogador está usando o mouse pra mirar
+export const mouse={x:0,y:0,down:false,active:false};
+export function mouseWorld(){return {x:cam.x+(mouse.x-window.innerWidth/2)/cam.zoom, y:cam.y+(mouse.y-window.innerHeight/2)/cam.zoom};}

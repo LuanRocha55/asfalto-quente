@@ -2,7 +2,7 @@
 
 Jogo top-down de mundo aberto feito em JavaScript puro com Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
-Versão atual: **0.4.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **0.5.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
 ## Como rodar
 
@@ -29,6 +29,10 @@ No VS Code, a extensão **Live Server** também resolve.
 | H | buzina |
 | N | liga/desliga o som |
 | P / Esc | pausa |
+| Mouse | mira |
+| Clique esquerdo | atirar / soco (no carro, atira na direção da mira) |
+| Clique direito | entrar, sair ou roubar carro |
+| Roda do mouse | trocar de arma |
 
 ## Estrutura
 
