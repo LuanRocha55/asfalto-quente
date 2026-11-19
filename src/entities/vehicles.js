@@ -54,7 +54,8 @@ export class Car{
     else if(thr<0){ if(vF>5){vF-=t.brake*dt*(-thr);this.brakeLight=true;} else if(vF>-maxS*0.35)vF-=t.accel*0.6*dt; }
     else vF*=Math.max(0,1-0.9*dragM*dt);
     if(vF>maxS*1.05)vF-=(vF-maxS)*2*dt;
-    const grip=(hb?1.4:t.grip)*gripM;
+    const skill=this.driver==='player'&&player.skills.direcao;
+    const grip=(hb?1.4:t.grip)*gripM*(skill?1.15:1);
     vR*=Math.max(0,1-grip*dt);
     if(hb){vF*=Math.max(0,1-1.3*dt);this.brakeLight=true;}
     const sf=clamp(Math.abs(vF)/110,0,1)*Math.sign(vF);

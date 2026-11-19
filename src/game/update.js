@@ -14,6 +14,7 @@ import { S, player, cam, keys, mouse, mouseWorld } from '../core/state.js';
 import { advanceTime } from '../world/time.js';
 import { updateWeapons } from './weapons.js';
 import { updateJobs } from './jobs.js';
+import { autosave } from './save.js';
 
 export function update(dt){
   S.gameTime+=dt;
@@ -40,6 +41,8 @@ export function update(dt){
   advanceTime(dt);
   updateWeapons(dt);
   updateJobs(dt);
+  autosave(dt);
+  if(S.waypoint&&hyp(player.x-S.waypoint.x,player.y-S.waypoint.y)<90){S.waypoint=null;msg('Chegou no marcador.',2);}
   // IA dos carros
   for(const c of S.cars){
     if(c.hitCd>0)c.hitCd-=dt;

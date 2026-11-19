@@ -42,7 +42,7 @@ export function genMap(){
         map[y*W+x]=(lx===0||lx===11||ly===0||ly===11)?SIDE:GRASS;}
     }
   }
-  const specials={'2,2':'hospital','11,3':'policia','5,9':'pintura','10,11':'pintura2','3,11':'ze','6,3':'estac','12,8':'estac2','7,12':'estac3','9,6':'armas','4,5':'posto','10,2':'posto2'};
+  const specials={'2,2':'hospital','11,3':'policia','5,9':'pintura','10,11':'pintura2','3,11':'ze','6,3':'estac','12,8':'estac2','7,12':'estac3','9,6':'armas','4,5':'posto','10,2':'posto2','1,2':'casa'};
   for(let bj=0;bj<NI-1;bj++)for(let bi=0;bi<NI-1;bi++){
     const ix=O+bi*PER+BAND+1, iy=O+bj*PER+BAND+1; // interior 10x10
     const key=bi+','+bj; const sp=specials[key];
@@ -55,6 +55,14 @@ export function genMap(){
       const spot={x:(ix+5)*T,y:(iy+10)*T+T*1.5};
       if(sp==='hospital')hospitalSpot=spot;else policeSpot=spot;
       continue;
+    }
+    if(sp==='casa'){
+      // quintal com a casa do jogador no meio
+      for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,GRASS);
+      for(let y=iy+7;y<iy+10;y++)setT(ix+4,y,SIDE),setT(ix+5,y,SIDE);
+      fillLot(ix+2,iy+1,6,6,BUILD);
+      const b={x0:(ix+2)*T,y0:(iy+1)*T,x1:(ix+8)*T,y1:(iy+7)*T,h:22,wall:'#f0e0c0',roof:'#9c4a32',kind:'casa',seed:rng()};
+      buildings.push(b);special.casa=b;continue;
     }
     if(sp==='posto'||sp==='posto2'){
       for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);

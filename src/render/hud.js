@@ -11,6 +11,8 @@ import { WEAPONS } from '../game/weapons.js';
 import { districtAt, streetAt } from '../world/districts.js';
 import { buildings, zones } from '../world/map.js';
 import { mouse } from '../core/state.js';
+import { drawIcon, KIND_ICON } from './icons.js';
+import { hasSave, saveSummary } from '../game/save.js';
 import { JOBS, levelOf, jobHint, jobSpots } from '../game/jobs.js';
 import { cv } from '../core/canvas.js';
 let lastDistrict='', districtFlash=0, lastFrame=performance.now();
@@ -18,7 +20,7 @@ const POI_ICONS={hospital:['+','#e53935'],policia:['★','#3a6bff'],ze:['Z','#ff
 
 // mira na posição do mouse (esconde o cursor do sistema durante o jogo)
 function drawCrosshair(g){
-  const playing=S.started&&!S.paused&&player.state==='play';
+  const playing=S.started&&!S.paused&&!S.menu&&!S.mapOpen&&player.state==='play';
   cv.style.cursor=(playing&&mouse.active)?'none':'default';
   if(!playing||!mouse.active)return;
   const x=mouse.x,y=mouse.y,armed=player.weapon!=='punho';
@@ -57,6 +59,7 @@ export function drawHUD(g,tgt){
   // vida
   g.fillStyle='rgba(0,0,0,0.5)';g.fillRect(18,18,184,16);g.fillStyle=player.health>35?'#e53935':'#ff1744';g.fillRect(20,20,180*player.health/100,12);
   txt('VIDA',22,50,12,'#fff');
+  if(player.armor>0){g.fillStyle='rgba(0,0,0,0.5)';g.fillRect(70,40,132,10);g.fillStyle='#90a4ae';g.fillRect(72,42,128*player.armor/100,6);txt('COLETE',150,50,9,'#cfd8dc','center');}
   if(player.car){const c=player.car;g.fillStyle='rgba(0,0,0,0.5)';g.fillRect(18,58,184,12);g.fillStyle=c.health>c.t.hp*0.35?'#42a5f5':'#ff9100';g.fillRect(20,60,180*Math.max(0,c.health)/c.t.hp,8);
     txt(c.t.name+'  '+Math.round(Math.max(0,c.fwdSpeed())*0.36)+' km/h',22,88,14,'#fff');}
   // missão
@@ -80,19 +83,18 @@ export function drawHUD(g,tgt){
   const ptx=player.x/T,pty=player.y/T;g.imageSmoothingEnabled=false;
   g.drawImage(mini,ptx-VIEW/2,pty-VIEW/2,VIEW,VIEW,mx,my2,MS,MS);
   const toM=(x,y)=>[mx+(x/T-ptx+VIEW/2)*MS/VIEW,my2+(y/T-pty+VIEW/2)*MS/VIEW];
-  for(const ph of phones){const p=toM(ph.x,ph.y);g.fillStyle=(!S.mission&&S.phoneCd<=0)?'#ffd84a':'#8a7a3a';g.fillRect(p[0]-3,p[1]-3,6,6);}
-  g.font='bold 11px "Courier New",monospace';g.textAlign='center';
-  for(const b of buildings){const ic=POI_ICONS[b.kind];if(!ic)continue;const p=toM((b.x0+b.x1)/2,(b.y0+b.y1)/2);
-    if(p[0]<mx-8||p[0]>mx+MS+8||p[1]<my2-8||p[1]>my2+MS+8)continue;
-    g.fillStyle='rgba(0,0,0,0.75)';g.beginPath();g.arc(p[0],p[1],7,0,Math.PI*2);g.fill();g.fillStyle=ic[1];g.fillText(ic[0],p[0],p[1]+4);}
-  for(const sp of jobSpots()){if(!sp.terminal&&!sp.ponto)continue;const p=toM(sp.x,sp.y);if(p[0]<mx-8||p[0]>mx+MS+8||p[1]<my2-8||p[1]>my2+MS+8)continue;
-    g.fillStyle='rgba(0,0,0,0.75)';g.beginPath();g.arc(p[0],p[1],7,0,Math.PI*2);g.fill();g.fillStyle=sp.terminal?'#90caf9':'#ffe14a';g.fillText(sp.terminal?'B':'T',p[0],p[1]+4);}
+  const inMini=p=>!(p[0]<mx-8||p[0]>mx+MS+8||p[1]<my2-8||p[1]>my2+MS+8);
+  {const ringing=!S.mission&&!S.job&&S.phoneCd<=0;for(const ph of phones){const p=toM(ph.x,ph.y);if(!inMini(p))continue;g.globalAlpha=ringing?1:0.4;drawIcon(g,'phone',p[0],p[1],12);g.globalAlpha=1;}}
+  for(const b of buildings){const k=KIND_ICON[b.kind];if(!k)continue;const p=toM((b.x0+b.x1)/2,(b.y0+b.y1)/2);if(!inMini(p))continue;drawIcon(g,k,p[0],p[1],14);}
+  for(const sp of jobSpots()){if(!sp.terminal&&!sp.ponto)continue;const p=toM(sp.x,sp.y);if(!inMini(p))continue;drawIcon(g,sp.terminal?'terminal':'taxi',p[0],p[1],14);}
+  if(S.waypoint&&!S.mission&&!S.job){const p=toM(S.waypoint.x,S.waypoint.y);drawIcon(g,'waypoint',clamp(p[0],mx+7,mx+MS-7),clamp(p[1],my2+7,my2+MS-7),14);}
   for(const c of S.cars){if(c.ai!=='police')continue;const p=toM(c.x,c.y);g.fillStyle=Math.floor(S.gameTime*6)%2?'#ff3030':'#3a6bff';g.fillRect(p[0]-2.5,p[1]-2.5,5,5);}
   g.fillStyle='#ff9a3c';g.font='bold 9px monospace';
   g.fillStyle='#fff';const pp=toM(player.x,player.y);g.save();g.translate(pp[0],pp[1]);g.rotate(player.a);g.beginPath();g.moveTo(6,0);g.lineTo(-4,-4);g.lineTo(-4,4);g.closePath();g.fill();g.restore();
   if(tgt){const p=toM(tgt.x,tgt.y);const cp=[clamp(p[0],mx+4,mx+MS-4),clamp(p[1],my2+4,my2+MS-4)];g.fillStyle='#ffe14a';g.beginPath();g.arc(cp[0],cp[1],5,0,Math.PI*2);g.fill();g.strokeStyle='#000';g.lineWidth=1;g.stroke();}
   g.restore();
-  txt('N mudo · P pausa · v'+VERSION,mx,my2-10,11,'rgba(255,255,255,0.6)');
+  txt('M mapa · N mudo · P pausa · v'+VERSION,mx,my2-10,11,'rgba(255,255,255,0.6)');
+  if(S.saveFlash>0){g.globalAlpha=clamp(S.saveFlash,0,1);txt('✔ jogo salvo',mx,my2-28,12,'#7dff6b');g.globalAlpha=1;}
   drawCrosshair(g);
 }
 export function drawStar(g,x,y,r,col){g.fillStyle=col;g.strokeStyle='rgba(0,0,0,0.6)';g.lineWidth=2;g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*0.45:r;g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}g.closePath();g.fill();g.stroke();}
@@ -105,7 +107,8 @@ export function drawTitle(){
   txt('ASFALTO QUENTE',CW/2,CH*0.24,Math.round(70*s),'#ff8a1a');
   txt('Vila Maresia, 1997',CW/2,CH*0.24+40,Math.round(20*s),'#ffe9a0');
   txt('versão '+VERSION,CW/2,CH*0.24+66,Math.round(14*s),'rgba(255,255,255,0.55)');
-  const lines=['WASD / setas  —  dirigir ou andar','ESPAÇO  —  freio de mão (carro) / soco (a pé)','F ou ENTER  —  entrar / sair / roubar carro','SHIFT  —  correr a pé     H  —  buzina','Q / E ou 1-4  —  trocar arma     X  —  atirar do carro',"MOUSE: mira · clique esquerdo atira/soca · direito entra/sai do carro · roda troca arma",'','Orelhões amarelos tocando = missões','PINTURA EXPRESS ($500) apaga as estrelas','OFICINA DO ZÉ compra carro roubado','ARMAS DO TONHÃO vende armas · POSTO conserta o carro ($150)','Minimapa:  + hospital  ★ polícia  Z Zé  P pintura  A armas  G posto/guincho',"Empregos (J):  T táxi  L motoboy  B busão  G guincho  V vigilante (de noite)"];
+  const lines=['WASD / setas  —  dirigir ou andar','ESPAÇO  —  freio de mão (carro) / soco (a pé)','F ou ENTER  —  entrar / sair / roubar carro','SHIFT  —  correr a pé     H  —  buzina','Q / E ou 1-4  —  trocar arma     X  —  atirar do carro',"MOUSE: mira · clique esquerdo atira/soca · direito entra/sai do carro · roda troca arma",'','Orelhões amarelos tocando = missões','PINTURA EXPRESS ($500) apaga as estrelas','OFICINA DO ZÉ compra carro roubado','ARMAS DO TONHÃO vende armas · POSTO conserta o carro ($150)','M ou TAB  —  mapa da cidade com legenda   ·   F na porta  —  entrar nos comércios',"Empregos (J): táxi, motoboy, busão, guincho e vigilante (de noite)  ·  salva sozinho"];
   lines.forEach((l,i)=>txt(l,CW/2,CH*0.37+i*21*s,Math.round(16*s),'#e8e8e8'));
-  if(Math.floor(performance.now()/500)%2===0)txt(S.paused?'PAUSADO — ESC, P, ENTER ou clique pra voltar':'Aperta ENTER pra começar',CW/2,CH*0.86,Math.round(24*s),'#7dff6b');
+  if(Math.floor(performance.now()/500)%2===0)txt(S.paused?'PAUSADO — ESC, P, ENTER ou clique pra voltar':(hasSave()?'ENTER continua o jogo salvo · BACKSPACE começa do zero':'Aperta ENTER pra começar'),CW/2,CH*0.86,Math.round((hasSave()&&!S.paused?18:24)*s),'#7dff6b');
+  if(!S.paused&&hasSave())txt('Save: '+saveSummary(),CW/2,CH*0.86+28*s,Math.round(13*s),'#cfcfcf');
 }

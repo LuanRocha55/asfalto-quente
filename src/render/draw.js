@@ -14,7 +14,9 @@ import { signalized, signalState } from '../world/districts.js';
 import { darkness } from '../world/time.js';
 import { drawLighting, drawGlows } from './lighting.js';
 import { WEAPONS } from '../game/weapons.js';
-import { BUS_STOPS, jobSpots } from '../game/jobs.js';
+import { BUS_STOPS, jobSpots, doorOf } from '../game/jobs.js';
+import { enterables, nearestDoor } from '../game/interiors.js';
+import { drawIcon, KIND_ICON, ICONS } from './icons.js';
 
 let BR=1;      // brilho geral dos prédios/árvores (cai à noite)
 let NIGHT=0;   // 0 dia .. 1 noite
@@ -235,8 +237,14 @@ export function render(){
     g.fillStyle='#ffffff';g.font='bold 8px monospace';g.textAlign='center';g.fillText('BUS',px,py+2);}
   for(const sp of jobSpots()){if(!sp.terminal&&!sp.ponto)continue;if(sp.x<vx0||sp.x>vx1||sp.y<vy0||sp.y>vy1)continue;
     label(g,sp.terminal?'TERMINAL DE ÔNIBUS':'PONTO DE TÁXI',sp.x,sp.y-60,sp.terminal?'#90caf9':'#ffe14a',14);}
+  // portas dos prédios que dá pra entrar
+  const nearB=(!player.car&&player.state==='play')?nearestDoor(40):null;
+  for(const b of enterables()){const d=doorOf(b);if(d.x<vx0||d.x>vx1||d.y<vy0||d.y>vy1)continue;
+    const on=b===nearB;g.fillStyle=on?'rgba(255,233,160,0.55)':'rgba(255,233,160,0.22)';g.beginPath();g.arc(d.x,d.y,on?17:14,0,Math.PI*2);g.fill();
+    drawIcon(g,KIND_ICON[b.kind],d.x,d.y,on?18:14);}
+  if(nearB){const d=doorOf(nearB);label(g,'[F] Entrar: '+(ICONS[KIND_ICON[nearB.kind]].name.split(' (')[0].split(' ·')[0]),d.x,d.y-26,'#ffe9a0',13);}
   // marcador do alvo
-  const tgt=S.mission?S.mission.def.target(S.mission):(S.job?S.job.target:null);
+  const tgt=S.mission?S.mission.def.target(S.mission):(S.job?S.job.target:S.waypoint);
   if(tgt&&!(tgt instanceof Car)&&!(tgt instanceof Ped)){const r=26+Math.sin(S.gameTime*5)*5;g.strokeStyle='#ffe14a';g.lineWidth=4;g.beginPath();g.arc(tgt.x,tgt.y,r,0,Math.PI*2);g.stroke();g.fillStyle='rgba(255,225,74,0.25)';g.fill();}
   // pedestres
   for(const p of S.peds){if(p.state==='dead'||p.state==='gone'||p.state==='dead2')continue;if(p.x<vx0||p.x>vx1||p.y<vy0||p.y>vy1)continue;

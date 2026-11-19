@@ -94,7 +94,8 @@ function autoAim(x,y,a,range,cone=0.38){
 }
 
 function playerShoot(){
-  const w=WEAPONS[player.weapon];
+  const w0=WEAPONS[player.weapon];
+  const w=player.skills.pontaria?{...w0,spread:w0.spread*0.55}:w0;
   if((player.ammo[player.weapon]||0)<=0){ msg('Sem munição!',1.2); player.fireCd=0.4; cycleWeapon(-1); return; }
   player.ammo[player.weapon]--;
   player.fireCd=w.rate;

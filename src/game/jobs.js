@@ -9,6 +9,7 @@ import { roadPointFar, sidewalkPointFar, inZone } from './missions.js';
 import { darkness } from '../world/time.js';
 import { fire, WEAPONS } from './weapons.js';
 import { S, player } from '../core/state.js';
+import { saveGame } from './save.js';
 
 // ---------- carreira (nível sobe a cada 5 serviços) ----------
 const CAREER_KEY='aq_career';
@@ -101,6 +102,7 @@ export function endJob(reason){
   big('FIM DO TURNO','Ganhou '+fmtMoney(j.earned)+' de '+JOBS[j.type].title.toLowerCase(),'#7fd8ff',2.6);
   if(reason)msg(reason,3);
   S.job=null;
+  saveGame(true);
 }
 function cleanup(j){
   if(j.data.ped){j.data.ped.job=null;if(j.data.ped.state==='wait')j.data.ped.state='walk';}

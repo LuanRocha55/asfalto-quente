@@ -8,10 +8,12 @@ export const S={
   best:0, NEXT_ID:1, errCount:0, lastErr:'',
   tod:16.5, tracers:[], shopCd:0,
   job:null, floaters:[],
+  menu:null, mapOpen:false, mapRect:null, waypoint:null, playTime:0, saveFlash:0,
 };
 try{S.best=+localStorage.getItem('aq_best')||0;}catch(e){}
 export const player={x:0,y:0,a:0,health:100,car:null,money:0,heat:0,anim:0,punchCd:0,state:'play',stateT:0,bustT:0,inv:0,
-  weapon:'pistola', ammo:{pistola:12}, fireCd:0, triggerLatch:false};
+  weapon:'pistola', ammo:{pistola:12}, fireCd:0, triggerLatch:false,
+  armor:0, skills:{pontaria:false,direcao:false,socorros:false}};
 export const cam={x:0,y:0,zoom:1};
 export const keys={};
 // mouse: posição na tela, botões e se o jogador está usando o mouse pra mirar

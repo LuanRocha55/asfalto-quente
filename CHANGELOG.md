@@ -5,6 +5,25 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.7.0 — 19/11/2026
+**Save**
+- Salva sozinho a cada 45 segundos (fora de missão e sem estrelas), ao terminar missão e turno de emprego, e a cada compra
+- Salvar manual na **Sua casa** (ícone de casinha, perto do hospital); lá também dá pra dormir até de manhã ou de noite
+- Guarda dinheiro, vida, colete, armas e munição, cursos, progresso das missões, horário, posição e o carro em que você estava
+- Tela de título: ENTER continua o jogo salvo, BACKSPACE começa do zero
+
+**Comércios onde dá pra entrar** (F ou clique direito na porta)
+- Farmácia (curativo, kit, colete), Mercadinho (lanches e raspadinha), Padaria, Lanchonete, Lojinha do posto
+- Hospital (tratamento), Delegacia (pagar fiança até 2 estrelas ou se entregar), Armas do Tonhão (armas e colete)
+- Escola com cursos permanentes: pontaria (tiro mais preciso), direção (carro mais firme) e primeiros socorros (renasce com meio colete)
+- Colete à prova de balas: barra cinza embaixo da vida, absorve a maior parte do dano
+- Portas marcadas no chão com o ícone do lugar; o mundo pausa enquanto o menu está aberto
+
+**Mapa e ícones**
+- Mapa em tela cheia (M ou TAB) com bairros, legenda, polícia, objetivo e sua posição
+- Clique no mapa marca um destino (seta e marcador rosa); clique direito apaga
+- Letras trocadas por ícones desenhados com cor própria: cruz vermelha (hospital) e cruz verde (farmácia), estrela (polícia), chave (Zé), gota (pintura), mira (armas), bomba de gasolina (posto), hambúrguer, carrinho, pão, livro, casa, ônibus, táxi e orelhão
+
 ## 0.6.0 — 19/11/2026
 **Empregos** (aperta J pra começar e pra encerrar o turno)
 - **Taxista** (Táxi): busca o passageiro acenando e leva no destino. Paga mais se chegar rápido; batidas fazem o passageiro reclamar e pagar menos

@@ -2,7 +2,7 @@
 
 Jogo top-down de mundo aberto feito em JavaScript puro com Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
-Versão atual: **0.6.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **0.7.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
 ## Como rodar
 
@@ -28,6 +28,8 @@ No VS Code, a extensão **Live Server** também resolve.
 | Shift | correr a pé |
 | H | buzina |
 | J | começar/encerrar turno de emprego |
+| M ou Tab | mapa em tela cheia (clique marca destino) |
+| F na porta | entrar em comércios |
 | N | liga/desliga o som |
 | P / Esc | pausa |
 | Mouse | mira |
@@ -64,12 +66,16 @@ src/
     effects.js          explosões, marcas de pneu, atropelamentos
     weapons.js          armas, tiros, loja e inimigos atirando
     jobs.js             empregos, carreira e veículos de trabalho
+    interiors.js        portas e menus dos comércios
+    save.js             salvar e carregar o jogo
     missions.js         missões dos orelhões
     update.js           atualização do mundo e colisões
   render/
     draw.js             mundo: carros, pessoas, prédios em perspectiva
     hud.js              interface, minimapa e tela de título
     lighting.js         escuridão da noite e pontos de luz
+    icons.js            ícones do minimapa, do mapa e da legenda
+    overlays.js         mapa em tela cheia e menus
   audio/
     audio.js            motor, sirene e efeitos sintetizados
 ```

@@ -52,6 +52,7 @@ export function busted(){if(player.state!=='play')return;player.state='busted';p
   player.ammo={};player.weapon='punho';
   big('EM CANA!','-$500 de fiança e as armas','#5aa0ff',3.2);sfxFail();failMission('Missão falhou.');}
 export function respawn(where){
+  player.armor=player.skills.socorros?50:0;
   player.x=where.x;player.y=where.y;player.health=100;player.heat=0;player.state='play';player.inv=2;player.bustT=0;
   for(const c of S.cars)if(c.ai==='police'){c.ai='traffic';recoverCar(c);}
   cam.x=player.x;cam.y=player.y;

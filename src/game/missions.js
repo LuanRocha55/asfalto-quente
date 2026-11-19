@@ -1,4 +1,5 @@
 // Missões dos orelhões
+import { saveGame } from './save.js';
 import { rand, randi, pick, hyp, fmtMoney } from '../core/utils.js';
 import { T, NI, O, CITY, PX, SIDE, roadPx, phones, special, tileAt } from '../world/map.js';
 import { sfxTone, sfxWin } from '../audio/audio.js';
@@ -55,7 +56,7 @@ export function startMission(){
   S.mission={def,title:def.title};def.start(S.mission);S.mission.reward=Math.round(S.mission.reward*(1+round*0.6));
   big(def.title,'Missão '+(S.missionIdx+1),'#ffd84a',2.5);sfxTone(660,0.2,0.1);sfxTone(880,0.3,0.1,'square',0.18);
 }
-export function finishMission(){player.money+=S.mission.reward;big('MISSÃO CUMPRIDA',fmtMoney(S.mission.reward),'#5cff7a',3);sfxWin();
+export function finishMission(){setTimeout(()=>saveGame(true),0);player.money+=S.mission.reward;big('MISSÃO CUMPRIDA',fmtMoney(S.mission.reward),'#5cff7a',3);sfxWin();
   if(S.mission.zeDone){const c=S.mission.zeDone;player.car=null;c.driver=null;{const ix=S.cars.indexOf(c);if(ix>=0)S.cars.splice(ix,1);}player.x=(special.ze.x0+special.ze.x1)/2;player.y=special.ze.y1+10;}
   cleanupMission();S.missionIdx++;S.mission=null;S.phoneCd=3;}
 export function failMission(t){if(!S.mission)return;msg(t||'Missão falhou.');cleanupMission();S.mission=null;S.phoneCd=3;}
