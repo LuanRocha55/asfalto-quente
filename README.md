@@ -2,6 +2,8 @@
 
 Jogo top-down de mundo aberto feito em JavaScript puro com Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
+Versão atual: **0.2.1** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+
 ## Como rodar
 
 Como o código usa módulos ES (`import`/`export`), o navegador não carrega abrindo o `index.html` direto do disco. Precisa de um servidor local:
@@ -34,6 +36,7 @@ src/
   main.js               loop principal (com recuperação de erros)
   core/
     canvas.js           canvas e redimensionamento
+    version.js          número da versão do jogo
     state.js            estado mutável compartilhado (S, player, cam, keys)
     utils.js            aleatório, matemática, cores
     input.js            teclado e mouse
