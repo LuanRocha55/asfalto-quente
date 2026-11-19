@@ -14,6 +14,7 @@ import { signalized, signalState } from '../world/districts.js';
 import { darkness } from '../world/time.js';
 import { drawLighting, drawGlows } from './lighting.js';
 import { WEAPONS } from '../game/weapons.js';
+import { BUS_STOPS, jobSpots } from '../game/jobs.js';
 
 let BR=1;      // brilho geral dos prédios/árvores (cai à noite)
 let NIGHT=0;   // 0 dia .. 1 noite
@@ -27,7 +28,19 @@ export function drawCar(g,c){
   const col=c.wreck?'#2b2724':c.color;
   g.fillStyle=shade(col,0.7);roundRect(g,-hl,-hw,L,Wd,5);g.fill();
   g.fillStyle=col;roundRect(g,-hl+1,-hw+1,L-2,Wd-2,4);g.fill();
-  if(c.type==='busao'){
+  if(c.type==='moto'){
+    g.fillStyle='#222';g.fillRect(-hl,-2,L,4);                       // pneus/quadro
+    g.fillStyle=col;g.fillRect(-hl+6,-hw+1,L-12,Wd-2);
+    g.fillStyle='#ccc';g.fillRect(hl-6,-hw-1,2,Wd+2);                 // guidão
+    if(c.driver){g.fillStyle=c.driver==='player'?'#ff7a1a':'#555';g.beginPath();g.arc(-2,0,4.5,0,Math.PI*2);g.fill();g.fillStyle='#e53935';g.beginPath();g.arc(-1,0,3.2,0,Math.PI*2);g.fill();} // capacete
+  } else if(c.type==='guincho'){
+    g.fillStyle=shade(col,1.1);g.fillRect(hl-L*0.32,-hw+2,L*0.3,Wd-4);       // cabine
+    g.fillStyle='#86c5da';g.fillRect(hl-6,-hw+4,4,Wd-8);
+    g.fillStyle='#555';g.fillRect(-hl+2,-hw+3,L*0.62,Wd-6);                  // plataforma
+    g.strokeStyle='#333';g.lineWidth=2;for(let i=0;i<5;i++){g.beginPath();g.moveTo(-hl+6+i*6,-hw+4);g.lineTo(-hl+6+i*6,hw-4);g.stroke();}
+    g.fillStyle='#f57f17';g.fillRect(-hl-4,-2,10,4);g.fillStyle='#333';g.beginPath();g.arc(-hl-4,0,3,0,Math.PI*2);g.fill(); // gancho
+    const on=Math.floor(S.gameTime*5)%2===0;g.fillStyle=on?'#ffb300':'#7a5a00';g.fillRect(hl-L*0.2,-hw+2,4,Wd-4);
+  } else if(c.type==='busao'){
     g.fillStyle=shade(col,1.15);g.fillRect(-hl+4,-hw+3,L-10,Wd-6);
     g.fillStyle='#9fd3e8';g.fillRect(hl-7,-hw+3,4,Wd-6);
     g.fillStyle='rgba(255,255,255,0.5)';for(let i=0;i<6;i++)g.fillRect(-hl+10+i*11,-hw+5,6,Wd-10);
@@ -216,8 +229,14 @@ export function render(){
     g.fillStyle='rgba(0,0,0,0.3)';g.beginPath();g.arc(ph.x+3,ph.y+3,10,0,Math.PI*2);g.fill();
     g.fillStyle='#f2a900';g.beginPath();g.arc(ph.x,ph.y,10,0,Math.PI*2);g.fill();g.fillStyle='#ffd04a';g.beginPath();g.arc(ph.x-2,ph.y-2,6,0,Math.PI*2);g.fill();
     g.fillStyle='#3a3a3a';g.fillRect(ph.x-2,ph.y+4,4,6);}
+  // pontos de ônibus
+  for(const s of BUS_STOPS){const px=s.x+s.side.x*72, py=s.y+s.side.y*72;if(px<vx0||px>vx1||py<vy0||py>vy1)continue;
+    g.fillStyle='rgba(0,0,0,0.3)';g.fillRect(px-13,py-6,28,14);g.fillStyle='#1565c0';g.fillRect(px-14,py-8,28,14);
+    g.fillStyle='#ffffff';g.font='bold 8px monospace';g.textAlign='center';g.fillText('BUS',px,py+2);}
+  for(const sp of jobSpots()){if(!sp.terminal&&!sp.ponto)continue;if(sp.x<vx0||sp.x>vx1||sp.y<vy0||sp.y>vy1)continue;
+    label(g,sp.terminal?'TERMINAL DE ÔNIBUS':'PONTO DE TÁXI',sp.x,sp.y-60,sp.terminal?'#90caf9':'#ffe14a',14);}
   // marcador do alvo
-  const tgt=S.mission?S.mission.def.target(S.mission):null;
+  const tgt=S.mission?S.mission.def.target(S.mission):(S.job?S.job.target:null);
   if(tgt&&!(tgt instanceof Car)&&!(tgt instanceof Ped)){const r=26+Math.sin(S.gameTime*5)*5;g.strokeStyle='#ffe14a';g.lineWidth=4;g.beginPath();g.arc(tgt.x,tgt.y,r,0,Math.PI*2);g.stroke();g.fillStyle='rgba(255,225,74,0.25)';g.fill();}
   // pedestres
   for(const p of S.peds){if(p.state==='dead'||p.state==='gone'||p.state==='dead2')continue;if(p.x<vx0||p.x>vx1||p.y<vy0||p.y>vy1)continue;
@@ -248,6 +267,7 @@ export function render(){
   g.globalCompositeOperation='lighter';g.lineWidth=2;
   for(const t of S.tracers){g.strokeStyle='rgba('+t.col+','+clamp(t.life/t.max,0,1)+')';g.beginPath();g.moveTo(t.x1,t.y1);g.lineTo(t.x2,t.y2);g.stroke();}
   g.globalCompositeOperation='source-over';
+  for(const f of S.floaters){g.globalAlpha=clamp(f.life,0,1);label(g,f.t,f.x,f.y,f.col,15);}g.globalAlpha=1;
 
   drawHUD(g,tgt);
 }

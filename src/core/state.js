@@ -7,6 +7,7 @@ export const S={
   mission:null, missionIdx:0, phoneCd:0,
   best:0, NEXT_ID:1, errCount:0, lastErr:'',
   tod:16.5, tracers:[], shopCd:0,
+  job:null, floaters:[],
 };
 try{S.best=+localStorage.getItem('aq_best')||0;}catch(e){}
 export const player={x:0,y:0,a:0,health:100,car:null,money:0,heat:0,anim:0,punchCd:0,state:'play',stateT:0,bustT:0,inv:0,

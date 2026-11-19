@@ -5,6 +5,20 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.6.0 — 19/11/2026
+**Empregos** (aperta J pra começar e pra encerrar o turno)
+- **Taxista** (Táxi): busca o passageiro acenando e leva no destino. Paga mais se chegar rápido; batidas fazem o passageiro reclamar e pagar menos
+- **Motoboy** (Motoca nova, nas lanchonetes L): pega o pedido e entrega antes de esfriar; entrega rápida dá gorjeta
+- **Motorista de busão** (Busão, Terminal B): faz a volta das avenidas parando nos pontos azuis; paga por passageiro e tem bônus por volta completa
+- **Guincho** (caminhão novo, nos postos G): encosta a traseira no carro quebrado, reboca e entrega no posto ou na Oficina do Zé
+- **Vigilante noturno** (a pé, na porta de mercadinho ou farmácia V, só de noite): derruba os assaltantes antes de chegarem na loja; eles atiram de volta. Bônus ao amanhecer
+- Sequência: a cada 5 serviços seguidos sem falhar, bônus extra
+- Carreira: cada emprego sobe de nível a cada 5 serviços (até o nível 5) e passa a pagar mais; o progresso fica salvo no navegador
+- Dinheiro ganho aparece flutuando na tela
+- Veículos de trabalho ficam estacionados nos pontos e reaparecem se sumirem
+- Ícones no minimapa: T ponto de táxi, L lanchonete, B terminal, V lojas
+- Motocas também circulam no trânsito
+
 ## 0.5.0 — 19/11/2026
 **Controles no mouse**
 - A pé: o personagem olha pra mira do mouse enquanto anda com WASD

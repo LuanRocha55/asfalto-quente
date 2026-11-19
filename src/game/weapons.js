@@ -79,7 +79,7 @@ export function fire(x,y,a,w,fromPlayer,shooterCar){
   // pedestres em volta entram em pânico
   for(const p of S.peds){
     if(p.state!=='walk'&&p.state!=='wait')continue;
-    if(p.state==='wait'&&p.mission)continue;
+    if(p.state==='wait'&&(p.mission||p.job))continue;
     if(hyp(p.x-x,p.y-y)<300){ p.state='flee'; p.flee={x,y}; p.t=4; }
   }
 }

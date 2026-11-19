@@ -24,5 +24,5 @@ export function explode(x,y,src){
   if(!player.car&&player.state==='play'){const d=hyp(player.x-x,player.y-y);if(d<90)hurtPlayer(60*(90-d)/90);}
 }
 export function killPed(p,byPlayer){if(p.state==='dead')return;p.state='dead';S.decals.push({x:p.x,y:p.y,r:9,type:'splat',life:25});
-  if(byPlayer)addHeat(55); if(p.mission&&p.mission.onPedDead)p.mission.onPedDead(p);}
+  if(byPlayer&&!p.robber)addHeat(55); if(p.mission&&p.mission.onPedDead)p.mission.onPedDead(p);}
 export function hurtPlayer(v){if(player.inv>0||player.state!=='play')return;player.health-=v;S.shake=Math.max(S.shake,6);if(player.health<=0){player.health=0;wasted();}}

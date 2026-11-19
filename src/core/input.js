@@ -5,6 +5,7 @@ import { msg } from '../game/world.js';
 import { enterExit, punch } from '../game/player.js';
 import { S, keys, player, mouse } from './state.js';
 import { cycleWeapon, selectWeapon } from '../game/weapons.js';
+import { toggleJob } from '../game/jobs.js';
 
 window.addEventListener('keydown',e=>{
   if(['Space','KeyX','ControlLeft','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();
@@ -20,6 +21,7 @@ window.addEventListener('keydown',e=>{
   const num={Digit1:'punho',Digit2:'pistola',Digit3:'escopeta',Digit4:'smg'}[e.code];
   if(num)selectWeapon(num);
   if(e.code==='KeyH')sfxHorn();
+  if(e.code==='KeyJ')toggleJob();
   if(e.code==='KeyN'){AU.muted=!AU.muted;msg(AU.muted?'Som desligado':'Som ligado',1.5);}
 });
 window.addEventListener('keyup',e=>{keys[e.code]=false;});

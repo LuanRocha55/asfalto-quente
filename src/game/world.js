@@ -1,4 +1,5 @@
 // Procurado, mensagens, câmera auxiliar e spawn de carros/pedestres
+import { setupJobSpots } from './jobs.js';
 import { CW, CH } from '../core/canvas.js';
 import { rand, randi, pick, clamp, hyp } from '../core/utils.js';
 import { T, NI, PX, SAND, SIDE, GRASS, roadPx, LANE_OFF, DX, DY, hospitalSpot, tileAt } from '../world/map.js';
@@ -20,6 +21,7 @@ export function resetWorld(){
   cam.x=player.x;cam.y=player.y;
   for(let i=0;i<40;i++)spawnTraffic(150,1600,true);
   for(let i=0;i<55;i++)spawnPed(60,1100,true);
+  S.job=null;setupJobSpots();
 }
 
 export function spawnTraffic(rmin,rmax,ignoreView,type,ai){

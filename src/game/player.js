@@ -39,7 +39,7 @@ export function punch(){
   const fx=Math.cos(player.a),fy=Math.sin(player.a);sfxNoise(0.08,0.15,2000);
   for(const p of S.peds){if(p.state==='dead')continue;const dx=p.x-player.x,dy=p.y-player.y;const f=dx*fx+dy*fy;
     if(f>0&&f<24&&Math.abs(-dx*fy+dy*fx)<14){p.hits++;
-      if(p.hits>=3)killPed(p,true);else{p.state='down';p.t=2.5;addHeat(18);}
+      if(p.hits>=3)killPed(p,true);else{p.state='down';p.t=2.5;if(!p.robber)addHeat(18);}
       if(p.mission&&p.mission.onPedHit)p.mission.onPedHit(p);
       sfxNoise(0.12,0.35,700);break;}}
 }

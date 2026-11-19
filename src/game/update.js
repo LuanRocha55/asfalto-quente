@@ -13,6 +13,7 @@ import { startMission, finishMission, failMission, inZone } from './missions.js'
 import { S, player, cam, keys, mouse, mouseWorld } from '../core/state.js';
 import { advanceTime } from '../world/time.js';
 import { updateWeapons } from './weapons.js';
+import { updateJobs } from './jobs.js';
 
 export function update(dt){
   S.gameTime+=dt;
@@ -38,6 +39,7 @@ export function update(dt){
   }
   advanceTime(dt);
   updateWeapons(dt);
+  updateJobs(dt);
   // IA dos carros
   for(const c of S.cars){
     if(c.hitCd>0)c.hitCd-=dt;
@@ -45,7 +47,7 @@ export function update(dt){
       if(c.burnT<=0){c.wreck=true;c.burnT=0;explode(c.x,c.y,c.lastHitBy||null);
         if(player.car===c){player.car=null;c.driver=null;wasted();}
         if(c.driver==='ai'){c.driver=null;} c.ai=null;}}
-    if(c===player.car)continue;
+    if(c===player.car||c.towed)continue;
     if(c.wreck){c.physics(0,0,true,dt);continue;}
     if(c.ai==='traffic'&&c.driver==='ai')updateTraffic(c,dt);
     else if(c.ai==='police'&&c.driver==='ai')updatePolice(c,dt);
@@ -78,10 +80,10 @@ export function update(dt){
   S.spawnT-=dt; if(S.spawnT<=0){S.spawnT=0.4;
     const pr=player;
     // despawn
-    S.cars=S.cars.filter(c=>{if(c===player.car||c.mission)return true;const d=hyp(c.x-pr.x,c.y-pr.y);
+    S.cars=S.cars.filter(c=>{if(c===player.car||c.mission||c.keep||c.towed)return true;const d=hyp(c.x-pr.x,c.y-pr.y);
       if(c.ai==='police'&&stars===0&&d>900)return false;
       if(d>2300&&!(c.driver===null&&!c.wreck&&d<3200))return false;return true;});
-    S.peds=S.peds.filter(p=>(p.mission||hyp(p.x-pr.x,p.y-pr.y)<1500)&&p.state!=='dead'&&p.state!=='dead2');
+    S.peds=S.peds.filter(p=>(p.mission||p.job||p.robber||hyp(p.x-pr.x,p.y-pr.y)<1500)&&p.state!=='dead'&&p.state!=='dead2');
     const traffic=S.cars.filter(c=>c.ai==='traffic').length;
     for(let i=0;i<3&&traffic+i<42;i++)spawnTraffic(800,1700,false);
     const np=S.peds.length;for(let i=0;i<3&&np+i<60;i++)spawnPed(500,1100,false);
@@ -114,7 +116,7 @@ export function update(dt){
   }
   // missões
   if(S.mission&&player.state==='play'){const r=S.mission.def.update(S.mission,dt);if(r==='done')finishMission();else if(r==='fail')failMission('Missão falhou!');}
-  else if(!S.mission&&S.phoneCd<=0&&player.state==='play'){
+  else if(!S.mission&&!S.job&&S.phoneCd<=0&&player.state==='play'){
     for(const ph of phones){if(hyp(player.x-ph.x,player.y-ph.y)<46){startMission();break;}}
   }
   // partículas
@@ -146,7 +148,7 @@ export function update(dt){
 export function collideCars(){
   const n=S.cars.length;
   for(let i=0;i<n;i++){const a=S.cars[i];const ca=a.circles();
-    for(let j=i+1;j<n;j++){const b=S.cars[j];const lim=(a.t.len+b.t.len)/2+4;if(Math.abs(a.x-b.x)>lim||Math.abs(a.y-b.y)>lim)continue;
+    for(let j=i+1;j<n;j++){const b=S.cars[j];if(a.towed||b.towed)continue;const lim=(a.t.len+b.t.len)/2+4;if(Math.abs(a.x-b.x)>lim||Math.abs(a.y-b.y)>lim)continue;
       const cb=b.circles();
       for(const p of ca)for(const q of cb){const dx=p[0]-q[0],dy=p[1]-q[1],d=hyp(dx,dy),r=p[2]+q[2];
         if(d<r&&d>0.01){const nx=dx/d,ny=dy/d,ov=r-d;const ma=a.wreck?3:a.t.mass,mb=b.wreck?3:b.t.mass;
@@ -183,7 +185,8 @@ export function updatePeds(dt){
     // fugir de carro rápido perto
     if(p.state==='walk'){const pc=player.car;if(pc&&pc.speed>150&&hyp(pc.x-p.x,pc.y-p.y)<90&&Math.random()<0.1){p.state='flee';p.flee={x:pc.x,y:pc.y};p.t=2.5;}}
     if(p.state==='wait'){p.a=Math.atan2(player.y-p.y,player.x-p.x);continue;}
-    if(p.state==='down'){p.t-=dt;if(p.t<=0){p.state='flee';p.flee={x:player.x,y:player.y};p.t=3;}continue;}
+    if(p.state==='down'){p.t-=dt;if(p.t<=0){if(p.robber)p.state='robber';else{p.state='flee';p.flee={x:player.x,y:player.y};p.t=3;}}continue;}
+    if(p.state==='robber')continue;
     if(p.state==='flee'){p.t-=dt;const dx=p.x-p.flee.x,dy=p.y-p.flee.y,l=hyp(dx,dy)||1;let mx=dx/l,my=dy/l;
       const sp=115;const nx=p.x+mx*sp*dt,ny=p.y+my*sp*dt;p.a=Math.atan2(my,mx);
       if(!solidAt(nx,p.y))p.x=nx;if(!solidAt(p.x,ny))p.y=ny;

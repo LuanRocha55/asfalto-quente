@@ -13,9 +13,11 @@ export const CT={
   camin:{name:'Caminhonete',len:46,wid:22,maxSpd:255,accel:210,brake:440,grip:7,turn:2.2,hp:180,mass:1.7,val:500,colors:['#5d4037','#455a64','#827717','#37474f']},
   bugue:{name:'Bugue',len:32,wid:19,maxSpd:330,accel:340,brake:480,grip:6.2,turn:3.3,hp:80,mass:0.8,val:600,colors:['#ff7043','#26c6da','#ffca28','#9ccc65'],sand:true},
   busao:{name:'Busão',len:84,wid:26,maxSpd:200,accel:130,brake:340,grip:7,turn:1.7,hp:320,mass:4,val:800,colors:['#1565c0','#e65100','#2e7d32']},
+  moto:{name:'Motoca',len:26,wid:10,maxSpd:340,accel:380,brake:520,grip:7.5,turn:3.6,hp:60,mass:0.5,val:250,colors:['#e53935','#1e88e5','#212121','#fdd835']},
+  guincho:{name:'Guincho',len:52,wid:22,maxSpd:240,accel:190,brake:420,grip:7,turn:2.1,hp:220,mass:2.2,val:700,colors:['#f9a825']},
   viatura:{name:'Viatura',len:40,wid:19,maxSpd:390,accel:330,brake:560,grip:8.6,turn:2.9,hp:150,mass:1.3,val:1200,colors:['#20242c']},
 };
-export const TRAFFIC_MIX=['jegue','jegue','jegue','jegue','taxi','taxi','camin','camin','brisa','bugue','busao'];
+export const TRAFFIC_MIX=['jegue','jegue','jegue','jegue','taxi','taxi','camin','camin','brisa','bugue','busao','moto'];
 
 export class Car{
   constructor(type,x,y,a,color){
