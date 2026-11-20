@@ -300,7 +300,7 @@ __game.startMission()                // começa a próxima missão
 
 O número segue `MAIOR.MENOR.CORREÇÃO` (explicado no topo do [CHANGELOG](../CHANGELOG.md)).
 
-1. Atualize `VERSION` em `src/core/version.js` **e** `version` em `package.json`.
+1. Atualize `VERSION` em `src/core/version.js`, `version` em `package.json` e a versão escrita no `README.md` e no `docs/README.md`.
 2. Descreva as mudanças no topo do `CHANGELOG.md`, no mesmo estilo (título curto em negrito e itens em linguagem de jogador).
 3. Se mudou algo que o jogador vê, atualize o [guia do jogador](guia-do-jogador.md) e a [referência](referencia.md).
 4. Faça o commit com a mensagem `Versão X.Y.Z: resumo` (é o padrão do histórico).
@@ -318,9 +318,9 @@ A versão aparece na tela de título e no canto do minimapa, e vai dentro do sav
 Coisas notadas ao escrever esta documentação, a partir da geração atual da cidade (semente 1337). Não são mudanças, só registro pra decidir depois.
 
 1. **Começo com pouca coisa aberta.** Com só Centro e Jardim liberados, ficam em bairro fechado: os **dois Postos Maresia** (Alto da Maresia), o **terminal de ônibus** e **todas as lanchonetes com motoca** (Alto do Cajueiro e Vila Velha), o **ponto de táxi** do estacionamento (Alto da Maresia) e a **Oficina do Zé** (Orla). Isso quer dizer que, até juntar $5.000, não dá pra consertar o carro nem tirar pneu furado de blitz. No começo só o táxi da rua e o vigilante funcionam como emprego. Isso pode ajudar a explicar por que a blitz pesa tanto no começo.
-2. **Guincho sem destino aberto.** `updTow` escolhe o posto ou o Zé mais perto entre os abertos. Se nenhum estiver aberto, `zs[0]` fica `undefined` e o código quebra. Hoje não acontece porque o guincho só fica estacionado nos postos, que abrem junto com o Alto da Maresia, mas qualquer mudança nos lugares pode trazer o erro de volta.
+2. **Guincho sem destino aberto (corrigido).** Dava pra furar a blitz, pegar o guincho de um posto fechado e travar o jogo, porque `updTow` não achava destino aberto. Agora `towZones()` é checado ao começar o turno (não começa) e ao engatar o carro (encerra o turno com aviso).
 3. **Carreira fora do save.** `aq_career` não é apagado ao começar do zero (BACKSPACE), então os níveis dos empregos continuam.
-4. **Bônus do vigilante.** O bônus do amanhecer testa `robbed < 3`, mas com 3 assaltos o turno já acabou. Na prática o bônus é sempre pago a quem chega às 5h.
+4. **Bônus do vigilante (corrigido).** Antes dava pra começar o turno entre 5h e 6h (ainda escuro) e receber o bônus na hora. Agora não se começa turno entre 5h e 7h, e o bônus só é pago com pelo menos 2 horas de jogo de turno (`GUARD_MIN_SHIFT`, 1 minuto real).
 5. **Horário do vigilante.** A mensagem diz "das 20h às 5h", mas o código libera quando `darkness() >= 0.5`, que acontece por volta das 18h15, e encerra às 5h.
 6. **`updateCopsOnFoot`** em `ai/police.js` está vazia (os policiais a pé são atualizados em `updatePeds` via `updateCopPed`).
 7. **`TRAFFIC_MIX`** em `vehicles.js` é importado em `world.js` mas não é usado: o trânsito sai de `MIX` em `traffic.js`.

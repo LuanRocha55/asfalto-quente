@@ -202,7 +202,7 @@ Aperte **J a pé** pra abrir o menu de empregos: ele explica cada um e marca no 
 | **Motoboy** | Motoca parada nas lanchonetes | pega o pedido na lanchonete e entrega antes de esfriar | por entrega, com gorjeta se for rápida |
 | **Motorista de busão** | busão do Terminal | volta pelas avenidas parando em cada ponto azul (bem devagar, por 1,4 s) | por passageiro (1 a 5 por ponto), bônus de $200 por volta completa |
 | **Guincho** | guincho dos postos | encosta a traseira no carro quebrado, reboca e entrega no posto ou na Oficina do Zé | por reboque |
-| **Vigilante noturno** | a pé, na porta de mercadinho ou farmácia, de noite | derruba os assaltantes antes de chegarem na porta. Eles atiram. Se assaltarem 3 vezes, você é demitido do turno. Se afastar ou entrar num carro também encerra | por assaltante, mais bônus de $300 se você aguentar até o amanhecer (5h) |
+| **Vigilante noturno** | a pé, na porta de mercadinho ou farmácia, de noite | derruba os assaltantes antes de chegarem na porta. Eles atiram. Se assaltarem 3 vezes, você é demitido do turno. Se afastar ou entrar num carro também encerra | por assaltante, mais bônus de $300 se você aguentar até o amanhecer (5h), com pelo menos 2 horas de turno |
 
 **Sequência:** a cada 5 serviços seguidos sem falhar, bônus extra ($150 vezes o multiplicador do nível). Falhar zera a sequência.
 

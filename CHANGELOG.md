@@ -5,6 +5,11 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.5.1 — 20/11/2026
+**Correções nos empregos de guincho e vigilante**
+- **Guincho** não trava mais o jogo quando o posto e a Oficina do Zé estão fechados pela operação: o turno nem começa, ou termina com aviso se fecharem no meio do serviço
+- **Vigilante** não começa mais turno entre 5h e 7h, e o bônus do amanhecer só sai pra quem fez pelo menos 2 horas de turno
+
 ## 1.5.0 — 20/11/2026
 **Visual 97: interface nova e cidade com cara de jogo de 1997**
 - Fontes novas: **VT323** (texto, estilo terminal) e **Anton** (títulos de impacto), salvas no jogo, funcionam sem internet

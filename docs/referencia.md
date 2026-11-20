@@ -166,7 +166,7 @@ Multiplicador do nível: `1 + 0,25 × (nível − 1)`. O nível sobe a cada 5 se
 | Motoboy | `35 + distância/11`, +30 se sobrar mais de 40% do prazo | `distância/190 + 12` s |
 | Busão | 14 por passageiro (1–5 por ponto). Volta completa: 200 × mult. | parar a menos de 25 por 1,4 s |
 | Guincho | `150 + distância/7` | sem prazo |
-| Vigilante | 110 por assaltante. Amanhecer: 300 × mult. | até 5h. Assaltantes a cada 9–16 s (mais rápido com nível), até 3 de uma vez, 2 tiros cada |
+| Vigilante | 110 por assaltante. Amanhecer: 300 × mult. (só com 2h de jogo de turno). | até 5h. Assaltantes a cada 9–16 s (mais rápido com nível), até 3 de uma vez, 2 tiros cada |
 
 Sequência: a cada 5 serviços seguidos, bônus de 150 × mult.
 
