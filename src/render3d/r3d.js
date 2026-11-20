@@ -3,7 +3,7 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { ctx, CW, CH, DPR } from '../core/canvas.js';
 import { clamp, lerp, hyp } from '../core/utils.js';
 import { T, W, H } from '../world/map.js';
-import { CHUNK, getChunk } from '../world/chunks.js';
+import { CHUNK, getChunk, makeLowres } from '../world/chunks.js';
 import { darkness, golden } from '../world/time.js';
 import { heatStars } from '../game/world.js';
 import { nearestCar } from '../game/player.js';
@@ -55,7 +55,11 @@ export function init3D(){
     for(const s of city.special3d){scene.add(s.mesh);scene.add(s.crowd);scene.add(s.lightBoxes);scene.add(s.fieldLight);}
     // mar em volta
     const wg=new THREE.PlaneGeometry(W*3,H*3);wg.rotateX(-Math.PI/2);
-    water=new THREE.Mesh(wg,new THREE.MeshLambertMaterial({color:'#1f5f8b'}));water.position.set(W/2,-0.06,H/2);scene.add(water);
+    water=new THREE.Mesh(wg,new THREE.MeshLambertMaterial({color:'#1f5f8b'}));water.position.set(W/2,-0.08,H/2);scene.add(water);
+    // LOD do chão: o mapa todo em baixa resolução, por baixo dos pedaços detalhados (nunca aparece buraco)
+    const lt=new THREE.CanvasTexture(makeLowres());lt.colorSpace=THREE.SRGBColorSpace;lt.anisotropy=renderer.capabilities.getMaxAnisotropy();
+    const lg=new THREE.PlaneGeometry(W,H);lg.rotateX(-Math.PI/2);
+    const low=new THREE.Mesh(lg,new THREE.MeshLambertMaterial({map:lt}));low.position.set(W/2,-0.03,H/2);low.receiveShadow=true;scene.add(low);
     // camada do chão com detalhes dinâmicos (marcas de pneu, zonas, portas, alvo...)
     overlay=document.createElement('canvas');overlay.width=1024;overlay.height=1024;
     overlayTex=new THREE.CanvasTexture(overlay);overlayTex.colorSpace=THREE.SRGBColorSpace;
@@ -64,7 +68,7 @@ export function init3D(){
     initPeople();initParticles();
     R.ok=true;DBG.renderer=renderer;DBG.scene=scene;
     applyQuality(quality);
-    view3d();
+    view3d();warmUp();
   }catch(e){console.warn('3D indisponível:',e);R.ok=false;}
   return R.ok;
 }
@@ -84,18 +88,26 @@ function view3d(){
 }
 
 // ---------- chão: as mesmas texturas do 2D em placas ----------
-function updateGround(cx0,cz0,radius){
-  const n=Math.ceil(radius/CHUNK)+1, ccx=Math.floor(cx0/CHUNK), ccz=Math.floor(cz0/CHUNK);
-  const want=new Set();
-  for(let dz=-n;dz<=n;dz++)for(let dx=-n;dx<=n;dx++){
-    const x=ccx+dx,z=ccz+dz;if(x<0||z<0||x*CHUNK>=W||z*CHUNK>=H)continue;
-    const k=x+','+z;want.add(k);
-    if(!ground[k]){const tex=new THREE.CanvasTexture(getChunk(x,z));tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
-      const geo=new THREE.PlaneGeometry(CHUNK,CHUNK);geo.rotateX(-Math.PI/2);
-      const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:tex}));m.position.set(x*CHUNK+CHUNK/2,0,z*CHUNK+CHUNK/2);m.receiveShadow=true;scene.add(m);ground[k]={m,t:0};}
-    ground[k].t=0;
-  }
-  for(const k of Object.keys(ground)){if(want.has(k))continue;ground[k].t++;if(ground[k].t>120){const g=ground[k];scene.remove(g.m);g.m.geometry.dispose();g.m.material.map.dispose();g.m.material.dispose();delete ground[k];}}
+// Streaming do chão: carrega os pedaços que estão (ou vão estar) na tela, os mais perto primeiro,
+// no máximo alguns por quadro pra não travar. Enquanto não chega, aparece o chão em baixa resolução.
+const groundMats=[];
+function updateGround(x0,x1,z0,z1,ahead){
+  const want=new Map();
+  const add=(xa,xb,za,zb,pri)=>{for(let z=Math.floor(za/CHUNK);z<=Math.floor(zb/CHUNK);z++)for(let x=Math.floor(xa/CHUNK);x<=Math.floor(xb/CHUNK);x++){
+    if(x<0||z<0||x*CHUNK>=W||z*CHUNK>=H)continue;const k=x+','+z;if(!want.has(k)||want.get(k).p>pri)want.set(k,{x,z,p:pri});}};
+  add(x0,x1,z0,z1,0);                                             // o que está na tela
+  if(ahead)add(x0+ahead.x,x1+ahead.x,z0+ahead.z,z1+ahead.z,1);    // pra onde o carro está indo
+  const cx=(x0+x1)/2,cz=(z0+z1)/2;
+  const missing=[...want.entries()].filter(([k])=>!ground[k]).map(([k,v])=>({k,...v,d:v.p*1e4+Math.hypot((v.x+0.5)*CHUNK-cx,(v.z+0.5)*CHUNK-cz)}));
+  missing.sort((a,b)=>a.d-b.d);
+  let budget=missing.length&&missing[0].p===0?3:1;
+  for(const m of missing){if(budget--<=0)break;
+    const tex=new THREE.CanvasTexture(getChunk(m.x,m.z));tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    const geo=new THREE.PlaneGeometry(CHUNK,CHUNK);geo.rotateX(-Math.PI/2);
+    const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:tex}));mesh.position.set(m.x*CHUNK+CHUNK/2,0,m.z*CHUNK+CHUNK/2);mesh.receiveShadow=true;scene.add(mesh);
+    ground[m.k]={m:mesh,t:0};}
+  for(const k of Object.keys(ground)){if(want.has(k)){ground[k].t=0;continue;}ground[k].t++;
+    if(ground[k].t>300){const g=ground[k];scene.remove(g.m);g.m.geometry.dispose();g.m.material.map.dispose();g.m.material.dispose();delete ground[k];}}
 }
 
 // ---------- carros ----------
@@ -244,6 +256,23 @@ function syncTracers(){
   trGeo.setDrawRange(0,n*2);trGeo.attributes.position.needsUpdate=true;
 }
 
+// ---------- sol e sombras ----------
+// A caixa de sombra cobre a área vista (cresce quando a câmera afasta) e anda em passos de 1 pixel do mapa de sombra,
+// senão as bordas das sombras ficam tremendo quando o carro anda.
+let shadowBox=34;const _d=new THREE.Vector3(),_r=new THREE.Vector3(),_u=new THREE.Vector3(),_c=new THREE.Vector3(),UP=new THREE.Vector3(0,1,0);
+function setShadowBox(half){
+  half=Math.ceil(half/6)*6;if(half===shadowBox)return;shadowBox=half;
+  const sc=sun.shadow.camera;sc.left=-half;sc.right=half;sc.top=half;sc.bottom=-half;sc.updateProjectionMatrix();
+}
+function placeSun(cx,cz,dx,dy,dz){
+  _d.set(dx,dy,dz).normalize();_r.crossVectors(UP,_d).normalize();_u.crossVectors(_d,_r);
+  const texel=2*shadowBox/sun.shadow.mapSize.x;
+  _c.set(cx,0,cz);const a=Math.round(_c.dot(_r)/texel)*texel,b=Math.round(_c.dot(_u)/texel)*texel,c=_c.dot(_d);
+  _c.copy(_r).multiplyScalar(a).addScaledVector(_u,b).addScaledVector(_d,c);
+  sun.target.position.copy(_c);sun.position.copy(_c).addScaledVector(_d,90);
+  sun.target.updateMatrixWorld();
+}
+
 // ---------- luz do dia, céu e cidade à noite ----------
 const DAY=new THREE.Color('#9cc9f0'),SUNSET=new THREE.Color('#f0a070'),NIGHT=new THREE.Color('#0b1022');
 function updateSky(cx,cz){
@@ -253,7 +282,7 @@ function updateSky(cx,cz){
   // sol cruza o céu de leste (6h) pra oeste (18h)
   const t=(S.tod-6)/12, ang=Math.PI*clamp(t,0,1);
   const sx=Math.cos(ang)*-60, sy=Math.max(8,Math.sin(ang)*70), sz=30;
-  sun.position.set(cx-sx,sy,cz+sz);sun.target.position.set(cx,0,cz);
+  placeSun(cx,cz,-sx,sy,sz);
   sun.intensity=2.3*(1-dk)*(1-gd*0.3)+0.05;
   sun.color.set(gd>0.3?'#ffc890':'#fff4e0');
   hemi.intensity=0.95*(1-dk)+0.28;
@@ -282,6 +311,12 @@ function updateSignals(signalState){
   for(const b of city.bulbs)b.colorsDirty();
 }
 
+// prepara (compila) os efeitos da placa de vídeo antes de precisar, pra não engasgar na 1ª sirene/freio/explosão
+function warmUp(){
+  try{const g=new THREE.Group();
+    for(const m of [brakeOn,brakeOff,headMat,wreckMat,beamMat,mats.detail,...sirR,...sirB,mat('#888')]){const x=new THREE.Mesh(boxG,m);x.castShadow=true;g.add(x);}
+    g.position.set(cam.x*U,0,cam.y*U);scene.add(g);renderer.compile(scene,camera);scene.remove(g);}catch(e){}
+}
 // ---------- quadro ----------
 // Qualidade: 2 = alta, 1 = média, 0 = leve.
 export const QNAMES=['leve','média','alta'];
@@ -293,7 +328,7 @@ export function applyQuality(q,manual){
   renderer.setPixelRatio(q===2?Math.min(2,dpr):q===1?Math.min(1,dpr):Math.min(0.75,dpr));
   const sh=q>0, ms=q===2?2048:1024;
   if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
-  if(renderer.shadowMap.enabled!==sh){renderer.shadowMap.enabled=sh;sun.castShadow=sh;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true);});}
+  if(renderer.shadowMap.enabled!==sh){renderer.shadowMap.enabled=sh;sun.castShadow=sh;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true);});[brakeOn,brakeOff,headMat,wreckMat,beamMat,...sirR,...sirB].forEach(m=>m.needsUpdate=true);if(R.ok)warmUp();}
   sizeKey='';
 }
 // se o computador não aguentar (abaixo de ~35 quadros por segundo por uns 3 s), baixa a qualidade sozinho
@@ -320,13 +355,18 @@ export function render3D(signalState){
   const shx=(Math.random()-.5)*S.shake*0.05, shz=(Math.random()-.5)*S.shake*0.05;
   camera.position.set(tx+shx,dist*0.92,tz+dist*0.62+shz);camera.lookAt(tx,0,tz-1);
   const night=darkness();
-  updateSky(tx,tz);
+  // área do chão que aparece na tela (a câmera olha inclinada: mais longe pra cima, perto embaixo)
+  const hw=1.62*dist*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect+2;
+  const vz0=tz-0.75*dist-2, vz1=tz+0.45*dist+2;
+  setShadowBox(Math.max(hw,(vz1-vz0)/2)+2);
+  updateSky(tx,(vz0+vz1)/2);
   updateSignals(signalState);
-  updateGround(tx,tz-dist*0.4,dist*1.6);
+  const pc=player.car, ahead=pc?{x:(pc.vx||0)*U*1.2,z:(pc.vy||0)*U*1.2}:null;
+  updateGround(tx-hw,tx+hw,vz0,vz1,ahead&&Math.hypot(ahead.x,ahead.z)>2?ahead:null);
   // camada de detalhes do chão: centrada um pouco à frente da câmera, presa numa grade
   const ocx=Math.round(tx/4)*4, ocz=Math.round((tz-6)/4)*4;
-  overlayMesh.position.set(ocx,0.025,ocz);
-  if(frameN%2===0){
+  if(frameN%2===0||!overlayMesh.userData.ok){overlayMesh.userData.ok=true;
+    overlayMesh.position.set(ocx,0.025,ocz); // a placa só anda junto com o desenho novo (senão pisca)
     const g=overlay.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1024,1024);
     const k=1024/(64*T); g.setTransform(k,0,0,k,-(ocx-32)*T*k,-(ocz-32)*T*k);
     const vx0=(ocx-32)*T,vy0=(ocz-32)*T;

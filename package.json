@@ -1,6 +1,6 @@
 {
   "name": "asfalto-quente",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "Jogo top-down de mundo aberto em JavaScript e Canvas 2D",
   "type": "module",

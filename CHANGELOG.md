@@ -5,6 +5,15 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.1.1 — 20/11/2026
+**Fim das piscadas dirigindo no 3D** (o mesmo esquema dos jogos de mundo aberto: streaming + LOD)
+- O chão é carregado aos poucos (no máximo 3 pedaços por quadro), primeiro o que está na tela e depois pra onde o carro está indo
+- Por baixo fica o mapa inteiro em baixa resolução: se um pedaço ainda não chegou, aparece ele em vez de um buraco
+- Só carrega a área que aparece na tela (antes carregava quase o dobro)
+- A sombra cobre toda a área vista, mesmo com a câmera afastada, e não treme mais nas bordas quando o carro anda
+- Marcas de pneu e detalhes do chão não dão mais pulo quando o carro anda rápido
+- Os efeitos (sirene, freio, explosão...) são preparados na placa de vídeo ao iniciar, sem engasgo na primeira vez
+
 ## 1.1.0 — 20/11/2026
 **Desempenho do 3D**
 - A cidade agora é dividida em blocos: a placa de vídeo só desenha o que está perto da câmera (antes desenhava o mapa todo a cada quadro, duas vezes por causa das sombras). Cerca de 3x menos triângulos e metade das chamadas de desenho por quadro
