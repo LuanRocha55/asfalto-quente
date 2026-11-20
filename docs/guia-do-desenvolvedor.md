@@ -45,7 +45,8 @@ O repositório tem um `.nojekyll`, então dá pra publicar no GitHub Pages diret
 
 ```
 index.html              página: canvas 3D (#gl) por baixo e canvas 2D (#c) por cima, pro HUD
-vendor/three/           Three.js (licença MIT)
+vendor/three/           Three.js (licença MIT); em addons/ o carregador de glTF (GLTFLoader + BufferGeometryUtils)
+assets/models/          modelos 3D: kenney-car-kit/ (carros do Kenney, CC0, com o colormap.png e a licença)
 src/
   main.js               loop principal, recuperação de erros, tecla G e painel F3
   core/
@@ -93,6 +94,7 @@ src/
     build.js            cidade 3D estática (prédios, árvores, postes, estádio...), montada uma vez
     interior3d.js       interiores em 3D, montados a partir das mesmas plantas em texto
     r3d.js              câmera, sol e céu, carros, pessoas, efeitos, blitz, qualidade e HUD por cima
+    models.js           carrega os modelos .glb dos carros e repinta a lataria na cor de cada carro
   audio/
     audio.js            motor, sirene e efeitos sintetizados (Web Audio)
 ```
@@ -220,6 +222,13 @@ Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra con
 - **Chão com streaming e LOD:** o chão é desenhado em canvas por blocos de 16 × 16 tiles (`world/chunks.js`) e vira textura. No máximo 3 blocos por quadro, primeiro os visíveis e depois na direção do movimento. Por baixo, o mapa inteiro em baixa resolução (`makeLowres`) cobre o que ainda não carregou. No 3D os tiles de água ficam transparentes (`getChunk3D`, `makeLowres(true)` e `alphaTest`), e o 2D clássico continua usando `getChunk` com a água pintada.
 - **Mar** (`makeSea`): plano com ondas facetadas no shader. `shoreField()` (em `chunks.js`) calcula a distância de cada tile de água até a terra, e o shader usa isso pra clarear a água rasa e desenhar a espuma batendo na beira. `uGlow` dá um brilho próprio pra água não ficar preta com o sol baixo.
 - **Objetos dinâmicos:** carros reaproveitam malhas por tipo (`carParts`: rodas cilíndricas com calota, para-choques, vidros em volta da cabine, retrovisores). Carroceria e cabine usam a cor do carro; a viatura tem cabine branca fixa. À noite, as lanternas fazem um brilho vermelho no chão (mais forte freando). Pessoas e partículas são desenhadas em lote (instancing).
+- **Modelos 3D dos carros** (`models.js`): o Car Kit do Kenney (CC0) carrega em segundo plano depois do `init3D()`. Até chegar, ou se der erro, os carros usam as caixas de `carParts`. Quando termina, `rebuildCars()` refaz os carros da tela.
+  - `CAR_MODELS` liga o tipo do jogo ao modelo. Busão, moto, bugue e blindado não têm modelo no kit e seguem com caixas.
+  - Os modelos são virados pro +X, ficam do comprimento do carro do jogo e as rodas giram com a velocidade.
+  - Cor: o kit pinta tudo com uma paleta (`colormap.png`). `paintCell()` acha a faixa da paleta usada na lataria (ignora o cinza do chassi, prefere faixa colorida com área de lataria) e `paintMat()` faz uma cópia da paleta com essa faixa na cor do carro (guardada por modelo + cor). A viatura usa a pintura original.
+  - Na qualidade **leve** os carros voltam pras caixas (pesam menos).
+  - O `index.html` tem um *import map* (`"three"` → `vendor/three/three.module.min.js`) porque o `GLTFLoader` importa o Three.js pelo nome.
+  - Pra trocar ou adicionar um modelo: copie o `.glb` pra `assets/models/kenney-car-kit/` e aponte o tipo em `CAR_MODELS`. Modelos de outro pacote precisam virar pro +Z e ter as rodas em nós com `wheel` no nome.
 - **Prédios** (`build.js`): paredes com degradê (mais escuras embaixo), rodapé escuro, moldura no topo dos prédios de telhado plano, toldo listrado na frente das lojas (`AWNING`), antena de TV em parte das casas e aquecedor solar, caixa d'água e ar-condicionado nos telhados. Árvores têm duas copas e os coqueiros têm cocos.
 - **Sol e céu:** o sol cruza o céu com sombra que acompanha a câmera; de noite ele vira a lua (luz fraca e azulada, mais alta). As cores saem da tabela `SKY_KEYS` (céu/neblina, sol, luz ambiente, mar e água rasa por hora: madrugada, amanhecer rosado, dia, fim de tarde dourado, pôr do sol, crepúsculo roxo e noite), misturadas entre uma hora e outra por `skyAt()`.
 - **Qualidade** (`applyQuality`): 2 = alta (densidade até 2, sombra 2048), 1 = média (densidade até 1, sombra 1024 atualizada quadro sim, quadro não), 0 = leve (densidade 0,75, sem sombra). `adapt()` baixa a qualidade sozinho se mais de ~100 quadros acima de 28 ms se acumularem (abaixo de ~35 FPS por uns 3 s), até o jogador escolher com G.
