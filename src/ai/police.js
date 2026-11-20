@@ -117,6 +117,7 @@ function updateRoadblocks(dt,stars){
   if(!best||bd>400)return;
   if(hyp(best.x-player.x,best.y-player.y)<600)return;
   const half=best.L.w*T/2, n=best.L.type==='ave'?3:2;
+  if(blocks.length+n>4)return; // nunca passa de 4 carros de bloqueio ao mesmo tempo
   // 4+ estrelas: van da SWAT no meio; 6: blindado do exército
   const mid=stars>=6?'blindado':stars>=4?'swat':'viatura', side=stars>=6?'exercito':'viatura';
   for(let k=0;k<n;k++){

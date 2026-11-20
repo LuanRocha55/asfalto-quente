@@ -37,7 +37,7 @@ export function resetWorld(){
   cam.x=player.x;cam.y=player.y;
   for(let i=0;i<40;i++)spawnTraffic(150,1600,true);
   for(let i=0;i<55;i++)spawnPed(60,1100,true);
-  S.job=null;S.unlocked=[...START_OPEN];initDistricts();setupJobSpots();
+  S.job=null;S.day=0;S.lastTod=S.tod;S.match=null;S.unlocked=[...START_OPEN];initDistricts();setupJobSpots();
 }
 
 export function spawnTraffic(rmin,rmax,ignoreView,type,ai,pred){return spawnOnRoad(rmin,rmax,ignoreView,type,ai,pred);}

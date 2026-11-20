@@ -1,6 +1,6 @@
 # Documentação do Asfalto Quente
 
-Jogo de mundo aberto em Vila Maresia, cidade litorânea inventada (inspirada em Fortaleza, em 1997). Feito em JavaScript, com gráficos 3D em Three.js e um modo clássico visto de cima. Documentação da versão **1.4.0**.
+Jogo de mundo aberto em Vila Maresia, cidade litorânea inventada (inspirada em Fortaleza, em 1997). Feito em JavaScript, com gráficos 3D em Three.js e um modo clássico visto de cima. Documentação da versão **1.5.2**.
 
 | Documento | Pra quem | O que tem |
 |---|---|---|

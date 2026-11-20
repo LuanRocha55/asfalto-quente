@@ -117,7 +117,7 @@ Tudo que muda durante o jogo fica em objetos exportados por `src/core/state.js`,
 
 | Objeto | O que guarda |
 |---|---|
-| `S` | listas do mundo (`cars`, `peds`, `parts`, `skids`, `decals`, `tracers`), mensagens (`messages`, `bigMsg`, `toasts`, `floaters`), `mission`, `missionIdx`, `job`, `interior`, `menu`, `mapOpen`, `waypoint`, hora do dia `tod`, `gameTime`, `playTime`, `paused`, `started`, bairros liberados `unlocked`, recorde `best` |
+| `S` | listas do mundo (`cars`, `peds`, `parts`, `skids`, `decals`, `tracers`), mensagens (`messages`, `bigMsg`, `toasts`, `floaters`), `mission`, `missionIdx`, `job`, `interior`, `menu`, `mapOpen`, `waypoint`, hora do dia `tod`, dia do calendário `day` (com `lastTod`), partida do dia `match`, `gameTime`, `playTime`, `paused`, `started`, bairros liberados `unlocked`, recorde `best` |
 | `player` | posição, ângulo, `health`, `armor`, `money`, `heat`, `car`, `weapon`, `ammo`, `skills`, `state` (`play`, `wasted`, `busted`) |
 | `cam` | posição e zoom da câmera 2D |
 | `keys`, `mouse` | teclas pressionadas (`keys['KeyW']`) e mouse |
@@ -153,7 +153,7 @@ Campos que outros sistemas usam: `driver` (`'player'`, `'ai'` ou `null`), `ai` (
 
 ### Trânsito (`ai/traffic.js`)
 
-Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra converter, respeitam mão única e semáforo (`signalState` em `districts.js`), não entram no cruzamento se não couberem do outro lado e destravam engarrafamentos fora da tela. Ônibus e caminhões não entram em beco. O tipo de carro sorteado depende do bairro. `spawnOnRoad()` cria carros fora da tela, e `driveTo()` é a direção usada também pela polícia.
+Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra converter, respeitam mão única e semáforo (`signalState` em `districts.js`), não entram no cruzamento se não couberem do outro lado e destravam engarrafamentos fora da tela. Ônibus e caminhões não entram em beco. Carro com `stayOpen` (as caminhonetes da gangue em "Acerto de Contas") não escolhe trecho que passe por bairro fechado; `headingOpen(c)` diz se o trecho atual é todo aberto. O tipo de carro sorteado depende do bairro. `spawnOnRoad()` cria carros fora da tela, e `driveTo()` é a direção usada também pela polícia.
 
 ### Polícia (`ai/police.js`, `game/world.js`, `game/update.js`)
 
@@ -194,7 +194,7 @@ Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra con
 
 ### Save (`game/save.js`)
 
-`saveGame()` grava um JSON em `localStorage['aq_save']` com a versão, dinheiro, vida, colete, armas, cursos, `missionIdx`, hora, `playTime`, `unlocked`, posição e o carro atual. `loadGame()` roda depois de `resetWorld()` e trata saves antigos:
+`saveGame()` grava um JSON em `localStorage['aq_save']` com a versão, dinheiro, vida, colete, armas, cursos, `missionIdx`, hora, dia do calendário (`day`), `playTime`, `unlocked`, posição e o carro atual. `loadGame()` roda depois de `resetWorld()` e trata saves antigos:
 
 - sem `unlocked` (antes da 1.4.0): zera o dinheiro e volta pra só Centro e Jardim (`S.migratedDistricts` mostra o aviso);
 - de antes da cidade nova (0.8.0), ou posição dentro de parede ou de área fechada: começa no hospital.
@@ -205,7 +205,7 @@ Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra con
 
 ### Estádio (`game/stadium.js`)
 
-`matchOn()` é verdadeiro das 15h30 às 18h. O dia do jogo é calculado de `S.gameTime`, e o adversário roda pela lista `AWAY`. `match()` guarda o placar, a aposta e se já assistiu.
+`matchOn()` é verdadeiro das 15h30 às 18h. O dia vem de `S.day`, que sobe 1 sempre que `S.tod` fica menor que no passo anterior (passou da meia-noite, andando, dormindo ou dentro de um interior). O adversário roda pela lista `AWAY`. `match()` guarda o placar, a aposta e se já assistiu.
 
 ### Áudio (`audio/audio.js`)
 
@@ -284,7 +284,7 @@ Adicione em `CT` (`vehicles.js`), na mistura de trânsito do bairro (`MIX` em `t
 
 ## Depurar
 
-- **F3** (segundo toque): FPS, tempo da lógica e do desenho, placa de vídeo, resolução, chamadas de desenho, triângulos e blocos de chão carregados, com o palpite do gargalo.
+- **F3**: o contador de FPS já vem ligado (`perf.mode = 1`). Cada toque avança contador → painel completo → desligado → contador. O painel completo mostra FPS, tempo da lógica e do desenho, placa de vídeo, resolução, chamadas de desenho, triângulos e blocos de chão carregados, com o palpite do gargalo.
 - **`window.__game`** no console expõe `S`, `player`, `cam`, `keys`, `update`, `render`, `enterExit`, `startMission`, `finishMission` e `phones`. Exemplos:
 
 ```js
@@ -300,7 +300,7 @@ __game.startMission()                // começa a próxima missão
 
 O número segue `MAIOR.MENOR.CORREÇÃO` (explicado no topo do [CHANGELOG](../CHANGELOG.md)).
 
-1. Atualize `VERSION` em `src/core/version.js` **e** `version` em `package.json`.
+1. Atualize `VERSION` em `src/core/version.js`, `version` em `package.json` e a versão escrita no `README.md` e no `docs/README.md`.
 2. Descreva as mudanças no topo do `CHANGELOG.md`, no mesmo estilo (título curto em negrito e itens em linguagem de jogador).
 3. Se mudou algo que o jogador vê, atualize o [guia do jogador](guia-do-jogador.md) e a [referência](referencia.md).
 4. Faça o commit com a mensagem `Versão X.Y.Z: resumo` (é o padrão do histórico).
@@ -318,9 +318,9 @@ A versão aparece na tela de título e no canto do minimapa, e vai dentro do sav
 Coisas notadas ao escrever esta documentação, a partir da geração atual da cidade (semente 1337). Não são mudanças, só registro pra decidir depois.
 
 1. **Começo com pouca coisa aberta.** Com só Centro e Jardim liberados, ficam em bairro fechado: os **dois Postos Maresia** (Alto da Maresia), o **terminal de ônibus** e **todas as lanchonetes com motoca** (Alto do Cajueiro e Vila Velha), o **ponto de táxi** do estacionamento (Alto da Maresia) e a **Oficina do Zé** (Orla). Isso quer dizer que, até juntar $5.000, não dá pra consertar o carro nem tirar pneu furado de blitz. No começo só o táxi da rua e o vigilante funcionam como emprego. Isso pode ajudar a explicar por que a blitz pesa tanto no começo.
-2. **Guincho sem destino aberto.** `updTow` escolhe o posto ou o Zé mais perto entre os abertos. Se nenhum estiver aberto, `zs[0]` fica `undefined` e o código quebra. Hoje não acontece porque o guincho só fica estacionado nos postos, que abrem junto com o Alto da Maresia, mas qualquer mudança nos lugares pode trazer o erro de volta.
+2. **Guincho sem destino aberto (corrigido).** Dava pra furar a blitz, pegar o guincho de um posto fechado e travar o jogo, porque `updTow` não achava destino aberto. Agora `towZones()` é checado ao começar o turno (não começa) e ao engatar o carro (encerra o turno com aviso).
 3. **Carreira fora do save.** `aq_career` não é apagado ao começar do zero (BACKSPACE), então os níveis dos empregos continuam.
-4. **Bônus do vigilante.** O bônus do amanhecer testa `robbed < 3`, mas com 3 assaltos o turno já acabou. Na prática o bônus é sempre pago a quem chega às 5h.
+4. **Bônus do vigilante (corrigido).** Antes dava pra começar o turno entre 5h e 6h (ainda escuro) e receber o bônus na hora. Agora não se começa turno entre 5h e 7h, e o bônus só é pago com pelo menos 2 horas de jogo de turno (`GUARD_MIN_SHIFT`, 1 minuto real).
 5. **Horário do vigilante.** A mensagem diz "das 20h às 5h", mas o código libera quando `darkness() >= 0.5`, que acontece por volta das 18h15, e encerra às 5h.
 6. **`updateCopsOnFoot`** em `ai/police.js` está vazia (os policiais a pé são atualizados em `updatePeds` via `updateCopPed`).
 7. **`TRAFFIC_MIX`** em `vehicles.js` é importado em `world.js` mas não é usado: o trânsito sai de `MIX` em `traffic.js`.

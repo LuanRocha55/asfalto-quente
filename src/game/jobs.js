@@ -6,7 +6,7 @@ import { Ped } from '../entities/peds.js';
 import { sfxTone, sfxNoise } from '../audio/audio.js';
 import { heatStars, msg, big } from './world.js';
 import { roadPointFar, sidewalkPointFar, inZone } from './missions.js';
-import { darkness } from '../world/time.js';
+import { darkness, DAY_SECONDS } from '../world/time.js';
 import { fire, WEAPONS } from './weapons.js';
 import { S, player } from '../core/state.js';
 import { isOpenAt } from './blitz.js';
@@ -31,6 +31,12 @@ export const JOBS={
 // ---------- lugares dos empregos ----------
 const openB=b=>isOpenAt((b.x0+b.x1)/2,(b.y0+b.y1)/2);
 export const lanchonetes=()=>buildings.filter(b=>b.kind==='lanchonete'&&openB(b));
+// emprego que depende de lugar em bairro fechado: devolve o motivo (ou '' se dá pra trabalhar)
+function jobBlocked(type){
+  if(type==='motoboy'&&!lanchonetes().length)return 'Motoboy parado: as lanchonetes estão fechadas pela operação.';
+  if(type==='guincho'&&!towZones().length)return 'Guincho parado: posto e Oficina do Zé estão fechados pela operação.';
+  return '';
+}
 export const lojas=()=>buildings.filter(b=>(b.kind==='mercadinho'||b.kind==='farmacia')&&openB(b));
 const walkable=(x,y)=>{const t=tileAt(x,y);return t===SIDE||t===GRASS||t===PARK||t===SAND;};
 // ponto de calçada na frente de um prédio (porta)
@@ -89,12 +95,14 @@ export function toggleJob(){
   if(c){
     const type=Object.keys(JOBS).find(k=>JOBS[k].vehicle&&JOBS[k].vehicle.includes(c.type));
     if(!type){msg('Esse veículo não tem emprego. Tenta táxi, motoca, busão ou guincho.',2.5);return;}
+    const why=jobBlocked(type);if(why){msg(why,3);return;}
     startJob(type,c);return;
   }
   // a pé: vigilante na porta de mercadinho ou farmácia
   const loja=lojas().find(b=>{const d=doorOf(b);return hyp(d.x-player.x,d.y-player.y)<60;});
   if(!loja){openJobMenu();return;}
   if(darkness()<0.5){msg('Vigilante só trabalha de noite (das 20h às 5h).',2.5);return;}
+  if(dawn()){msg('Já tá amanhecendo, o turno da noite acabou. Volta de noite.',2.5);return;}
   startJob('vigilante',null,loja);
 }
 function startJob(type,car,loja){
@@ -104,7 +112,7 @@ function startJob(type,car,loja){
   else if(type==='motoboy')nextMoto(j);
   else if(type==='onibus'){let bi=0,bd=1e9;BUS_STOPS.forEach((s,i)=>{const d=hyp(s.x-car.x,s.y-car.y);if(d<bd){bd=d;bi=i;}});j.data.stop=bi;j.data.count=0;nextBus(j);}
   else if(type==='guincho')nextTow(j);
-  else if(type==='vigilante'){j.data.loja=loja;j.data.door=doorOf(loja);j.data.robbed=0;j.data.spawnT=4;j.text='Protege a loja! Derruba os assaltantes antes de chegarem na porta.';}
+  else if(type==='vigilante'){j.data.loja=loja;j.data.door=doorOf(loja);j.data.robbed=0;j.data.spawnT=4;j.data.shiftT=0;j.text='Protege a loja! Derruba os assaltantes antes de chegarem na porta.';}
   big(JOBS[type].title,'Nível '+levelOf(type)+' · J encerra o turno','#7fd8ff',2.2);sfxTone(520,0.12,0.1);sfxTone(780,0.18,0.1,'square',0.1);
 }
 export function endJob(reason){
@@ -160,7 +168,7 @@ function updTaxi(j,dt){
 
 // ---------- MOTOBOY ----------
 function nextMoto(j){
-  const ls=lanchonetes();if(!ls.length){endJob('Nenhuma lanchonete na cidade.');return;}
+  const ls=lanchonetes();if(!ls.length){endJob('As lanchonetes estão fechadas pela operação.');return;}
   let best=ls[0],bd=1e9;for(const b of ls){const d=doorOf(b);const dd=hyp(d.x-player.x,d.y-player.y);if(dd<bd&&dd>150){bd=dd;best=b;}}
   j.stage='pegar';j.data.loja=best;j.target=doorOf(best);j.time=undefined;j.text='Pega o pedido na lanchonete.';
 }
@@ -204,14 +212,17 @@ function nextTow(j){
   car.health=car.t.hp*0.2;car.keep=true;car.broken=true;S.cars.push(car);
   j.stage='buscar';j.data.broken=car;j.data.towed=null;j.target=car;j.time=undefined;j.text='Vai buscar o carro quebrado (encosta a traseira do guincho nele).';
 }
+const towZones=()=>zones.filter(z=>(z.type==='posto'||z.type==='ze')&&isOpenAt((z.x0+z.x1)/2,(z.y0+z.y1)/2));
 function rearOf(c){return {x:c.x-Math.cos(c.a)*c.t.len/2,y:c.y-Math.sin(c.a)*c.t.len/2};}
 function updTow(j,dt){
   const c=player.car, car=j.data.broken;
   if(!car||car.wreck||car.burnT>0||!S.cars.includes(car)){if(j.data.towed){j.data.towed.towed=false;}failService(j,'O carro do serviço foi destruído.');nextTow(j);return;}
   if(j.stage==='buscar'){
     const r=rearOf(c);
-    if(hyp(r.x-car.x,r.y-car.y)<car.t.len/2+30&&c.speed<40){car.towed=true;j.data.towed=car;j.stage='levar';
-      const zs=zones.filter(z=>(z.type==='posto'||z.type==='ze')&&isOpenAt((z.x0+z.x1)/2,(z.y0+z.y1)/2));let best=zs[0],bd=1e9;for(const z of zs){const d=hyp((z.x0+z.x1)/2-c.x,(z.y0+z.y1)/2-c.y);if(d<bd){bd=d;best=z;}}
+    if(hyp(r.x-car.x,r.y-car.y)<car.t.len/2+30&&c.speed<40){
+      const zs=towZones();if(!zs.length){endJob('Não tem posto nem Oficina do Zé aberto pra levar o carro.');return;}
+      car.towed=true;j.data.towed=car;j.stage='levar';
+      let best=zs[0],bd=1e9;for(const z of zs){const d=hyp((z.x0+z.x1)/2-c.x,(z.y0+z.y1)/2-c.y);if(d<bd){bd=d;best=z;}}
       j.data.zone=best;j.data.dist=bd;j.target={x:(best.x0+best.x1)/2,y:(best.y0+best.y1)/2};j.text='Leva o carro pro posto ou pra Oficina do Zé.';sfxNoise(0.2,0.2,600);}
   }else{
     // carro rebocado vai atrás do guincho
@@ -233,9 +244,12 @@ function spawnRobber(j){
   }
 }
 function clearLine(ax,ay,bx,by){const d=hyp(bx-ax,by-ay),n=Math.ceil(d/12);for(let i=1;i<n;i++){const t=i/n;if(solidAt(ax+(bx-ax)*t,ay+(by-ay)*t))return false;}return true;}
+const dawn=()=>S.tod>=5&&S.tod<7;
+const GUARD_MIN_SHIFT=DAY_SECONDS/12; // 2 horas de jogo de turno pra ganhar o bônus do amanhecer
 function updGuard(j,dt){
   const d=j.data.door;
-  if(S.tod>=5&&S.tod<7){const b=j.data.robbed<3?Math.round(300*mult('vigilante')):0;player.money+=b;j.earned+=b;endJob(b?'Amanheceu! Bônus do turno: +'+fmtMoney(b):'Amanheceu.');return;}
+  j.data.shiftT=(j.data.shiftT||0)+dt;
+  if(dawn()){const b=j.data.shiftT>=GUARD_MIN_SHIFT?Math.round(300*mult('vigilante')):0;player.money+=b;j.earned+=b;endJob(b?'Amanheceu! Bônus do turno: +'+fmtMoney(b):'Amanheceu.');return;}
   const dist=hyp(player.x-d.x,player.y-d.y);
   if(player.car||dist>520){endJob('Tu abandonou o posto de vigilante.');return;}
   if(dist>300)j.text='Volta pra perto da loja!';else j.text='Protege a loja! Assaltos: '+j.data.robbed+'/3';
@@ -307,8 +321,9 @@ export function jobHint(){
   if(S.job||S.mission||player.state!=='play')return '';
   const c=player.car;
   if(c){const type=Object.keys(JOBS).find(k=>JOBS[k].vehicle&&JOBS[k].vehicle.includes(c.type));
-    return type?'Começar turno de '+JOBS[type].title.toLowerCase()+' (nível '+levelOf(type)+')':'';}
+    if(!type)return '';const why=jobBlocked(type);
+    return why||'Começar turno de '+JOBS[type].title.toLowerCase()+' (nível '+levelOf(type)+')';}
   const loja=lojas().find(b=>{const d=doorOf(b);return hyp(d.x-player.x,d.y-player.y)<60;});
-  if(loja)return darkness()>=0.5?'Começar turno de vigilante noturno (nível '+levelOf('vigilante')+')':'Vigilante: volta aqui de noite (20h às 5h)';
+  if(loja)return darkness()>=0.5&&!dawn()?'Começar turno de vigilante noturno (nível '+levelOf('vigilante')+')':'Vigilante: volta aqui de noite (20h às 5h)';
   return '';
 }

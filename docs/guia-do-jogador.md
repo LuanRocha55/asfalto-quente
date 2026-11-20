@@ -199,10 +199,10 @@ Aperte **J a pé** pra abrir o menu de empregos: ele explica cada um e marca no 
 | Emprego | Onde começa | Como funciona | Paga |
 |---|---|---|---|
 | **Taxista** | qualquer táxi (da rua ou do ponto) | busca o passageiro acenando na calçada e leva ao destino | por corrida: mais se chegar rápido. Se bater muito (25+ de dano), ele paga 40% menos. Com 2+ estrelas o passageiro desce |
-| **Motoboy** | Motoca parada nas lanchonetes | pega o pedido na lanchonete e entrega antes de esfriar | por entrega, com gorjeta se for rápida |
+| **Motoboy** | qualquer Motoca (as de trabalho ficam paradas nas lanchonetes). Só funciona com alguma lanchonete em bairro aberto | pega o pedido na lanchonete e entrega antes de esfriar | por entrega, com gorjeta se for rápida |
 | **Motorista de busão** | busão do Terminal | volta pelas avenidas parando em cada ponto azul (bem devagar, por 1,4 s) | por passageiro (1 a 5 por ponto), bônus de $200 por volta completa |
 | **Guincho** | guincho dos postos | encosta a traseira no carro quebrado, reboca e entrega no posto ou na Oficina do Zé | por reboque |
-| **Vigilante noturno** | a pé, na porta de mercadinho ou farmácia, de noite | derruba os assaltantes antes de chegarem na porta. Eles atiram. Se assaltarem 3 vezes, você é demitido do turno. Se afastar ou entrar num carro também encerra | por assaltante, mais bônus de $300 se você aguentar até o amanhecer (5h) |
+| **Vigilante noturno** | a pé, na porta de mercadinho ou farmácia, de noite | derruba os assaltantes antes de chegarem na porta. Eles atiram. Se assaltarem 3 vezes, você é demitido do turno. Se afastar ou entrar num carro também encerra | por assaltante, mais bônus de $300 se você aguentar até o amanhecer (5h), com pelo menos 2 horas de turno |
 
 **Sequência:** a cada 5 serviços seguidos sem falhar, bônus extra ($150 vezes o multiplicador do nível). Falhar zera a sequência.
 
@@ -354,7 +354,7 @@ Você volta com vida cheia, sem estrelas e com 2 segundos de invencibilidade.
 
 Se o jogo ficar abaixo de uns 35 FPS por alguns segundos, a qualidade baixa sozinha (até você escolher uma com G). Sem suporte a WebGL, o jogo usa o clássico.
 
-**F3** mostra o contador de FPS e, no segundo toque, o painel completo: tempo da lógica e do desenho, resolução real, chamadas de desenho, triângulos e **qual placa de vídeo o navegador está usando**. Se aparecer a placa integrada (Intel UHD/Iris) ou software, o painel avisa, e também diz se o gargalo é a placa ou o processador.
+O contador de FPS já vem ligado no topo da tela. **F3** abre o painel completo no primeiro toque e desliga tudo no segundo. O painel mostra tempo da lógica e do desenho, resolução real, chamadas de desenho, triângulos e **qual placa de vídeo o navegador está usando**. Se aparecer a placa integrada (Intel UHD/Iris) ou software, o painel avisa, e também diz se o gargalo é a placa ou o processador.
 
 **Notebook com placa dedicada (NVIDIA/AMD).** Se o F3 mostrar a placa integrada:
 

@@ -15,7 +15,13 @@ const AWAY=[
   {name:'Jangadeiros',colors:['#6a1b9a','#fdd835']},
 ];
 export const MATCH_START=15.5, MATCH_END=18;
-const day=()=>Math.floor((S.gameTime+16.5*30)/720); // muda de adversário a cada dia do jogo
+// dia do calendário do jogo: avança quando o relógio passa da meia-noite, seja andando, dormindo
+// ou dentro de um interior (S.tod menor que no último passo). Muda o adversário e zera a partida.
+function day(){
+  if(typeof S.lastTod==='number'&&S.tod<S.lastTod)S.day=(S.day||0)+1;
+  S.lastTod=S.tod;
+  return S.day||0;
+}
 export function matchOn(){return S.tod>=MATCH_START&&S.tod<MATCH_END;}
 export function opponent(){return AWAY[day()%AWAY.length];}
 export function match(){
