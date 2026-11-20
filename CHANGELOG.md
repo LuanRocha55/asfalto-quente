@@ -5,6 +5,9 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.9.3 — 19/11/2026
+- Telhado da escola agora tem um livro aberto grande (antes parecia um campo de futebol)
+
 ## 0.9.2 — 19/11/2026
 - Portas de todos os comércios e lugares agora ficam viradas pra rua, no lado do prédio mais perto da calçada
 - Comércio só é colocado em prédio que tem fachada pra rua (nada de entrada escondida entre dois prédios)

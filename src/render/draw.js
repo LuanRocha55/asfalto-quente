@@ -150,8 +150,14 @@ function roofSign(g,b,x,y,rw,rh){
     g.beginPath();g.arc(cx,cy-6,bw*0.3,Math.PI,0);g.stroke();plate('MERCADINHO',y+rh-12,'#5a2a00','#ffe0b0');}
   else if(k==='padaria'){g.fillStyle='#e0a35a';g.beginPath();g.ellipse(cx,cy-8,s*0.24,s*0.12,0,0,Math.PI*2);g.fill();g.strokeStyle='#8a5a2a';g.lineWidth=3;
     for(let i=-1;i<=1;i++){g.beginPath();g.moveTo(cx+i*s*0.1-5,cy-8-s*0.06);g.lineTo(cx+i*s*0.1+5,cy-8+s*0.06);g.stroke();}plate('PADARIA',y+rh-12,'#5a3410','#ffe9c0');}
-  else if(k==='escola'){const m=12;g.fillStyle='#2f7d4a';g.fillRect(x+m,y+m,rw-m*2,rh-m*2-18);g.strokeStyle='#ffffff';g.lineWidth=2;g.strokeRect(x+m+4,y+m+4,rw-m*2-8,rh-m*2-26);
-    g.beginPath();g.moveTo(cx,y+m+4);g.lineTo(cx,y+rh-m-22);g.stroke();g.beginPath();g.arc(cx,(y+m+4+y+rh-m-22)/2,Math.min(rw,rh)*0.1,0,Math.PI*2);g.stroke();plate('ESCOLA',y+rh-12,'#1f3f70','#ffffff');}
+  else if(k==='escola'){ // livro aberto grande no telhado
+    const bw=Math.min(rw*0.62,s*0.75), bh=bw*0.55, bx=cx, by=cy-10;
+    g.fillStyle='rgba(0,0,0,0.25)';g.beginPath();g.moveTo(bx+4,by-bh*0.35+5);g.lineTo(bx-bw/2+4,by-bh/2+5);g.lineTo(bx-bw/2+4,by+bh/2+5);g.lineTo(bx+4,by+bh*0.62+5);g.lineTo(bx+bw/2+4,by+bh/2+5);g.lineTo(bx+bw/2+4,by-bh/2+5);g.closePath();g.fill();
+    g.fillStyle='#8e2b2b';g.beginPath();g.moveTo(bx,by-bh*0.32);g.lineTo(bx-bw/2-5,by-bh/2-3);g.lineTo(bx-bw/2-5,by+bh/2+5);g.lineTo(bx,by+bh*0.66);g.lineTo(bx+bw/2+5,by+bh/2+5);g.lineTo(bx+bw/2+5,by-bh/2-3);g.closePath();g.fill();   // capa
+    for(const sd of[-1,1]){g.fillStyle='#fbf6e9';g.beginPath();g.moveTo(bx,by-bh*0.35);g.quadraticCurveTo(bx+sd*bw*0.25,by-bh*0.6,bx+sd*bw/2,by-bh/2);g.lineTo(bx+sd*bw/2,by+bh/2);g.quadraticCurveTo(bx+sd*bw*0.25,by+bh*0.4,bx,by+bh*0.6);g.closePath();g.fill();
+      g.strokeStyle='rgba(60,60,60,0.45)';g.lineWidth=1.5;for(let l=0;l<5;l++){const ly=by-bh*0.3+l*bh*0.16;g.beginPath();g.moveTo(bx+sd*bw*0.08,ly+bh*0.05);g.lineTo(bx+sd*bw*0.42,ly);g.stroke();}}
+    g.strokeStyle='#5a1a1a';g.lineWidth=2;g.beginPath();g.moveTo(bx,by-bh*0.35);g.lineTo(bx,by+bh*0.6);g.stroke();
+    plate('ESCOLA',y+rh-12,'#1f3f70','#ffffff');}
   else if(k==='lanchonete'){const q=s*0.14;g.fillStyle='#e6a33a';g.beginPath();g.ellipse(cx,cy-q-4,q*1.4,q*0.7,0,Math.PI,0);g.fill();g.fillStyle='#6b3a1a';g.fillRect(cx-q*1.4,cy-q-2,q*2.8,q*0.5);
     g.fillStyle='#4caf50';g.fillRect(cx-q*1.5,cy-q*0.5-2,q*3,q*0.25);g.fillStyle='#e6a33a';g.fillRect(cx-q*1.4,cy-q*0.2,q*2.8,q*0.5);plate('LANCHONETE',y+rh-12,'#7a1d14','#ffe14a');}
   else if(k==='lojaposto'){plate('POSTO MARESIA',cy+4,'#7a1d14','#ffffff');}
