@@ -2,7 +2,7 @@
 
 Jogo de mundo aberto visto de cima, feito em JavaScript com gráficos 3D (Three.js) e um modo clássico em Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
-**Jogar no navegador:** https://luanrocha55.github.io/asfalto-quente/
+**Jogar no navegador:** https://luanrocha55.github.io/maresia-97/
 
 Versão atual: **1.6.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
