@@ -12,6 +12,8 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **Arena** tem jogo todo dia de novo: o dia agora vira à meia-noite do relógio do jogo (também dormindo) e fica no save. Antes, depois de dormir ou carregar o jogo, alguns dias ficavam sem partida e sem aposta
 - **Acerto de Contas**: as caminhonetes da gangue não nascem nem entram mais em bairro fechado (antes dava pra ter que furar blitz pra pegar uma)
 - **Motoboy**: subir numa Motoca da rua e apertar J com todas as lanchonetes fechadas não abre mais um turno que acaba na hora; aparece o aviso de que estão fechadas pela operação, e a dica do J já avisa antes
+- **Bloqueios da polícia** nunca passam de 4 carros ao mesmo tempo (antes podiam chegar a 6)
+- Documentação: ordem do F3 corrigida (o primeiro toque abre o painel completo)
 
 ## 1.5.0 — 20/11/2026
 **Visual 97: interface nova e cidade com cara de jogo de 1997**

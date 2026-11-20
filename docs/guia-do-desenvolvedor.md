@@ -284,7 +284,7 @@ Adicione em `CT` (`vehicles.js`), na mistura de trânsito do bairro (`MIX` em `t
 
 ## Depurar
 
-- **F3** (segundo toque): FPS, tempo da lógica e do desenho, placa de vídeo, resolução, chamadas de desenho, triângulos e blocos de chão carregados, com o palpite do gargalo.
+- **F3**: o contador de FPS já vem ligado (`perf.mode = 1`). Cada toque avança contador → painel completo → desligado → contador. O painel completo mostra FPS, tempo da lógica e do desenho, placa de vídeo, resolução, chamadas de desenho, triângulos e blocos de chão carregados, com o palpite do gargalo.
 - **`window.__game`** no console expõe `S`, `player`, `cam`, `keys`, `update`, `render`, `enterExit`, `startMission`, `finishMission` e `phones`. Exemplos:
 
 ```js

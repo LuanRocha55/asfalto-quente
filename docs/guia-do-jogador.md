@@ -354,7 +354,7 @@ Você volta com vida cheia, sem estrelas e com 2 segundos de invencibilidade.
 
 Se o jogo ficar abaixo de uns 35 FPS por alguns segundos, a qualidade baixa sozinha (até você escolher uma com G). Sem suporte a WebGL, o jogo usa o clássico.
 
-**F3** mostra o contador de FPS e, no segundo toque, o painel completo: tempo da lógica e do desenho, resolução real, chamadas de desenho, triângulos e **qual placa de vídeo o navegador está usando**. Se aparecer a placa integrada (Intel UHD/Iris) ou software, o painel avisa, e também diz se o gargalo é a placa ou o processador.
+O contador de FPS já vem ligado no topo da tela. **F3** abre o painel completo no primeiro toque e desliga tudo no segundo. O painel mostra tempo da lógica e do desenho, resolução real, chamadas de desenho, triângulos e **qual placa de vídeo o navegador está usando**. Se aparecer a placa integrada (Intel UHD/Iris) ou software, o painel avisa, e também diz se o gargalo é a placa ou o processador.
 
 **Notebook com placa dedicada (NVIDIA/AMD).** Se o F3 mostrar a placa integrada:
 
