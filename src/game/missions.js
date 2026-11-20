@@ -2,7 +2,7 @@
 import { saveGame } from './save.js';
 import { rand, randi, pick, hyp, fmtMoney } from '../core/utils.js';
 import { T, W, H, SIDE, phones, special, tileAt } from '../world/map.js';
-import { randomRoadPoint } from '../ai/traffic.js';
+import { randomRoadPoint, headingOpen } from '../ai/traffic.js';
 import { sfxTone, sfxWin } from '../audio/audio.js';
 import { Car } from '../entities/vehicles.js';
 import { Ped } from '../entities/peds.js';
@@ -10,6 +10,16 @@ import { addHeat, msg, big, spawnTraffic } from './world.js';
 import { update } from './update.js';
 import { S, player } from '../core/state.js';
 import { isOpenAt, isOpenZone } from './blitz.js';
+
+// caminhonete da gangue: nasce em bairro aberto, indo pra bairro aberto, e não entra em bairro fechado
+function spawnGang(){
+  for(let k=0;k<8;k++){
+    const c=spawnTraffic(700,1800,true,'camin','traffic',isOpenAt);if(!c)return null;
+    if(headingOpen(c)){c.stayOpen=true;return c;}
+    const i=S.cars.indexOf(c);if(i>=0)S.cars.splice(i,1);
+  }
+  return null;
+}
 
 export function roadPointFar(dmin,dmax){
   let best=null;
@@ -41,7 +51,7 @@ export const MISSIONS=[
     update(m,dt){if(m.lost)return'fail';m.time-=dt;if(m.time<=0)return'fail';
       const z=special.ze;if(m.stage===1&&player.car===m.car&&inZone(m.car,z)){m.car.mission=null;m.zeDone=m.car;return'done';}},
     target(m){if(m.stage===1&&player.car===m.car){const z=special.ze;return{x:(z.x0+z.x1)/2,y:(z.y0+z.y1)/2};}return m.car;}},
-  {title:'Acerto de Contas',start(m){m.gang=[];for(let i=0;i<3;i++){const c=spawnTraffic(700,1800,true,'camin','traffic');if(c){c.color='#2e9e3e';c.mission=m;c.maxHp=110;c.health=110;c.cruise=rand(90,120);m.gang.push(c);}}
+  {title:'Acerto de Contas',start(m){m.gang=[];for(let i=0;i<3;i++){const c=spawnGang();if(c){c.color='#2e9e3e';c.mission=m;c.maxHp=110;c.health=110;c.cruise=rand(90,120);m.gang.push(c);}}
       m.left=m.gang.length;m.time=200;m.reward=3000;m.text='Destrói as 3 caminhonetes verdes da gangue do Galego.';
       msg('Dica: bate nelas com força. Quando pegar fogo, se afasta!',6);
       m.onDestroyed=(c)=>{m.left--;msg('Faltam '+m.left+'.');};},

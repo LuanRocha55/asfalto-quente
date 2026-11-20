@@ -153,7 +153,7 @@ Campos que outros sistemas usam: `driver` (`'player'`, `'ai'` ou `null`), `ai` (
 
 ### Trânsito (`ai/traffic.js`)
 
-Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra converter, respeitam mão única e semáforo (`signalState` em `districts.js`), não entram no cruzamento se não couberem do outro lado e destravam engarrafamentos fora da tela. Ônibus e caminhões não entram em beco. O tipo de carro sorteado depende do bairro. `spawnOnRoad()` cria carros fora da tela, e `driveTo()` é a direção usada também pela polícia.
+Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra converter, respeitam mão única e semáforo (`signalState` em `districts.js`), não entram no cruzamento se não couberem do outro lado e destravam engarrafamentos fora da tela. Ônibus e caminhões não entram em beco. Carro com `stayOpen` (as caminhonetes da gangue em "Acerto de Contas") não escolhe trecho que passe por bairro fechado; `headingOpen(c)` diz se o trecho atual é todo aberto. O tipo de carro sorteado depende do bairro. `spawnOnRoad()` cria carros fora da tela, e `driveTo()` é a direção usada também pela polícia.
 
 ### Polícia (`ai/police.js`, `game/world.js`, `game/update.js`)
 

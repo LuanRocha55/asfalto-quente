@@ -7,6 +7,7 @@ import { sfxHorn } from '../audio/audio.js';
 import { onScreen, viewR } from '../game/world.js';
 import { signalized, signalState } from '../world/districts.js';
 import { S, player } from '../core/state.js';
+import { isOpenAt } from '../game/blitz.js';
 
 export function alongOf(c){return c.dir%2===0?c.x:c.y;}
 export function sgn(d){return(d===0||d===1)?1:-1;}
@@ -17,6 +18,12 @@ const lineOf=c=>c.dir%2===0?HL[c.line]:VL[c.line];
 const nextNode=c=>c.dir%2===0?[c.next,c.line]:[c.line,c.next];
 const nodeAlong=(c,k)=>c.dir%2===0?VL[k].px:HL[k].px;
 const big=c=>c.t.len>40;
+
+// trecho todo fora da área fechada pela operação (amostra pontos ao longo da reta)
+function openPath(x0,y0,x1,y1){for(let k=0;k<=8;k++){const t=k/8;if(!isOpenAt(x0+(x1-x0)*t,y0+(y1-y0)*t))return false;}return true;}
+const nodeXY=(i,j)=>[VL[i].px,HL[j].px];
+// o carro chega no próximo nó sem entrar em bairro fechado?
+export function headingOpen(c){const [i,j]=nextNode(c);if(i<0||j<0||i>=NV||j>=NH)return false;return openPath(c.x,c.y,...nodeXY(i,j));}
 
 // ---------- planejamento no próximo nó ----------
 export function planCar(c){
@@ -29,6 +36,8 @@ export function planCar(c){
     const L=nd%2===0?HL[j]:VL[i];
     if(!dirAllowed(L,nd))continue;
     if(L.type==='beco'&&big(c))continue;
+    // carro de missão (gangue) não entra em bairro fechado
+    if(c.stayOpen){const ni=i+(nd%2===0?DX[nd]:0),nj=j+(nd%2===1?DY[nd]:0);if(!openPath(...nodeXY(i,j),...nodeXY(ni,nj)))continue;}
     opts.push({nd,w,L});
   }
   let ch;
