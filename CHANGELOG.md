@@ -5,6 +5,11 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.1.3 — 20/11/2026
+- **Contador de FPS e qualidade no topo da tela** (ex.: `58 FPS · 3D alta`), verde/amarelo/vermelho conforme o desempenho
+- **F3 agora tem três estados**: contador pequeno → painel de desempenho completo → desligado (a escolha fica salva no navegador)
+- A dica acima do minimapa mostra a tecla F3
+
 ## 1.1.2 — 20/11/2026
 - **F3 abre um painel de desempenho**: FPS, tempo da lógica e do desenho, resolução real do 3D, chamadas de desenho e **qual placa de vídeo o navegador está usando** (avisa se for a integrada) e se o gargalo é a placa ou o processador
 

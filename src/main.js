@@ -31,9 +31,19 @@ window.addEventListener('keydown',e=>{if(e.code!=='KeyG'||!S.started||S.menu)ret
   else{set3D(false);val='2d';txt='Gráficos: clássico (2D)';}
   try{localStorage.setItem('aq_gfx',val);}catch(err){}msg(txt+'  (G troca)',2.5);});
 let last=performance.now();
-// painel de diagnóstico (F3): quadros por segundo, onde o tempo vai e qual placa de vídeo o navegador está usando
-const perf={on:false,fps:0,up:0,rd:0,frames:0,acc:0,shown:{}};
-window.addEventListener('keydown',e=>{if(e.code==='F3'){e.preventDefault();perf.on=!perf.on;}});
+// F3 alterna: desligado → contador pequeno (FPS + qualidade, no topo) → painel de diagnóstico completo
+// (quadros por segundo, onde o tempo vai e qual placa de vídeo o navegador está usando). Fica salvo no navegador.
+const perf={mode:1,fps:0,up:0,rd:0,frames:0,acc:0,shown:{}};
+try{const v=localStorage.getItem('aq_fps');if(v==='0'||v==='1'||v==='2')perf.mode=+v;}catch(e){}
+window.addEventListener('keydown',e=>{if(e.code!=='F3')return;e.preventDefault();
+  perf.mode=(perf.mode+1)%3;try{localStorage.setItem('aq_fps',String(perf.mode));}catch(err){}});
+function drawFpsCounter(){
+  const fps=perf.shown.fps, mode=R.on&&!S.interior?'3D '+QNAMES[getQuality()]:'2D clássico';
+  const t=(fps===undefined?'--':fps)+' FPS · '+mode, g=ctx;
+  g.setTransform(DPR,0,0,DPR,0,0);g.font='bold 12px "Courier New",monospace';g.textAlign='center';
+  const w=g.measureText(t).width+16;g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(CW/2-w/2,6,w,20);
+  g.fillStyle=fps===undefined?'#cfcfcf':fps>=50?'#7dff6b':fps>=35?'#ffe14a':'#ff6b6b';g.fillText(t,CW/2,20);
+}
 function drawPerf(){
   const info=R.on&&!S.interior?gfxInfo():null, g=ctx;
   const lines=[perf.shown.fps+' FPS  ('+(1000/Math.max(1,perf.shown.fps)).toFixed(1)+' ms por quadro)',
@@ -77,7 +87,7 @@ function frame(now){
     if(S.interior)renderInterior();else if(use3D)render3D(signalState);else render();
     perf.rd+=performance.now()-_t2;perf.frames++;perf.acc+=now-(perf.lastNow||now);perf.lastNow=now;
     if(perf.acc>=500){perf.shown={fps:Math.round(perf.frames*1000/perf.acc),up:(perf.up/perf.frames).toFixed(1),rd:(perf.rd/perf.frames).toFixed(1)};perf.frames=0;perf.acc=0;perf.up=0;perf.rd=0;}
-    if(perf.on&&perf.shown.fps!==undefined)drawPerf();
+    if(perf.mode===2&&perf.shown.fps!==undefined)drawPerf();
     if(S.mapOpen&&!S.interior)drawBigMap();
     if(S.menu)drawMenu();
     if(!S.started||S.paused)drawTitle();
@@ -86,6 +96,7 @@ function frame(now){
     console.error(e);
     try{sanitize(true);}catch(_){}
   }
+  if(perf.mode>0)drawFpsCounter();
   if(S.lastErr){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.font='bold 12px monospace';ctx.textAlign='left';ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,CH-20,CW,20);
     ctx.fillStyle='#ff8080';ctx.fillText('Erro recuperado ('+S.errCount+'x): '+S.lastErr.slice(0,120),8,CH-6);}
 }
