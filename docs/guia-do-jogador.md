@@ -24,10 +24,14 @@ Tudo o que dá pra fazer em Vila Maresia, do primeiro passo até liberar a cidad
 
 ## Começando
 
-Na tela de título:
+A tela de título tem um menu (W/S ou setas escolhem, ENTER ou clique confirma):
 
-- **ENTER** (ou um clique) continua o jogo salvo. Se não tiver save, começa um jogo novo.
-- **BACKSPACE** apaga o save e começa do zero.
+- **CONTINUAR** volta pro jogo salvo (ou **COMEÇAR**, se não tiver save).
+- **NOVO JOGO** pede confirmação e apaga o save. **BACKSPACE** faz o mesmo direto.
+- **CONTROLES** mostra todas as teclas.
+- **GRÁFICOS**, **FILTRO 97** e **SOM** mudam as opções ali mesmo.
+
+A pausa (P ou Esc) usa o mesmo menu, com **VOLTAR PRO JOGO** no topo.
 
 O jogo novo começa na frente do hospital, no Centro, com um carro estacionado do lado. Um tutorial curto ensina jogando, em 5 passos: andar, pegar o carro, dirigir, abrir o mapa e atender o orelhão. Cada passo mostra as teclas e uma seta pro objetivo. **T** pula o tutorial.
 
@@ -55,8 +59,9 @@ Depois do tutorial aparecem dicas só na primeira vez que algo acontece (primeir
 | Tecla | Ação |
 |---|---|
 | M ou Tab | mapa em tela cheia (clique marca destino, clique direito apaga) |
-| P ou Esc | pausa (sai com Esc, P, Enter ou clique) |
+| P ou Esc | pausa com menu (Esc ou P volta) |
 | G | gráficos: 3D alta → 3D média → 3D leve → clássico (2D) |
+| V | liga/desliga o Filtro 97 (só no 3D) |
 | F3 | contador de FPS → painel de desempenho completo → desligado |
 | N | liga/desliga o som |
 | T | pula o tutorial |

@@ -13,13 +13,17 @@ import { drawGround2D, label } from '../render/draw.js';
 import { drawHUD, drawKeycap } from '../render/hud.js';
 import { ICONS, KIND_ICON } from '../render/icons.js';
 import { buildCity, U, bh } from './build.js';
+import { buildings as buildingsList_ } from '../world/map.js';
+const buildingsList=()=>buildingsList_;
 import { S, player, cam, keys, view } from '../core/state.js';
 import { checkpoints } from '../game/blitz.js';
+import { pf } from '../render/style97.js';
 
-export const R={ok:false,on:false};
+export const R={ok:false,on:false,retro:true};
+try{R.retro=localStorage.getItem('aq_retro')!=='0';}catch(e){}
 export const DBG={};
 export const getRenderer=()=>renderer;
-let renderer,scene,camera,sun,hemi,ground={},mats,city,overlay,overlayTex,overlayMesh,water;
+let renderer,scene,camera,sun,hemi,ground={},mats,city,overlay,overlayTex,overlayMesh,water,neon;
 const tmpV=new THREE.Vector3();
 
 // ---------- inicialização ----------
@@ -56,8 +60,8 @@ export function init3D(){
     city=buildCity(scene,mats);
     for(const s of city.special3d){scene.add(s.mesh);scene.add(s.crowd);scene.add(s.lightBoxes);scene.add(s.fieldLight);}
     // mar em volta
-    const wg=new THREE.PlaneGeometry(W*3,H*3);wg.rotateX(-Math.PI/2);
-    water=new THREE.Mesh(wg,new THREE.MeshLambertMaterial({color:'#1f5f8b'}));water.position.set(W/2,-0.08,H/2);scene.add(water);
+        water=makeSea();scene.add(water);
+    neon=buildNeon();scene.add(neon.group);
     // LOD do chão: o mapa todo em baixa resolução, por baixo dos pedaços detalhados (nunca aparece buraco)
     const lt=new THREE.CanvasTexture(makeLowres());lt.colorSpace=THREE.SRGBColorSpace;lt.anisotropy=renderer.capabilities.getMaxAnisotropy();
     const lg=new THREE.PlaneGeometry(W,H);lg.rotateX(-Math.PI/2);
@@ -76,6 +80,102 @@ export function init3D(){
 }
 function radialTex(rgb){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');const gr=g.createRadialGradient(32,32,0,32,32,32);
   gr.addColorStop(0,'rgba('+rgb+',1)');gr.addColorStop(1,'rgba('+rgb+',0)');g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);}
+
+// ---------- mar em volta: ondas em baixa poligonagem (facetado), brilho do sol ----------
+function makeSea(){
+  const g=new THREE.PlaneGeometry(W*3,H*3,150,150);g.rotateX(-Math.PI/2);
+  const m=new THREE.MeshPhongMaterial({color:'#2683ad',specular:'#7f7f7f',shininess:38,flatShading:true});
+  const mesh=new THREE.Mesh(g,m);mesh.position.set(W/2,-0.16,H/2);
+  m.onBeforeCompile=sh=>{sh.uniforms.uTime={value:0};mesh.userData.u=sh.uniforms;
+    sh.vertexShader='uniform float uTime;\n'+sh.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\ntransformed.y+=sin(position.x*0.33+uTime*1.25)*0.06+cos(position.z*0.27+uTime*0.85)*0.06+sin((position.x+position.z)*0.6+uTime*2.1)*0.025;');};
+  return mesh;
+}
+// ---------- letreiros dos comércios: pintados de dia, neon aceso à noite ----------
+const NEON={farmacia:['FARMÁCIA','#3dff6e','cruz'],lanchonete:['LANCHES','#ff3b30','#ffd21f'],mercadinho:['MERCADINHO','#ff4fd8'],padaria:['PADARIA','#ffae2b'],
+  lojaposto:['POSTO','#ffd21f','#ff3b30'],armas:['TONHÃO','#ff3b30'],ze:['OFICINA DO ZÉ','#ff9a1f'],pintura:['PINTURA','#38e8ff'],pintura2:['PINTURA','#38e8ff'],
+  hospital:['HOSPITAL','#ff4040'],policia:['POLÍCIA','#4d7dff']};
+function neonTex(text,col,col2){
+  const c=document.createElement('canvas');c.width=512;c.height=128;const g=c.getContext('2d');
+  g.fillStyle='rgba(8,8,12,0.92)';g.fillRect(6,10,500,108);g.strokeStyle='#000';g.lineWidth=6;g.strokeRect(6,10,500,108);
+  let x=256;
+  if(col2==='cruz'){g.shadowColor=col;g.shadowBlur=16;g.fillStyle=col;g.fillRect(26,55,60,20);g.fillRect(46,35,20,60);g.shadowBlur=0;x=290;}
+  g.font='64px "Anton",Impact,sans-serif';g.textAlign='center';g.textBaseline='middle';
+  const fs=Math.min(64,64*(col2==='cruz'?380:460)/Math.max(1,g.measureText(text).width));g.font=Math.floor(fs)+'px "Anton",Impact,sans-serif';
+  g.shadowColor=col;g.shadowBlur=14;g.lineWidth=5;g.strokeStyle=col;g.strokeText(text,x,66);
+  g.shadowBlur=0;g.fillStyle=col2&&col2!=='cruz'?col2:'#ffffff';g.fillText(text,x,66);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
+}
+function buildNeon(){
+  const group=new THREE.Group(),byKind={};
+  for(const b of buildingsList()){const n=NEON[b.kind];if(!n)continue;(byKind[b.kind]||(byKind[b.kind]=[])).push(b);}
+  const list=[];
+  for(const [k,bs] of Object.entries(byKind)){
+    const [text,col,col2]=NEON[k];
+    const pos=[],uv=[],idx=[];let v=0;
+    for(const b of bs){const x0=b.x0*U,x1=b.x1*U,z1=b.y1*U,H=bh(b);
+      const w=Math.min((x1-x0)*0.9,k==='hospital'||k==='policia'?6:5),h=w/4,cx=(x0+x1)/2,y0=H+0.06,z=z1-0.12;
+      pos.push(cx-w/2,y0,z, cx+w/2,y0,z, cx+w/2,y0+h,z, cx-w/2,y0+h,z);uv.push(0,0,1,0,1,1,0,1);idx.push(v,v+1,v+2,v,v+2,v+3);v+=4;
+    }
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(idx);geo.computeBoundingSphere();
+    const mat=new THREE.MeshBasicMaterial({map:neonTex(text,col,col2),transparent:true,side:THREE.DoubleSide,fog:true});
+    const glow=new THREE.MeshBasicMaterial({map:radialTex(hexRgb(col)),transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});
+    const gpos=[],gidx=[];let gv=0;
+    for(const b of bs){const x0=b.x0*U,x1=b.x1*U,z1=b.y1*U,H=bh(b);const w0=Math.min((x1-x0)*0.9,k==='hospital'||k==='policia'?6:5),w=w0*1.3,h=w0*0.5,cx=(x0+x1)/2,cy=H+0.06+w0/8,z=z1+0.05;
+      gpos.push(cx-w/2,cy-h/2,z, cx+w/2,cy-h/2,z, cx+w/2,cy+h/2,z, cx-w/2,cy+h/2,z);gidx.push(gv,gv+1,gv+2,gv,gv+2,gv+3);gv+=4;}
+    const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(gpos,3));gg.setAttribute('uv',new THREE.Float32BufferAttribute(Array(bs.length).fill([0,0,1,0,1,1,0,1]).flat(),2));gg.setIndex(gidx);gg.computeBoundingSphere();
+    const m1=new THREE.Mesh(geo,mat),m2=new THREE.Mesh(gg,glow);m2.renderOrder=4;group.add(m1);group.add(m2);
+    list.push({k,mat,glow});
+  }
+  return {group,list};
+}
+function hexRgb(h){const c=new THREE.Color(h);return Math.round(c.r*255)+','+Math.round(c.g*255)+','+Math.round(c.b*255);}
+function updateNeon(dk){
+  if(!neon)return;
+  for(const n of neon.list){
+    let on=dk>0.35?1:0;
+    if(on&&(n.k==='farmacia'||n.k==='lanchonete')){const t=S.gameTime*(n.k==='farmacia'?1.6:0.7);on=(Math.floor(t)%5===4&&Math.floor(t*8)%2)?0.35:1;}
+    const lvl=on?1:0.55+0.25*(1-dk);n.mat.color.setScalar(on?1.25*on:lvl);
+    n.glow.opacity=on&&quality===2?0.32*on*clamp((dk-0.35)*3,0,1):0;
+  }
+}
+// ---------- Filtro 97: desenha a cidade numa resolução baixa e estica sem borrar, com pontilhado e menos cores ----------
+let rt=null,post=null;
+const RETRO_LINES=[240,300,360];
+function retroPass(){
+  const h=RETRO_LINES[quality],w=Math.round(h*CW/Math.max(1,CH));
+  if(!rt){
+    const ext=renderer.extensions;const half=ext.has('EXT_color_buffer_float')||ext.has('EXT_color_buffer_half_float');
+    rt=new THREE.WebGLRenderTarget(w,h,{type:half?THREE.HalfFloatType:THREE.UnsignedByteType,minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,depthBuffer:true,generateMipmaps:false});
+    const mat=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{tDiffuse:{value:rt.texture},res:{value:new THREE.Vector2(w,h)},levels:{value:31}},
+      vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+      fragmentShader:`uniform sampler2D tDiffuse;uniform vec2 res;uniform float levels;varying vec2 vUv;
+        float b2(vec2 a){a=floor(a);return fract(a.x*.5+a.y*a.y*.75);}
+        float bayer4(vec2 a){return b2(.5*a)*.25+b2(a);}
+        void main(){vec2 px=floor(vUv*res);vec3 c=texture2D(tDiffuse,(px+.5)/res).rgb;
+          c=mix(c*12.92,1.055*pow(max(c,vec3(0.)),vec3(1./2.4))-.055,step(vec3(.0031308),c));
+          float l=dot(c,vec3(.299,.587,.114));c=mix(vec3(l),c,1.12);
+          c+=(bayer4(px)-.5)/levels;c=floor(c*levels+.5)/levels;
+          gl_FragColor=vec4(clamp(c,0.,1.),1.);}`});
+    post={scene:new THREE.Scene(),cam:new THREE.OrthographicCamera(-1,1,1,-1,0,1),mat};
+    const q=new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat);q.frustumCulled=false;post.scene.add(q);
+  }
+  if(rt.width!==w||rt.height!==h){rt.setSize(w,h);post.mat.uniforms.res.value.set(w,h);}
+  renderer.setRenderTarget(rt);renderer.render(scene,camera);renderer.setRenderTarget(null);
+  renderer.render(post.scene,post.cam);
+}
+export function toggleRetro(){R.retro=!R.retro;try{localStorage.setItem('aq_retro',R.retro?'1':'0');}catch(e){}}
+// G passa por: 3D alta → 3D média → 3D leve → clássico (fica salvo no navegador). Devolve o texto pra mostrar.
+export function gfxLabel(){return R.on?'3D '+QNAMES[quality].toUpperCase():'CLÁSSICO 2D';}
+export function cycleGfx(){
+  if(!R.ok)return 'Este navegador não tem suporte a 3D (WebGL).';
+  let txt,val;
+  if(!R.on){set3D(true);applyQuality(2,true);val='3d2';txt='Gráficos: 3D · qualidade alta';}
+  else if(quality>0){const q=quality-1;applyQuality(q,true);val='3d'+q;txt='Gráficos: 3D · qualidade '+QNAMES[q];}
+  else{set3D(false);val='2d';txt='Gráficos: clássico (2D)';}
+  try{localStorage.setItem('aq_gfx',val);}catch(err){}
+  return txt;
+}
 
 // troca entre 3D e clássico
 export function set3D(on){
@@ -316,7 +416,8 @@ function placeSun(cx,cz,dx,dy,dz){
 }
 
 // ---------- luz do dia, céu e cidade à noite ----------
-const DAY=new THREE.Color('#9cc9f0'),SUNSET=new THREE.Color('#f0a070'),NIGHT=new THREE.Color('#0b1022');
+const DAY=new THREE.Color('#8ec6ee'),SUNSET=new THREE.Color('#f08c5a'),NIGHT=new THREE.Color('#0a0e22');
+const SEA_DAY=new THREE.Color('#2683ad'),SEA_SUNSET=new THREE.Color('#3d5f86'),SEA_NIGHT=new THREE.Color('#0b1a30');
 function updateSky(cx,cz){
   const dk=darkness(), gd=golden();
   const bg=DAY.clone().lerp(SUNSET,gd*(1-dk*0.5)).lerp(NIGHT,dk);
@@ -330,7 +431,12 @@ function updateSky(cx,cz){
   hemi.intensity=0.95*(1-dk)+0.28;
   hemi.color.set(dk>0.5?'#5a6fa8':'#dfefff');
   mats.lit.opacity=clamp((dk-0.25)*1.6,0,1);
-  mats.lightPool.opacity=0.55*dk;
+  // mar: cor e brilho do sol/lua mudam com a hora; ondas andam
+  water.material.color.copy(SEA_DAY).lerp(SEA_SUNSET,gd*(1-dk*0.5)).lerp(SEA_NIGHT,dk);
+  water.material.specular.setScalar(0.5*(1-dk)+0.12);
+  if(water.userData.u)water.userData.u.uTime.value=S.gameTime;
+  updateNeon(dk);
+  mats.lightPool.opacity=(R.retro?0.3:0.55)*dk;
   mats.lampHead.emissiveIntensity=dk>0.05?1.5*dk:0;
   // estádio: torcida e refletores
   for(const s of city.special3d){
@@ -401,6 +507,8 @@ export function render3D(signalState){
   // câmera inclinada acima do jogador (afasta com a velocidade)
   const zn=cam.zoom/clamp(CH/820,0.7,1.6);camZ=lerp(camZ,zn,0.1);
   const dist=24/clamp(camZ,0.5,1.3);
+  {const sp=player.car?Math.abs(player.car.fwdSpeed()):0,fov=42+clamp((sp-150)/500,0,1)*5;
+    if(Math.abs(camera.fov-fov)>0.02){camera.fov=lerp(camera.fov,fov,0.06);camera.updateProjectionMatrix();}}
   const tx=cam.x*U, tz=cam.y*U;
   const shx=(Math.random()-.5)*S.shake*0.05, shz=(Math.random()-.5)*S.shake*0.05;
   camera.position.set(tx+shx,dist*0.92,tz+dist*0.62+shz);camera.lookAt(tx,0,tz-1);
@@ -424,7 +532,7 @@ export function render3D(signalState){
     overlayTex.needsUpdate=true;
   }
   syncCars(night);syncCheckpoints();syncPeople();syncParticles();syncTracers();
-  renderer.render(scene,camera);
+  if(R.retro)retroPass();else renderer.render(scene,camera);
   // HUD e avisos por cima, em 2D
   const g=ctx;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,CW*DPR,CH*DPR);g.setTransform(DPR,0,0,DPR,0,0);
   drawPrompts(g);
@@ -438,8 +546,8 @@ function drawPrompts(g){
   if(!player.car&&player.state==='play'){
     const nc=nearestCar(26);
     const carCloser=nc&&(!nearB||hyp(nc.x-player.x,nc.y-player.y)-nc.t.wid/2<hyp(doorOf(nearB).x-player.x,doorOf(nearB).y-player.y));
-    if(nc&&carCloser){const p=P(nc.x,nc.y,1.6);g.font='bold 12px "Courier New",monospace';const t=(nc.driver==='ai'?'Roubar ':'Entrar: ')+nc.t.name;drawKeycap(g,'F',p.x-(g.measureText(t).width+28)/2,p.y,t,12);}
-    else if(nearB){const d=doorOf(nearB);const p=P(d.x,d.y,1.4);const name=ICONS[KIND_ICON[nearB.kind]].name.split(' (')[0].split(' ·')[0];g.font='bold 13px "Courier New",monospace';drawKeycap(g,'F',p.x-(g.measureText('Entrar: '+name).width+30)/2,p.y,'Entrar: '+name,13);}
+    if(nc&&carCloser){const p=P(nc.x,nc.y,1.6);g.font=pf(12);const t=(nc.driver==='ai'?'Roubar ':'Entrar: ')+nc.t.name;drawKeycap(g,'F',p.x-(g.measureText(t).width+28)/2,p.y,t,12);}
+    else if(nearB){const d=doorOf(nearB);const p=P(d.x,d.y,1.4);const name=ICONS[KIND_ICON[nearB.kind]].name.split(' (')[0].split(' ·')[0];g.font=pf(13);drawKeycap(g,'F',p.x-(g.measureText('Entrar: '+name).width+30)/2,p.y,'Entrar: '+name,13);}
   }
   // passageiro esperando e carros da missão: setinha amarela em cima
   for(const p of S.peds)if(p.state==='wait'){const q=P(p.x,p.y,1.6+Math.sin(S.gameTime*6)*0.1);arrowDown(g,q.x,q.y);}

@@ -3,8 +3,9 @@ import { ctx, CW, CH, DPR } from '../core/canvas.js';
 import { shade, clamp } from '../core/utils.js';
 import { ITS, THEME, NPC_SHIRT, nearestPoint, interiorTitle } from '../game/interior.js';
 import { drawPerson } from './draw.js';
-import { drawKeycap } from './hud.js';
+import { drawKeycap, drawInteriorHUD } from './hud.js';
 import { S, player } from '../core/state.js';
+import { pf } from './style97.js';
 
 function hash(x,y){const s=Math.sin(x*127.1+y*311.7)*43758.5453;return s-Math.floor(s);}
 
@@ -67,11 +68,6 @@ export function renderInterior(){
   for(const q of it.points){const near=p===q;g.strokeStyle=near?'rgba(255,233,160,0.95)':'rgba(255,233,160,0.35)';g.lineWidth=near?3:2;g.beginPath();g.arc(q.x,q.y,ITS*0.42+(near?Math.sin(S.gameTime*6)*3:0),0,Math.PI*2);g.stroke();}
   // tela
   g.setTransform(DPR,0,0,DPR,0,0);
-  g.font='bold 22px "Courier New",monospace';g.textAlign='center';g.fillStyle='rgba(0,0,0,0.8)';g.fillText(interiorTitle(),CW/2+2,oy-14+2);g.fillStyle='#ffe9a0';g.fillText(interiorTitle(),CW/2,oy-14);
+  drawInteriorHUD(g,interiorTitle(),p?null:'Anda com WASD · o tapete vermelho é a saída');
   if(p){const sx=ox+(p.exit?it.px:p.x)*sc, sy=oy+(p.exit?it.py:p.y)*sc-ITS*sc*0.9;drawKeycap(g,'F',sx-60,sy,p.label);}
-  else{g.font='bold 13px "Courier New",monospace';g.fillStyle='rgba(255,255,255,0.6)';g.fillText('Anda com WASD · o tapete vermelho é a saída',CW/2,CH-24);}
-  // dinheiro e vida no canto
-  g.textAlign='right';g.font='bold 26px "Courier New",monospace';g.fillStyle='rgba(0,0,0,0.75)';g.fillText('$ '+Math.floor(player.money).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'),CW-18,38);
-  g.fillStyle='#7dff6b';g.fillText('$ '+Math.floor(player.money).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'),CW-20,36);
-  g.fillStyle='rgba(0,0,0,0.5)';g.fillRect(18,18,184,16);g.fillStyle='#e53935';g.fillRect(20,20,180*player.health/100,12);
 }

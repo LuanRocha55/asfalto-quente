@@ -27,4 +27,4 @@ export function killPed(p,byPlayer){if(p.state==='dead')return;p.state='dead';S.
   if(byPlayer&&p.cop)addHeat(120);else if(byPlayer&&!p.robber)addHeat(55); if(p.mission&&p.mission.onPedDead)p.mission.onPedDead(p);}
 export function hurtPlayer(v){if(player.inv>0||player.state!=='play')return;
   if(player.armor>0){const a=Math.min(player.armor,v*0.75);player.armor-=a;v-=a;}
-  player.health-=v;S.shake=Math.max(S.shake,6);if(player.health<=0){player.health=0;wasted();}}
+  player.health-=v;S.shake=Math.max(S.shake,6);S.hurtT=0.5;if(player.health<=0){player.health=0;wasted();}}

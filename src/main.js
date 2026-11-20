@@ -11,12 +11,16 @@ import { drawBigMap, drawMenu } from './render/overlays.js';
 import { updateInterior } from './game/interior.js';
 import { renderInterior } from './render/interiorDraw.js';
 import { renderInterior3D } from './render3d/interior3d.js';
-import { init3D, set3D, render3D, R, applyQuality, getQuality, QNAMES, gfxInfo } from './render3d/r3d.js';
+import { init3D, set3D, render3D, R, applyQuality, getQuality, QNAMES, gfxInfo, cycleGfx, toggleRetro } from './render3d/r3d.js';
 import { signalState } from './world/districts.js';
 import { msg } from './game/world.js';
 import { S, player, cam, keys } from './core/state.js';
 import { resetWorld } from './game/world.js';
 import './core/input.js';
+import { loadFonts, pf } from './render/style97.js';
+
+// as fontes entram nas texturas do chão e dos telhados: espera carregar (no máximo 2,5 s)
+await loadFonts();
 
 resetWorld();
 // gráficos: 3D por padrão. G passa por: 3D alta → 3D média → 3D leve → clássico (fica salvo no navegador)
@@ -24,13 +28,9 @@ let pref='3d';try{pref=localStorage.getItem('aq_gfx')||'3d';}catch(e){}
 init3D();
 const prefQ=pref==='3d'?2:pref.startsWith('3d')?(+pref[2]||0):2;
 applyQuality(prefQ);set3D(pref.startsWith('3d'));
-window.addEventListener('keydown',e=>{if(e.code!=='KeyG'||!S.started||S.menu)return;
-  if(!R.ok){msg('Este navegador não tem suporte a 3D (WebGL).',3);return;}
-  let txt,val;
-  if(!R.on){set3D(true);applyQuality(2,true);val='3d2';txt='Gráficos: 3D · qualidade alta';}
-  else if(getQuality()>0){const q=getQuality()-1;applyQuality(q,true);val='3d'+q;txt='Gráficos: 3D · qualidade '+QNAMES[q];}
-  else{set3D(false);val='2d';txt='Gráficos: clássico (2D)';}
-  try{localStorage.setItem('aq_gfx',val);}catch(err){}msg(txt+'  (G troca)',2.5);});
+window.addEventListener('keydown',e=>{if(!S.started||S.menu||S.paused)return;
+  if(e.code==='KeyG')msg(cycleGfx()+'  (G troca)',2.5);
+  else if(e.code==='KeyV'){if(!R.on){msg('O Filtro 97 só funciona no 3D (G troca).',2.5);return;}toggleRetro();msg('Filtro 97 '+(R.retro?'ligado':'desligado')+'  (V troca)',2.5);}});
 let last=performance.now();
 // F3 alterna: desligado → contador pequeno (FPS + qualidade, no topo) → painel de diagnóstico completo
 // (quadros por segundo, onde o tempo vai e qual placa de vídeo o navegador está usando). Fica salvo no navegador.
@@ -41,9 +41,9 @@ window.addEventListener('keydown',e=>{if(e.code!=='F3')return;e.preventDefault()
 function drawFpsCounter(){
   const fps=perf.shown.fps, mode=R.on?'3D '+QNAMES[getQuality()]:'2D clássico';
   const t=(fps===undefined?'--':fps)+' FPS · '+mode, g=ctx;
-  g.setTransform(DPR,0,0,DPR,0,0);g.font='bold 11px "Courier New",monospace';g.textAlign='center';
-  const w=g.measureText(t).width+14;g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(CW/2-w/2,2,w,16); // fica acima da linha de dicas (y=34)
-  g.fillStyle=fps===undefined?'#cfcfcf':fps>=50?'#7dff6b':fps>=35?'#ffe14a':'#ff6b6b';g.fillText(t,CW/2,14);
+  g.setTransform(DPR,0,0,DPR,0,0);g.font=pf(11);g.textAlign='center';
+  const w=g.measureText(t).width+14,X=CW-w/2-16,Y=CH-44;g.textAlign='center';g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(X-w/2,Y-12,w,16); // canto de baixo, longe do bip
+  g.fillStyle=fps===undefined?'#cfcfcf':fps>=50?'#7dff6b':fps>=35?'#ffe14a':'#ff6b6b';g.fillText(t,X,Y);
 }
 function drawPerf(){
   const info=R.on&&!S.interior?gfxInfo():null, g=ctx;
@@ -56,7 +56,7 @@ function drawPerf(){
     const cpu=parseFloat(perf.shown.up)+parseFloat(perf.shown.rd), ms=1000/Math.max(1,perf.shown.fps);
     if(ms>20)lines.push(cpu<ms*0.5?'-> o gargalo é a placa de vídeo (a CPU fica esperando)':'-> o gargalo é o processador');}
   else lines.push('(modo clássico ou interior: só 2D)');
-  g.setTransform(DPR,0,0,DPR,0,0);g.font='bold 12px "Courier New",monospace';g.textAlign='left';
+  g.setTransform(DPR,0,0,DPR,0,0);g.font=pf(12);g.textAlign='left';
   const w=Math.max(...lines.map(l=>g.measureText(l).width))+20, x=CW-w-14, y=200;
   g.fillStyle='rgba(0,0,0,0.75)';g.fillRect(x,y,w,lines.length*17+14);
   lines.forEach((l,i)=>{g.fillStyle=l[0]==='!'?'#ff7070':l[0]==='-'?'#ffd34a':i===0?'#7dff8a':'#e8e8e8';g.fillText(l,x+10,y+20+i*17);});
@@ -78,7 +78,8 @@ function frame(now){
   requestAnimationFrame(frame); // agenda antes: um erro nunca mais congela o jogo
   try{
     let _t=performance.now();
-    if(S.started&&!S.paused&&!S.menu&&!S.mapOpen){let rem=dt;while(rem>0){const s=Math.min(1/60,rem);if(S.interior)updateInterior(s);else update(s);rem-=s;}}
+    if(S.hitStop>0){S.hitStop-=dt;}
+    else if(S.started&&!S.paused&&!S.menu&&!S.mapOpen){let rem=dt;while(rem>0){const s=Math.min(1/60,rem);if(S.interior)updateInterior(s);else update(s);rem-=s;}}
 
     else if(!S.started){S.gameTime+=dt;cam.x+=Math.cos(S.gameTime*0.1)*40*dt;cam.y+=Math.sin(S.gameTime*0.13)*40*dt;}
     sanitize();

@@ -199,7 +199,7 @@ export function collideCars(){
               if(src&&a!==player.car)a.damage(pd,'player');else a.damage(dmg*(b.t.mass/ma),null);
               if(src&&b!==player.car)b.damage(pd,'player');else b.damage(dmg*(a.t.mass/mb),null);
               if(onScreen(a.x,a.y))sfxNoise(0.3,clamp(imp/500,0.08,0.6),800);
-              if(src){S.shake=Math.max(S.shake,Math.min(10,imp/50));
+              if(src){S.shake=Math.max(S.shake,Math.min(10,imp/50));if(imp>180)S.hitStop=Math.max(S.hitStop||0,0.06);
                 const other=a===player.car?b:a;if(other.ai==='police'&&other.hitCd<=0){addHeat(30);other.hitCd=1.5;}}
             }}
         }}

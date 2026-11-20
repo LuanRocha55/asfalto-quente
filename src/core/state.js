@@ -9,7 +9,7 @@ export const S={
   tod:16.5, tracers:[], shopCd:0,
   job:null, floaters:[],
   interior:null, toasts:[], mapOpenedOnce:false,
-  menu:null, mapOpen:false, mapRect:null, waypoint:null, playTime:0, saveFlash:0,
+  menu:null, mapOpen:false, hitStop:0, hurtT:0, mapRect:null, waypoint:null, playTime:0, saveFlash:0,
 };
 try{S.best=+localStorage.getItem('aq_best')||0;}catch(e){}
 export const player={x:0,y:0,a:0,health:100,car:null,money:0,heat:0,anim:0,punchCd:0,state:'play',stateT:0,bustT:0,inv:0,
