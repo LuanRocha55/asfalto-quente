@@ -87,6 +87,7 @@ src/
     interiorDraw.js     desenho dos interiores
   render3d/
     build.js            cidade 3D estática (prédios, árvores, postes, estádio...)
+    interior3d.js       interiores em 3D (montados a partir das plantas em texto)
     r3d.js              câmera, luz do dia, carros, pessoas, efeitos e HUD por cima
   audio/
     audio.js            motor, sirene e efeitos sintetizados

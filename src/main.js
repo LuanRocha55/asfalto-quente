@@ -10,6 +10,7 @@ import { drawTitle } from './render/hud.js';
 import { drawBigMap, drawMenu } from './render/overlays.js';
 import { updateInterior } from './game/interior.js';
 import { renderInterior } from './render/interiorDraw.js';
+import { renderInterior3D } from './render3d/interior3d.js';
 import { init3D, set3D, render3D, R, applyQuality, getQuality, QNAMES, gfxInfo } from './render3d/r3d.js';
 import { signalState } from './world/districts.js';
 import { msg } from './game/world.js';
@@ -38,7 +39,7 @@ try{const v=localStorage.getItem('aq_fps');if(v==='0'||v==='1'||v==='2')perf.mod
 window.addEventListener('keydown',e=>{if(e.code!=='F3')return;e.preventDefault();
   perf.mode=(perf.mode+1)%3;try{localStorage.setItem('aq_fps',String(perf.mode));}catch(err){}});
 function drawFpsCounter(){
-  const fps=perf.shown.fps, mode=R.on&&!S.interior?'3D '+QNAMES[getQuality()]:'2D clássico';
+  const fps=perf.shown.fps, mode=R.on?'3D '+QNAMES[getQuality()]:'2D clássico';
   const t=(fps===undefined?'--':fps)+' FPS · '+mode, g=ctx;
   g.setTransform(DPR,0,0,DPR,0,0);g.font='bold 11px "Courier New",monospace';g.textAlign='center';
   const w=g.measureText(t).width+14;g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(CW/2-w/2,2,w,16); // fica acima da linha de dicas (y=34)
@@ -82,9 +83,9 @@ function frame(now){
     else if(!S.started){S.gameTime+=dt;cam.x+=Math.cos(S.gameTime*0.1)*40*dt;cam.y+=Math.sin(S.gameTime*0.13)*40*dt;}
     sanitize();
     const _t2=performance.now();perf.up+=_t2-_t;
-    const use3D=R.on&&!S.interior;
+    const use3D=R.on;
     document.getElementById('gl').style.visibility=use3D?'visible':'hidden';
-    if(S.interior)renderInterior();else if(use3D)render3D(signalState);else render();
+    if(S.interior){if(use3D)renderInterior3D();else renderInterior();}else if(use3D)render3D(signalState);else render();
     perf.rd+=performance.now()-_t2;perf.frames++;perf.acc+=now-(perf.lastNow||now);perf.lastNow=now;
     if(perf.acc>=500){perf.shown={fps:Math.round(perf.frames*1000/perf.acc),up:(perf.up/perf.frames).toFixed(1),rd:(perf.rd/perf.frames).toFixed(1)};perf.frames=0;perf.acc=0;perf.up=0;perf.rd=0;}
     if(perf.mode===2&&perf.shown.fps!==undefined)drawPerf();

@@ -5,6 +5,14 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.2.0 — 20/11/2026
+**Interiores em 3D**
+- Mercadinho, farmácia, padaria, loja do posto, lanchonete, hospital, delegacia, loja de armas, escola e sua casa agora são salas em 3D, montadas a partir da mesma planta em texto
+- Câmera fixa olhando da porta, com a parede da frente cortada pra dar pra ver tudo; luz e sombras próprias
+- Prateleiras com produtos, geladeiras com bebidas, balcões, mesas com prato, cadeiras, camas (a de casal é uma só), computadores, quadro-negro, carteiras com livro, plantas, sofá, arara de armas, alvos do estande e cela com grade
+- Anel no chão marca os pontos de atendimento (pulsa no mais perto) e o aviso com tecla acompanha em 3D
+- No modo clássico (G) os interiores continuam como antes, vistos de cima
+
 ## 1.1.5 — 20/11/2026
 - Painel F3: corrigido o diagnóstico do gargalo (somava os tempos como texto e sempre culpava o processador)
 

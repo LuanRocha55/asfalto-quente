@@ -17,6 +17,7 @@ import { S, player, cam, keys, view } from '../core/state.js';
 
 export const R={ok:false,on:false};
 export const DBG={};
+export const getRenderer=()=>renderer;
 let renderer,scene,camera,sun,hemi,ground={},mats,city,overlay,overlayTex,overlayMesh,water;
 const tmpV=new THREE.Vector3();
 

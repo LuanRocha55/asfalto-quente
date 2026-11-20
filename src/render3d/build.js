@@ -12,7 +12,7 @@ export const HSCALE=2.2/T;                  // altura "2D" -> unidade
 export const bh=b=>Math.max(0.35,b.h*HSCALE);
 
 // ---------- montador de geometria com cor por vértice ----------
-class Geo{
+export class Geo{
   constructor(){this.p=[];this.n=[];this.c=[];}
   quad(a,b,c,d,nx,ny,nz,col){ // a,b,c,d em sentido anti-horário visto de fora
     for(const v of [a,b,c,a,c,d]){this.p.push(v[0],v[1],v[2]);this.n.push(nx,ny,nz);this.c.push(col.r,col.g,col.b);}
