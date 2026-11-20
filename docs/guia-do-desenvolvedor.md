@@ -136,7 +136,7 @@ Toda tela desenhada em canvas usa as peças daqui, pra manter a identidade de 19
 
 ## Mundo e coordenadas
 
-- **Tile:** `T = 32` px. Mapa de `W × H = 262 × 262` tiles em `map` (`Uint8Array`).
+- **Tile:** `T = 32` px. Mapa de `W × H = 376 × 376` tiles em `map` (`Uint8Array`). A cidade cresceu na 1.8.0: os quarteirões continuam com ~26 tiles entre ruas, mas tem mais ruas em cada bairro. As divisas dos bairros (`zoneAt` em `zoning.js`) ficam sempre em cima de uma rua.
 - **Tipos de tile:** `WATER`, `SAND`, `ROAD`, `SIDE` (calçada), `GRASS`, `BUILD`, `TREE`, `PARK` (estacionamento/praça), `POOL`, `DIRT`. Sólidos: água, prédio, árvore, piscina (`isSolidT`).
 - **Direções:** `0 = leste, 1 = sul, 2 = oeste, 3 = norte` (`DX`, `DY`).
 - **Malha de ruas:** `VL` (linhas verticais) e `HL` (horizontais) em `map.js`, cada uma com tipo `ave`, `rua` ou `beco`, largura, faixas, nome e mão única. `segH[j][i]` e `segV[i][j]` dizem quais trechos existem. Becos só existem na Vila Velha.
@@ -221,6 +221,7 @@ Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra con
 - `buildCity()` monta a cidade estática uma vez, **dividida em blocos**, e a placa só desenha os blocos perto da câmera.
 - **Chão com streaming e LOD:** o chão é desenhado em canvas por blocos de 16 × 16 tiles (`world/chunks.js`) e vira textura. No máximo 3 blocos por quadro, primeiro os visíveis e depois na direção do movimento. Por baixo, o mapa inteiro em baixa resolução (`makeLowres`) cobre o que ainda não carregou. No 3D os tiles de água ficam transparentes (`getChunk3D`, `makeLowres(true)` e `alphaTest`), e o 2D clássico continua usando `getChunk` com a água pintada.
 - **Mar** (`makeSea`): plano com ondas facetadas no shader. `shoreField()` (em `chunks.js`) calcula a distância de cada tile de água até a terra, e o shader usa isso pra clarear a água rasa e desenhar a espuma batendo na beira. `uGlow` dá um brilho próprio pra água não ficar preta com o sol baixo.
+- **Escala das pessoas:** `PED_SCALE` (0,56) e `PLAYER_SCALE` (0,75) em `r3d.js`. Um andar dos prédios tem 0,95 de altura e um carro uns 1,1 de comprimento, então a pessoa fica com ~0,6 (perto de 1,9 m). O jogador é um pouco maior pra ser fácil de achar.
 - **Objetos dinâmicos:** carros reaproveitam malhas por tipo (`carParts`: rodas cilíndricas com calota, para-choques, vidros em volta da cabine, retrovisores). Carroceria e cabine usam a cor do carro; a viatura tem cabine branca fixa. À noite, as lanternas fazem um brilho vermelho no chão (mais forte freando). Pessoas e partículas são desenhadas em lote (instancing).
 - **Modelos 3D dos carros** (`models.js`): o Car Kit do Kenney (CC0) carrega em segundo plano depois do `init3D()`. Até chegar, ou se der erro, os carros usam as caixas de `carParts`. Quando termina, `rebuildCars()` refaz os carros da tela.
   - `CAR_MODELS` liga o tipo do jogo ao modelo. Busão, moto, bugue e blindado não têm modelo no kit e seguem com caixas.
@@ -328,7 +329,7 @@ A versão aparece na tela de título e no canto do minimapa, e vai dentro do sav
 
 Coisas notadas ao escrever esta documentação, a partir da geração atual da cidade (semente 1337). Não são mudanças, só registro pra decidir depois.
 
-1. **Começo com pouca coisa aberta.** Com só Centro e Jardim liberados, ficam em bairro fechado: os **dois Postos Maresia** (Alto da Maresia), o **terminal de ônibus** e **todas as lanchonetes com motoca** (Alto do Cajueiro e Vila Velha), o **ponto de táxi** do estacionamento (Alto da Maresia) e a **Oficina do Zé** (Orla). Isso quer dizer que, até juntar $5.000, não dá pra consertar o carro nem tirar pneu furado de blitz. No começo só o táxi da rua e o vigilante funcionam como emprego. Isso pode ajudar a explicar por que a blitz pesa tanto no começo.
+1. **O que fica aberto no começo (resolvido na 1.8.0).** Antes, com só Centro e Jardim liberados, postos, Zé e lanchonetes ficavam todos em bairro fechado. Com a cidade maior, o Centro e o Jardim têm os dois Postos Maresia, a Oficina do Zé, parte das lanchonetes e lojas (`assignCommerce` põe pelo menos 1/3 de cada comércio lá) e uns 10 dos 18 pontos de ônibus. A Pintura do Cajueiro, o Armas do Tonhão e o estacionamento do Brisa continuam em bairro fechado.
 2. **Guincho sem destino aberto (corrigido).** Dava pra furar a blitz, pegar o guincho de um posto fechado e travar o jogo, porque `updTow` não achava destino aberto. Agora `towZones()` é checado ao começar o turno (não começa) e ao engatar o carro (encerra o turno com aviso).
 3. **Carreira fora do save.** `aq_career` não é apagado ao começar do zero (BACKSPACE), então os níveis dos empregos continuam.
 4. **Bônus do vigilante (corrigido).** Antes dava pra começar o turno entre 5h e 6h (ainda escuro) e receber o bônus na hora. Agora não se começa turno entre 5h e 7h, e o bônus só é pago com pelo menos 2 horas de jogo de turno (`GUARD_MIN_SHIFT`, 1 minuto real).

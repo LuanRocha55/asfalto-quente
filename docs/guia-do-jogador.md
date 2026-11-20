@@ -101,11 +101,11 @@ Vila Maresia é uma cidade litorânea inventada, inspirada em Fortaleza, em 1997
 
 | Bairro | Como é | O que tem |
 |---|---|---|
-| **Centro** | torres altas, praças, calçada de lajes | hospital, delegacia, Arena Maresia, escolas, mercadinhos, farmácia, padaria |
-| **Jardim Maresia** | casas, canteiro de grama, lombadas | sua casa, as duas Pinturas Express, Armas do Tonhão |
-| **Alto do Cajueiro** | periferia: casinhas de tijolo, terra batida, asfalto remendado, campinho de várzea, muitas motos | lanchonetes, mercadinhos, padaria, terminal de ônibus |
-| **Alto da Maresia** | bairro rico: mansões com piscina, condomínios, esportivos e sedãs de luxo no trânsito | os dois Postos Maresia, estacionamentos |
-| **Orla** | praia larga com coqueiros, barracas, guarda-sóis, vôlei, salva-vidas, hotéis, calçadão de ondas e ciclofaixa | Oficina do Zé |
+| **Centro** | torres altas, praças, calçada de lajes | hospital, delegacia, Arena Maresia, Oficina do Zé, um Posto Maresia, escolas, lanchonetes, mercadinhos, farmácias, padarias |
+| **Jardim Maresia** | casas, canteiro de grama, lombadas | sua casa, uma Pintura Express, um Posto Maresia, farmácia |
+| **Alto do Cajueiro** | periferia: casinhas de tijolo, terra batida, asfalto remendado, campinho de várzea, muitas motos | uma Pintura Express, Armas do Tonhão, lanchonetes, mercadinho, farmácia, padaria |
+| **Alto da Maresia** | bairro rico: mansões com piscina, condomínios, esportivos e sedãs de luxo no trânsito | estacionamento do Brisa |
+| **Orla** | praia larga com coqueiros, barracas, guarda-sóis, vôlei, salva-vidas, hotéis, calçadão de ondas e ciclofaixa | hotéis e praia |
 | **Vila Velha** | centro histórico: becos de paralelepípedo e casarões coloridos geminados | farmácias, lanchonetes, padarias, mercadinhos |
 | **Porto** | galpões, contêineres, guindastes, caminhões | — |
 
@@ -153,7 +153,7 @@ A cidade está sob operação policial. No começo só o **Centro** e o **Jardim
 
 Missões, empregos, orelhões e o tutorial só mandam você pra bairros abertos.
 
-> **O que tem disponível no começo.** Com só Centro e Jardim abertos, os dois postos de conserto, as lanchonetes das motocas, o terminal de ônibus e a Oficina do Zé ficam em bairros fechados. Os jeitos de ganhar dinheiro no início são as missões dos orelhões, o emprego de **taxista** (qualquer táxi da rua serve), o de **vigilante noturno** (mercadinhos e farmácia do Centro), a aposta no estádio e a raspadinha.
+> **O que tem disponível no começo.** Centro e Jardim já são grandes: têm os dois postos de conserto, a Oficina do Zé, a Pintura Express do Jardim, lanchonetes com motoca, mercadinhos, farmácias, padarias e boa parte dos pontos de ônibus. Dá pra fazer missões dos orelhões e trabalhar de **taxista**, **motoboy**, **motorista de busão**, **guincho** e **vigilante noturno** desde o início. Ficam fechados até liberar o bairro: a Pintura do Cajueiro, o Armas do Tonhão e o estacionamento do Brisa (Alto da Maresia).
 
 ## Dinheiro: como ganhar e onde gastar
 
