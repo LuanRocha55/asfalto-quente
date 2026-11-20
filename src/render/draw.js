@@ -1,7 +1,7 @@
 // Desenho do mundo: carros, pessoas, prédios em perspectiva
 import { ctx, CW, CH, DPR } from '../core/canvas.js';
 import { mulberry, clamp, lerp, hyp, shade } from '../core/utils.js';
-import { W, H, WATER, buildings, trees, zones, phones, tileAt } from '../world/map.js';
+import { T, W, H, WATER, buildings, trees, zones, phones, tileAt } from '../world/map.js';
 import { CHUNK, CPX, getChunk } from '../world/chunks.js';
 import { Car } from '../entities/vehicles.js';
 import { Ped } from '../entities/peds.js';
@@ -9,7 +9,7 @@ import { heatStars } from '../game/world.js';
 import { nearestCar } from '../game/player.js';
 import { drawHUD } from './hud.js';
 import { S, player, cam, keys } from '../core/state.js';
-import { lamps, special, pumps, NI, roadPx } from '../world/map.js';
+import { lamps, special, pumps, decor, VL, HL, NV, NH, isJunction } from '../world/map.js';
 import { signalized, signalState } from '../world/districts.js';
 import { darkness } from '../world/time.js';
 import { drawLighting, drawGlows } from './lighting.js';
@@ -42,6 +42,18 @@ export function drawCar(g,c){
     g.strokeStyle='#333';g.lineWidth=2;for(let i=0;i<5;i++){g.beginPath();g.moveTo(-hl+6+i*6,-hw+4);g.lineTo(-hl+6+i*6,hw-4);g.stroke();}
     g.fillStyle='#f57f17';g.fillRect(-hl-4,-2,10,4);g.fillStyle='#333';g.beginPath();g.arc(-hl-4,0,3,0,Math.PI*2);g.fill(); // gancho
     const on=Math.floor(S.gameTime*5)%2===0;g.fillStyle=on?'#ffb300':'#7a5a00';g.fillRect(hl-L*0.2,-hw+2,4,Wd-4);
+  } else if(c.type==='caminhao'){
+    g.fillStyle=shade(col,1.05);g.fillRect(-hl+2,-hw+2,L*0.74,Wd-4);g.strokeStyle='rgba(0,0,0,0.25)';g.lineWidth=1;
+    for(let i=1;i<6;i++){g.beginPath();g.moveTo(-hl+2+i*L*0.12,-hw+2);g.lineTo(-hl+2+i*L*0.12,hw-2);g.stroke();}
+    g.fillStyle='#455a64';g.fillRect(hl-L*0.24,-hw+1,L*0.22,Wd-2);g.fillStyle='#86c5da';g.fillRect(hl-6,-hw+4,4,Wd-8);
+  } else if(c.type==='suv'){
+    g.fillStyle='#86c5da';g.fillRect(hl-L*0.34,-hw+3,L*0.12,Wd-6);
+    g.fillStyle=shade(col,1.12);g.fillRect(-hl+L*0.12,-hw+3,L*0.5,Wd-6);
+    g.strokeStyle='#222';g.lineWidth=1.5;g.strokeRect(-hl+L*0.18,-hw+5,L*0.38,Wd-10);
+  } else if(c.type==='luxo'){
+    g.fillStyle='#5f8fa0';g.fillRect(hl-L*0.36,-hw+3,L*0.13,Wd-6);
+    g.fillStyle=shade(col,1.2);g.fillRect(-hl+L*0.22,-hw+3,L*0.38,Wd-6);
+    g.fillStyle='rgba(220,220,220,0.8)';g.fillRect(-hl+2,-hw+1,L-4,1.5);g.fillRect(-hl+2,hw-2.5,L-4,1.5);
   } else if(c.type==='busao'){
     g.fillStyle=shade(col,1.15);g.fillRect(-hl+4,-hw+3,L-10,Wd-6);
     g.fillStyle='#9fd3e8';g.fillRect(hl-7,-hw+3,4,Wd-6);
@@ -102,9 +114,9 @@ export function drawBuilding(g,b,camH){
   if(cam.x<x0){quad([x0,y0],[x0,y1],D,A,shade(b.wall,0.72*BR));wallLines([x0,y0],[x0,y1],A,D,'rgba(0,0,0,0.18)');wins([x0,y0],[x0,y1],A,D,3);}
   if(cam.x>x1){quad([x1,y0],[x1,y1],C,B,shade(b.wall,0.78*BR));wallLines([x1,y0],[x1,y1],B,C,'rgba(0,0,0,0.18)');wins([x1,y0],[x1,y1],B,C,4);}
   // telhado
-  quad(A,B,C,D,shade(b.roof,BR));
+  quad(A,B,C,D,shade(b.roof||shade(b.wall,0.8),BR));
   const k=camH/(camH-h);const rw=(x1-x0)*k, rh=(y1-y0)*k;
-  g.strokeStyle=shade(b.roof,1.35*BR);g.lineWidth=3;g.strokeRect(A[0]+2,A[1]+2,rw-4,rh-4);
+  g.strokeStyle=shade(b.roof||b.wall,1.35*BR);g.lineWidth=3;g.strokeRect(A[0]+2,A[1]+2,rw-4,rh-4);
   if(b.kind!=='b'){roofSign(g,b,A[0],A[1],rw,rh);return;}
   else{
     const r=mulberry(Math.floor(b.seed*1e9));
@@ -209,20 +221,31 @@ export function render(){
     g.fillStyle='rgba(0,0,0,0.3)';g.beginPath();g.arc(l.x+2,l.y+2,4,0,Math.PI*2);g.fill();
     g.fillStyle='#3d3d42';g.beginPath();g.arc(l.x,l.y,4,0,Math.PI*2);g.fill();
     g.fillStyle=NIGHT>0.05?'#fff1b8':'#c9c9c0';g.beginPath();g.arc(l.x,l.y,2,0,Math.PI*2);g.fill();}
+  // enfeites: guarda-sol, rede de vôlei, guindaste do porto
+  for(const d of decor){
+    if(d.type==='campo')continue;
+    if(d.x<vx0-120||d.x>vx1+120||d.y<vy0-120||d.y>vy1+120)continue;
+    if(d.type==='guarda-sol'){g.fillStyle='rgba(0,0,0,0.25)';g.beginPath();g.arc(d.x+5,d.y+5,15,0,Math.PI*2);g.fill();
+      for(let k=0;k<8;k++){g.fillStyle=k%2?d.c:'#ffffff';g.beginPath();g.moveTo(d.x,d.y);g.arc(d.x,d.y,15,k*Math.PI/4,(k+1)*Math.PI/4);g.closePath();g.fill();}}
+    else if(d.type==='volei'){g.strokeStyle='rgba(255,255,255,0.9)';g.lineWidth=2;g.strokeRect(d.x-60,d.y-30,120,60);g.strokeStyle='#333';g.lineWidth=3;g.beginPath();g.moveTo(d.x,d.y-38);g.lineTo(d.x,d.y+38);g.stroke();}
+    else if(d.type==='guindaste'){g.fillStyle='rgba(0,0,0,0.3)';g.fillRect(d.x-20,d.y-12,46,30);g.fillStyle='#f9a825';g.fillRect(d.x-22,d.y-16,44,30);
+      g.strokeStyle='#f9a825';g.lineWidth=6;g.beginPath();g.moveTo(d.x,d.y);g.lineTo(d.x,d.y+110);g.stroke();g.lineWidth=2;g.strokeStyle='#333';g.beginPath();g.moveTo(d.x,d.y+90);g.lineTo(d.x,d.y+130);g.stroke();}
+  }
   // bombas de gasolina
   for(const p of pumps){if(p.x<vx0||p.x>vx1||p.y<vy0||p.y>vy1)continue;g.fillStyle='#c9342a';g.fillRect(p.x-6,p.y-10,12,20);g.fillStyle='#f2f2ee';g.fillRect(p.x-4,p.y-7,8,6);}
   // semáforos e placas de rua
-  for(let iy=0;iy<NI;iy++)for(let ix=0;ix<NI;ix++){
-    const ox=roadPx(ix), oy=roadPx(iy);
-    if(ox+140<vx0||ox-20>vx1||oy+140<vy0||oy-20>vy1)continue;
-    // placa verde com nome da rua no canto
-    g.fillStyle='#1f6b3a';g.fillRect(ox+128+4,oy+128+4,20,8);g.fillStyle='#ffffff';g.fillRect(ox+128+6,oy+128+7,16,1.5);
-    if(!signalized(ix,iy))continue;
-    const sh=signalState(ix,iy,'h'), sv=signalState(ix,iy,'v');
-    trafficLight(g,ox-8,oy+128+8,Math.PI,sh);   // quem vem do oeste (indo pro leste)
-    trafficLight(g,ox+128+8,oy-8,0,sh);         // quem vem do leste
-    trafficLight(g,ox-8,oy-8,-Math.PI/2,sv);    // quem vem do norte
-    trafficLight(g,ox+128+8,oy+128+8,Math.PI/2,sv); // quem vem do sul
+  for(let j=0;j<NH;j++)for(let i=0;i<NV;i++){
+    const ox=VL[i].px, oy=HL[j].px;
+    if(ox+200<vx0||ox-200>vx1||oy+200<vy0||oy-200>vy1)continue;
+    if(!isJunction(i,j))continue;
+    const hv=VL[i].w*T/2, hh=HL[j].w*T/2;
+    g.fillStyle='#1f6b3a';g.fillRect(ox+hv+4,oy+hh+4,20,8);g.fillStyle='#ffffff';g.fillRect(ox+hv+6,oy+hh+7,16,1.5);
+    if(!signalized(i,j))continue;
+    const sh=signalState(i,j,'h'), sv=signalState(i,j,'v');
+    trafficLight(g,ox-hv-8,oy+hh+8,Math.PI,sh);   // quem vem do oeste
+    trafficLight(g,ox+hv+8,oy-hh-8,0,sh);         // quem vem do leste
+    trafficLight(g,ox-hv-8,oy-hh-8,-Math.PI/2,sv);// quem vem do norte
+    trafficLight(g,ox+hv+8,oy+hh+8,Math.PI/2,sv); // quem vem do sul
   }
   // orelhões
   for(const ph of phones){if(ph.x<vx0||ph.x>vx1||ph.y<vy0||ph.y>vy1)continue;
@@ -232,7 +255,7 @@ export function render(){
     g.fillStyle='#f2a900';g.beginPath();g.arc(ph.x,ph.y,10,0,Math.PI*2);g.fill();g.fillStyle='#ffd04a';g.beginPath();g.arc(ph.x-2,ph.y-2,6,0,Math.PI*2);g.fill();
     g.fillStyle='#3a3a3a';g.fillRect(ph.x-2,ph.y+4,4,6);}
   // pontos de ônibus
-  for(const s of BUS_STOPS){const px=s.x+s.side.x*72, py=s.y+s.side.y*72;if(px<vx0||px>vx1||py<vy0||py>vy1)continue;
+  for(const s of BUS_STOPS){const px=s.x+s.side.x*s.off, py=s.y+s.side.y*s.off;if(px<vx0||px>vx1||py<vy0||py>vy1)continue;
     g.fillStyle='rgba(0,0,0,0.3)';g.fillRect(px-13,py-6,28,14);g.fillStyle='#1565c0';g.fillRect(px-14,py-8,28,14);
     g.fillStyle='#ffffff';g.font='bold 8px monospace';g.textAlign='center';g.fillText('BUS',px,py+2);}
   for(const sp of jobSpots()){if(!sp.terminal&&!sp.ponto)continue;if(sp.x<vx0||sp.x>vx1||sp.y<vy0||sp.y>vy1)continue;

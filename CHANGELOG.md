@@ -5,6 +5,31 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.8.0 — 19/11/2026
+**Cidade nova** (o mapa foi refeito do zero; saves antigos continuam valendo, mas você recomeça no hospital)
+- Ruas de três tipos: **avenidas** de 4 faixas mão dupla, **ruas** de 2 faixas e **becos** estreitos de mão única
+- **Orla**: praia larga de areia com coqueiros, barracas, guarda-sóis, quadras de vôlei e posto de salva-vidas; hotéis altos de frente pro mar e calçadão de ondas
+- **Vila Velha**: centro histórico apertado, cheio de becos de paralelepípedo e casarões coloridos geminados
+- **Alto da Maresia** (bairro rico): mansões com piscina e jardim, condomínios de frente pro mar, quarteirões grandes
+- **Alto do Cajueiro**: periferia com casinhas de tijolo, terra batida e campinho de várzea
+- **Centro**: torres altas, praças e os principais serviços (hospital, delegacia)
+- **Porto**: galpões, pilhas de contêiner e guindastes no cais
+- Postes ao longo de todas as ruas, PARE na saída dos becos, semáforos em todos os cruzamentos com avenida
+
+**Trânsito**
+- Carros usam as faixas certas, trocam de faixa pra ultrapassar e pra fazer a conversão, respeitam a mão única dos becos
+- Avenidas com muito mais movimento; ônibus e caminhões não entram em beco
+- Carros diferentes por bairro: esportivos e sedãs de luxo no bairro rico, motos na periferia, caminhões no porto
+- Veículos novos: Sedã Executivo, Utilitário e Caminhão Baú
+
+**Polícia mais esperta**
+- Só sabe onde você está se alguém te viu; quando perde o contato, vai até o último lugar onde te viu e vasculha a área
+- Estrelas só caem quando ninguém te vê por alguns segundos
+- Parte das viaturas tenta te interceptar pela frente em vez de só seguir atrás; viaturas novas aparecem à frente de quem está fugindo
+- As viaturas se espalham pra te cercar em vez de empilhar
+- A partir de 3 estrelas: bloqueios atravessados na rua à frente
+- A pé: policiais descem da viatura, correm atrás de você, atiram (2+ estrelas) e te prendem se encostarem
+
 ## 0.7.0 — 19/11/2026
 **Save**
 - Salva sozinho a cada 45 segundos (fora de missão e sem estrelas), ao terminar missão e turno de emprego, e a cada compra

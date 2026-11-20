@@ -1,68 +1,46 @@
-// Bairros, avenidas, nomes de rua e semáforos
-import { T, BAND, PER, NI, O, CITY } from './map.js';
+// Bairros (visual de cada um), nomes de rua e semáforos
+import { T, VL, HL, NV, NH, segH, segV, degree } from './map.js';
+import { zoneAt } from './zoning.js';
 import { S } from '../core/state.js';
 
-// estilos visuais de cada bairro
 export const DISTRICTS = {
   centro:  { name:'CENTRO',            road:'#2f2f36', side:'#b8b5ad', sideStyle:'lajes' },
   orla:    { name:'ORLA',              road:'#3d3d45', side:'#e9e6dc', sideStyle:'ondas' },
   velha:   { name:'VILA VELHA',        road:'#6e655c', side:'#a85a4a', sideStyle:'tijolo', cobble:true },
   cajueiro:{ name:'ALTO DO CAJUEIRO',  road:'#48484e', side:'#9a968c', sideStyle:'rachado', worn:true },
   jardim:  { name:'JARDIM MARESIA',    road:'#3b3b42', side:'#a9a7a0', sideStyle:'grama', bumps:true },
+  rico:    { name:'ALTO DA MARESIA',   road:'#34343c', side:'#d8d2c4', sideStyle:'lajes', smooth:true },
+  porto:   { name:'PORTO',             road:'#45454a', side:'#8f8c85', sideStyle:'rachado' },
 };
+export const districtOfTile=(tx,ty)=>zoneAt(tx,ty);
+export const districtAt=(px,py)=>DISTRICTS[zoneAt(px/T|0,py/T|0)];
 
-// índices das ruas que são avenidas (nas duas direções)
-export const AVENUES = new Set([3,7,11]);
-export const RING = i => i===0 || i===NI-1;
-export const isAvenue = i => AVENUES.has(i);
-
-export function districtOfBlock(bi,bj){
-  bi=Math.max(0,Math.min(NI-2,bi)); bj=Math.max(0,Math.min(NI-2,bj));
-  if(bi===0||bj===0||bi===NI-2||bj===NI-2) return 'orla';
-  if(Math.hypot(bi-6.5,bj-6.5)<3.3) return 'centro';
-  if(bj>=7&&bi<7) return 'velha';
-  if(bj>=7) return 'cajueiro';
-  return 'jardim';
-}
-// bairro de um tile (ruas usam o quarteirão mais próximo)
-export function districtOfTile(tx,ty){
-  const cx=tx-O, cy=ty-O;
-  const bi=Math.floor((cx-BAND/2)/PER), bj=Math.floor((cy-BAND/2)/PER);
-  return districtOfBlock(bi,bj);
-}
-export const districtAt = (px,py) => DISTRICTS[districtOfTile(px/T|0,py/T|0)];
-
-// nomes fictícios das ruas
-const H_NAMES = ['Av. Beira-Mar','Rua das Jangadas','Rua do Farol','Av. Sol Nascente','Rua dos Pescadores','Rua da Rendeira','Rua das Gaivotas',
-  'Av. Central','Rua Coqueiral','Rua da Maré','Rua do Mangue','Av. Atlântica','Rua Areia Branca','Rua dos Ventos','Av. Beira-Mar'];
-const V_NAMES = ['Av. Beira-Mar','Rua da Brisa','Rua do Sal','Av. dos Coqueiros','Rua Tapioca','Rua da Rede','Rua do Caju',
-  'Av. Maresia','Rua Carnaúba','Rua Baião','Rua do Xote','Av. do Porto','Rua do Forró','Rua do Vaqueiro','Av. Beira-Mar'];
-export const hName = j => H_NAMES[j];
-export const vName = i => V_NAMES[i];
-
-// índice da rua horizontal/vertical em que um ponto está (ou -1)
-export function roadIndexAt(px,py){
-  const cx=(px/T|0)-O, cy=(py/T|0)-O;
-  const inX=cx>=0&&cx<CITY, inY=cy>=0&&cy<CITY;
-  const h=(inX&&inY&&cy%PER<BAND)?Math.floor(cy/PER):-1;
-  const v=(inX&&inY&&cx%PER<BAND)?Math.floor(cx/PER):-1;
-  return {h,v};
+// em que rua está um ponto (linha + trecho existente)
+export function roadAt(px,py){
+  for(let j=0;j<NH;j++){const L=HL[j];if(Math.abs(py-L.px)>L.w*T/2)continue;
+    for(let i=0;i<NV-1;i++)if(segH[j][i]&&px>=VL[i].px-VL[i].w*T/2&&px<=VL[i+1].px+VL[i+1].w*T/2)return{L,horiz:true};}
+  for(let i=0;i<NV;i++){const L=VL[i];if(Math.abs(px-L.px)>L.w*T/2)continue;
+    for(let j=0;j<NH-1;j++)if(segV[i][j]&&py>=HL[j].px-HL[j].w*T/2&&py<=HL[j+1].px+HL[j+1].w*T/2)return{L,horiz:false};}
+  return null;
 }
 export function streetAt(px,py){
-  const {h,v}=roadIndexAt(px,py);
-  if(h>=0&&v>=0) return hName(h)+' × '+vName(v);
-  if(h>=0) return hName(h);
-  if(v>=0) return vName(v);
-  return '';
+  let h=null,v=null;
+  for(let j=0;j<NH;j++){const L=HL[j];if(Math.abs(py-L.px)<=L.w*T/2){for(let i=0;i<NV-1;i++)if(segH[j][i]&&px>=VL[i].px-64&&px<=VL[i+1].px+64){h=L;break;}}}
+  for(let i=0;i<NV;i++){const L=VL[i];if(Math.abs(px-L.px)<=L.w*T/2){for(let j=0;j<NH-1;j++)if(segV[i][j]&&py>=HL[j].px-64&&py<=HL[j+1].px+64){v=L;break;}}}
+  if(h&&v)return h.name+' × '+v.name;
+  return (h||v||{name:''}).name;
 }
 
-// ---- semáforos: em todo cruzamento que tem pelo menos uma avenida ----
-export const signalized = (ix,iy) => (isAvenue(ix)||isAvenue(iy)) && !RING(ix) && !RING(iy);
-const CYCLE = 15; // verde 6s, amarelo 1.5s pra cada direção
-// axis 'h' = quem anda na horizontal, 'v' = vertical. retorna 'g' | 'y' | 'r'
-export function signalState(ix,iy,axis){
-  const t=(S.gameTime+(ix*3+iy*5)%CYCLE)%CYCLE;
-  const hs = t<6?'g':t<7.5?'y':'r';
-  const vs = t<7.5?'r':t<13.5?'g':'y';
+// semáforo: cruzamento (3+ saídas) que tem avenida
+export function signalized(i,j){
+  if(i<0||j<0||i>=NV||j>=NH)return false;
+  if(degree(i,j)<3)return false;
+  return VL[i].type==='ave'||HL[j].type==='ave';
+}
+const CYCLE=16; // verde 6.5s e amarelo 1.5s pra cada direção
+export function signalState(i,j,axis){
+  const t=(S.gameTime+(i*3+j*5)%CYCLE)%CYCLE;
+  const hs=t<6.5?'g':t<8?'y':'r';
+  const vs=t<8?'r':t<14.5?'g':'y';
   return axis==='h'?hs:vs;
 }

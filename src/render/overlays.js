@@ -3,7 +3,8 @@ import { ctx, CW, CH, DPR } from '../core/canvas.js';
 import { clamp, fmtMoney } from '../core/utils.js';
 import { T, W, buildings, phones } from '../world/map.js';
 import { mini } from '../world/chunks.js';
-import { districtOfBlock, DISTRICTS } from '../world/districts.js';
+import { DISTRICTS } from '../world/districts.js';
+import { ZONE_LABELS } from '../world/zoning.js';
 import { jobSpots } from '../game/jobs.js';
 import { isDisabled, whyOf, priceLabel } from '../game/interiors.js';
 import { drawIcon, ICONS, KIND_ICON } from './icons.js';
@@ -24,10 +25,7 @@ export function drawBigMap(){
   g.strokeStyle='rgba(255,255,255,0.3)';g.lineWidth=2;g.strokeRect(ox,oy,size,size);
   txt(g,'MAPA DE VILA MARESIA',ox,oy-16,18,'#ffe9a0');
   // nomes dos bairros
-  const blk=(bi,bj)=>toS((12+bi*16+10)*T,(12+bj*16+10)*T);
-  const labels=[['centro',6.5,6.5],['jardim',6.5,3],['velha',3,10.5],['cajueiro',10,10.5]];
-  for(const [k,bi,bj] of labels){const p=blk(bi,bj);g.globalAlpha=0.75;txt(g,DISTRICTS[k].name,p[0],p[1],Math.round(clamp(size/45,10,16)),'#ffffff','center');g.globalAlpha=1;}
-  {const p=blk(6.5,-0.6);g.globalAlpha=0.75;txt(g,'ORLA (toda a volta)',p[0],p[1],Math.round(clamp(size/50,9,14)),'#bfe8ff','center');g.globalAlpha=1;}
+  for(const [k,[tx,ty]] of Object.entries(ZONE_LABELS)){const p=toS(tx*T,ty*T);g.globalAlpha=0.8;txt(g,DISTRICTS[k].name,p[0],p[1],Math.round(clamp(size/48,10,15)),'#ffffff','center');g.globalAlpha=1;}
   // ícones
   const isz=Math.round(clamp(size/42,12,22));
   for(const b of buildings){const k=KIND_ICON[b.kind];if(!k)continue;const p=toS((b.x0+b.x1)/2,(b.y0+b.y1)/2);drawIcon(g,k,p[0],p[1],isz);}

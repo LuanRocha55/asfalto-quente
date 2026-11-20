@@ -1,7 +1,8 @@
 // Missões dos orelhões
 import { saveGame } from './save.js';
 import { rand, randi, pick, hyp, fmtMoney } from '../core/utils.js';
-import { T, NI, O, CITY, PX, SIDE, roadPx, phones, special, tileAt } from '../world/map.js';
+import { T, W, H, SIDE, phones, special, tileAt } from '../world/map.js';
+import { randomRoadPoint } from '../ai/traffic.js';
 import { sfxTone, sfxWin } from '../audio/audio.js';
 import { Car } from '../entities/vehicles.js';
 import { Ped } from '../entities/peds.js';
@@ -10,13 +11,12 @@ import { update } from './update.js';
 import { S, player } from '../core/state.js';
 
 export function roadPointFar(dmin,dmax){
-  for(let i=0;i<60;i++){const horiz=Math.random()<.5,j=randi(0,NI-1),k=randi(0,NI-2);
-    const along=roadPx(k)+160+Math.random()*(PX-220);const perp=roadPx(j)+64;
-    const x=horiz?along:perp,y=horiz?perp:along;const d=hyp(x-player.x,y-player.y);if(d>=dmin&&d<=dmax)return{x,y};}
-  return{x:roadPx(7)+64,y:roadPx(7)+64};
+  let best=null;
+  for(let i=0;i<120;i++){const p=randomRoadPoint();const d=hyp(p.x-player.x,p.y-player.y);if(d>=dmin&&d<=dmax)return{x:p.x,y:p.y};if(!best||Math.abs(d-dmin)<Math.abs(hyp(best.x-player.x,best.y-player.y)-dmin))best=p;}
+  return{x:best.x,y:best.y};
 }
 export function sidewalkPointFar(dmin,dmax){
-  for(let i=0;i<200;i++){const x=rand(O*T,(O+CITY)*T),y=rand(O*T,(O+CITY)*T);if(tileAt(x,y)!==SIDE)continue;const d=hyp(x-player.x,y-player.y);if(d>=dmin&&d<=dmax)return{x,y};}
+  for(let i=0;i<400;i++){const x=Math.random()*W*T,y=Math.random()*H*T;if(tileAt(x,y)!==SIDE)continue;const d=hyp(x-player.x,y-player.y);if(d>=dmin&&d<=dmax)return{x:(Math.floor(x/T)+.5)*T,y:(Math.floor(y/T)+.5)*T};}
   return phones[0];
 }
 export const MISSIONS=[

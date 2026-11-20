@@ -2,6 +2,7 @@
 import { VERSION } from '../core/version.js';
 import { Car, CT } from '../entities/vehicles.js';
 import { heatStars, msg } from './world.js';
+import { solidAt } from '../world/map.js';
 import { S, player, cam } from '../core/state.js';
 
 const KEY='aq_save';
@@ -31,7 +32,11 @@ export function loadGame(){
   if(player.weapon!=='punho'&&!(player.ammo[player.weapon]>0)) player.weapon='punho';
   Object.assign(player.skills, d.skills||{});
   S.missionIdx=d.missionIdx||0; S.tod=(typeof d.tod==='number')?d.tod:16.5; S.playTime=d.playTime||0;
-  if(typeof d.x==='number'&&isFinite(d.x)){ player.x=d.x; player.y=d.y; }
+  // saves de antes da cidade nova (0.8.0) não têm posição válida: começa no hospital
+  const [ma,mi]=(d.v||'0.0').split('.').map(Number);
+  const sameCity=ma>0||mi>=8;
+  if(sameCity&&typeof d.x==='number'&&isFinite(d.x)&&!solidAt(d.x,d.y)){ player.x=d.x; player.y=d.y; }
+  else d.car=null;
   if(d.car&&CT[d.car.type]){
     const c=new Car(d.car.type,player.x,player.y,d.car.a||0,d.car.color);
     c.health=d.car.health||c.t.hp; c.driver='player'; S.cars.push(c); player.car=c;

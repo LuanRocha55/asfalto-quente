@@ -1,17 +1,13 @@
-// Geração da cidade: tiles, prédios, árvores, zonas e orelhões
+// Geração da cidade: malha de ruas (avenidas, ruas, becos), bairros, prédios, praia e lugares especiais
 import { rng, rand, pick } from '../core/utils.js';
-import { S } from '../core/state.js';
+import { zoneAt, VV, BEACH_X0, BEACH_X1 } from './zoning.js';
 
-export const T=32, BAND=4, PER=16, NI=15, O=12;
-export const CITY=(NI-1)*PER+BAND;              // 228 tiles
-export const W=CITY+O*2, H=W;                    // 252
-export const PX=PER*T;                           // 512 px entre cruzamentos
+export const T=32;
+export const W=262, H=262;
 export const WORLD=W*T;
-export const WATER=0,SAND=1,ROAD=2,SIDE=3,GRASS=4,BUILD=5,TREE=6,PARK=7;
+export const WATER=0,SAND=1,ROAD=2,SIDE=3,GRASS=4,BUILD=5,TREE=6,PARK=7,POOL=8,DIRT=9;
 export const map=new Uint8Array(W*H);
-export const roadPx=i=>(O+i*PER)*T;
-export const LANE_OFF=[96,32,32,96]; // E,S,O,N
-export const DX=[1,0,-1,0], DY=[0,1,0,-1];
+export const DX=[1,0,-1,0], DY=[0,1,0,-1];   // 0=leste 1=sul 2=oeste 3=norte
 
 export const buildings=[];
 export const trees=[];
@@ -19,142 +15,359 @@ export const zones=[];
 export const phones=[];
 export const lamps=[];
 export const pumps=[];
+export const decor=[];        // enfeites sem colisão (guarda-sol, rede de vôlei, guindaste...)
 export let hospitalSpot, policeSpot;
 export const special={};
 
 export function tileAt(px,py){const x=px/T|0,y=py/T|0;if(x<0||y<0||x>=W||y>=H)return WATER;return map[y*W+x];}
-export function isSolidT(t){return t===WATER||t===BUILD||t===TREE;}
+export function tileOf(x,y){if(x<0||y<0||x>=W||y>=H)return WATER;return map[y*W+x];}
+export function isSolidT(t){return t===WATER||t===BUILD||t===TREE||t===POOL;}
 export function solidAt(px,py){return isSolidT(tileAt(px,py));}
 export function setT(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)map[y*W+x]=t;}
+export function fillLot(x0,y0,w,h,t){for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++)setT(x,y,t);}
 
 export const WALLS=['#d98b5f','#e6c27a','#7fb7a8','#e89aa3','#efe3c8','#c9a3d4','#8fb1d9','#d6d06b','#b8846a','#9ccf8f','#f0b37e','#a7a2a0'];
 export const ROOFS=['#6b6460','#5d6670','#7a6a5a','#4f5a52','#6e5c6a','#857b6c'];
 
+// =====================================================================
+//  MALHA DE RUAS
+//  Linhas verticais (VL) e horizontais (HL). Cada uma tem largura em tiles
+//  e um tipo: 'ave' (4 faixas, mão dupla), 'rua' (2 faixas, mão dupla) ou
+//  'beco' (1 faixa, mão única, só na Vila Velha).
+// =====================================================================
+const LANES={ave:2,rua:1,beco:1};
+const WIDTH={ave:8,rua:4,beco:2};
+function mkLines(list){return list.sort((a,b)=>a[0]-b[0]).map(([c,type,name],idx)=>({idx,c,px:c*T,type,w:WIDTH[type],lanes:LANES[type],name,oneway:0}));}
+export const VL=mkLines([
+  [16,'rua','Rua da Brisa'],[42,'rua','Rua do Sal'],[68,'ave','Av. dos Coqueiros'],[94,'rua','Rua Tapioca'],[120,'rua','Rua da Rede'],
+  [146,'ave','Av. Maresia'],[172,'rua','Rua Carnaúba'],[198,'rua','Rua do Farol'],[222,'ave','Av. Beira-Mar'],
+  [29,'beco','Beco do Vaqueiro'],[55,'beco','Beco da Rendeira'],[81,'beco','Beco do Xote'],[107,'beco','Beco do Baião'],
+]);
+export const HL=mkLines([
+  [16,'rua','Rua das Jangadas'],[42,'rua','Rua do Cajueiro'],[68,'ave','Av. Sol Nascente'],[94,'rua','Rua dos Pescadores'],[120,'rua','Rua das Gaivotas'],
+  [146,'ave','Av. Atlântica'],[172,'rua','Rua da Maré'],[198,'rua','Rua do Mangue'],[224,'rua','Rua Areia Branca'],[248,'rua','Av. do Porto'],
+  [159,'beco','Beco das Flores'],[185,'beco','Beco do Sino'],[211,'beco','Beco da Lua'],[236,'beco','Beco dos Ventos'],
+]);
+// becos alternam o sentido (mão única): +1 = leste/sul, -1 = oeste/norte
+{let k=0;for(const l of VL)if(l.type==='beco')l.oneway=(k++%2)?1:-1;}
+{let k=0;for(const l of HL)if(l.type==='beco')l.oneway=(k++%2)?1:-1;}
+export const NV=VL.length, NH=HL.length;
+
+// segH[j][i]: trecho da linha horizontal j entre as verticais i e i+1
+// segV[i][j]: trecho da linha vertical i entre as horizontais j e j+1
+export const segH=HL.map(()=>new Array(NV-1).fill(false));
+export const segV=VL.map(()=>new Array(NH-1).fill(false));
+const inVV=(x,y)=>x>=VV.x0&&x<=VV.x1&&y>=VV.y0&&y<=VV.y1;
+
+export const nodeKey=(i,j)=>i+j*NV;
+export function degree(i,j){let d=0;if(i>0&&segH[j][i-1])d++;if(i<NV-1&&segH[j][i])d++;if(j>0&&segV[i][j-1])d++;if(j<NH-1&&segV[i][j])d++;return d;}
+// existe trecho saindo do nó (i,j) na direção d?
+export function hasSeg(i,j,d){
+  if(d===0)return i<NV-1&&segH[j][i]; if(d===2)return i>0&&segH[j][i-1];
+  if(d===1)return j<NH-1&&segV[i][j]; return j>0&&segV[i][j-1];
+}
+// linha usada por quem anda na direção d a partir do nó (i,j)
+export const lineFor=(i,j,d)=>d%2===0?HL[j]:VL[i];
+// sentido permitido numa linha (mão única)
+export function dirAllowed(line,d){
+  if(!line.oneway)return true;
+  const plus=(d===0||d===1);
+  return line.oneway>0?plus:!plus;
+}
+// faixas de uma linha para a direção d: coordenada perpendicular em px, da faixa de dentro (0) para a de fora
+export function laneCoords(line,d){
+  if(line.oneway)return [line.px];
+  const sign=(d===0||d===3)?1:-1;
+  const out=[];for(let k=0;k<line.lanes;k++)out.push(line.px+sign*(32+64*k));
+  return out;
+}
+export const nodePos=(i,j)=>({x:VL[i].px,y:HL[j].px});
+// nó real de cruzamento (3 ou 4 saídas)
+export const isJunction=(i,j)=>degree(i,j)>=3;
+
+function buildGraph(){
+  for(let j=0;j<NH;j++)for(let i=0;i<NV-1;i++){
+    const L=HL[j],x0=VL[i].c,x1=VL[i+1].c;
+    segH[j][i]= L.type!=='beco' || (inVV(x0,L.c)&&inVV(x1,L.c));
+  }
+  for(let i=0;i<NV;i++)for(let j=0;j<NH-1;j++){
+    const L=VL[i],y0=HL[j].c,y1=HL[j+1].c;
+    segV[i][j]= L.type!=='beco' || (inVV(L.c,y0)&&inVV(L.c,y1));
+  }
+  // bairro rico e periferia: tira alguns trechos de rua (quarteirões maiores e mais irregulares)
+  const tryRemove=(isH,a,b,prob)=>{
+    const L=isH?HL[a]:VL[a]; if(L.type!=='rua')return;
+    const n1=isH?[b,a]:[a,b], n2=isH?[b+1,a]:[a,b+1];
+    if(L.idx===0||L.idx===(isH?NH:NV)-1)return;
+    if(rng()>prob)return;
+    if(degree(n1[0],n1[1])<3||degree(n2[0],n2[1])<3)return;
+    if(isH)segH[a][b]=false;else segV[a][b]=false;
+  };
+  for(let j=0;j<NH;j++)for(let i=0;i<NV-1;i++){if(!segH[j][i])continue;const z=zoneAt((VL[i].c+VL[i+1].c)/2,HL[j].c);
+    if(z==='rico')tryRemove(true,j,i,0.45);else if(z==='cajueiro')tryRemove(true,j,i,0.15);}
+  for(let i=0;i<NV;i++)for(let j=0;j<NH-1;j++){if(!segV[i][j])continue;const z=zoneAt(VL[i].c,(HL[j].c+HL[j+1].c)/2);
+    if(z==='rico')tryRemove(false,i,j,0.45);else if(z==='cajueiro')tryRemove(false,i,j,0.15);}
+}
+
+// largura da calçada por bairro
+const SIDEWALK={centro:2,rico:2,orla:2,jardim:1,cajueiro:1,velha:1,porto:1};
+
+// =====================================================================
+//  GERAÇÃO
+// =====================================================================
 export function genMap(){
   map.fill(WATER);
+  buildGraph();
+  // terra firme
+  for(let y=10;y<254;y++)for(let x=10;x<BEACH_X1;x++)map[y*W+x]=GRASS;
+  for(let y=10;y<254;y++)for(let x=10;x<BEACH_X1;x++){
+    if(x<13||y<13)map[y*W+x]=SAND;                 // borda oeste/norte
+    if(x>=BEACH_X0)map[y*W+x]=SAND;                 // praia
+    if(y>=250&&x<BEACH_X0)map[y*W+x]=PARK;          // cais do porto
+  }
+  // ruas
+  for(let j=0;j<NH;j++)for(let i=0;i<NV-1;i++)if(segH[j][i]){const L=HL[j];fillLot(Math.round(VL[i].c),Math.round(L.c-L.w/2),Math.round(VL[i+1].c-VL[i].c),L.w,ROAD);}
+  for(let i=0;i<NV;i++)for(let j=0;j<NH-1;j++)if(segV[i][j]){const L=VL[i];fillLot(Math.round(L.c-L.w/2),Math.round(HL[j].c),L.w,Math.round(HL[j+1].c-HL[j].c),ROAD);}
+  for(let j=0;j<NH;j++)for(let i=0;i<NV;i++){
+    if(!degree(i,j))continue;
+    const hv=(hasSeg(i,j,1)||hasSeg(i,j,3))?VL[i].w:0, hh=(hasSeg(i,j,0)||hasSeg(i,j,2))?HL[j].w:0;
+    const wv=hv||0, wh=hh||0;
+    fillLot(Math.round(VL[i].c-wv/2),Math.round(HL[j].c-wh/2),wv,wh,ROAD);
+    if(wv&&wh)fillLot(Math.round(VL[i].c-VL[i].w/2),Math.round(HL[j].c-HL[j].w/2),VL[i].w,HL[j].w,ROAD);
+  }
+  // calçadas em volta das ruas
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-    const cx=x-O, cy=y-O;
-    if(cx>=-3&&cx<CITY+3&&cy>=-3&&cy<CITY+3) map[y*W+x]=SAND;
-    if(cx>=0&&cx<CITY&&cy>=0&&cy<CITY){
-      const rx=cx%PER<BAND, ry=cy%PER<BAND;
-      if(rx||ry) map[y*W+x]=ROAD;
-      else{const lx=cx%PER-BAND, ly=cy%PER-BAND;
-        map[y*W+x]=(lx===0||lx===11||ly===0||ly===11)?SIDE:GRASS;}
+    if(map[y*W+x]!==ROAD)continue;
+    for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+      const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;
+      const t=map[ny*W+nx];if(t!==GRASS&&t!==SAND)continue;
+      const sw=SIDEWALK[zoneAt(nx,ny)]||1;
+      if(Math.max(Math.abs(dx),Math.abs(dy))<=sw&&!(t===SAND&&nx>=BEACH_X0))map[ny*W+nx]=SIDE;
     }
   }
-  const specials={'2,2':'hospital','11,3':'policia','5,9':'pintura','10,11':'pintura2','3,11':'ze','6,3':'estac','12,8':'estac2','7,12':'estac3','9,6':'armas','4,5':'posto','10,2':'posto2','1,2':'casa'};
-  for(let bj=0;bj<NI-1;bj++)for(let bi=0;bi<NI-1;bi++){
-    const ix=O+bi*PER+BAND+1, iy=O+bj*PER+BAND+1; // interior 10x10
-    const key=bi+','+bj; const sp=specials[key];
-    const cxd=Math.abs(bi-6.5), cyd=Math.abs(bj-6.5);
-    const downtown=Math.max(0,1-Math.hypot(cxd,cyd)/7);
-    if(sp==='hospital'||sp==='policia'){
-      fillLot(ix,iy,10,6,BUILD);
-      for(let y=iy+6;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);
-      buildings.push({x0:ix*T,y0:iy*T,x1:(ix+10)*T,y1:(iy+6)*T,h:34,wall:sp==='hospital'?'#f2f2ee':'#c8d2e0',roof:sp==='hospital'?'#e9e9e4':'#3c5a8a',kind:sp,seed:rng()});
-      const spot={x:(ix+5)*T,y:(iy+10)*T+T*1.5};
-      if(sp==='hospital')hospitalSpot=spot;else policeSpot=spot;
-      continue;
-    }
-    if(sp==='casa'){
-      // quintal com a casa do jogador no meio
-      for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,GRASS);
-      for(let y=iy+7;y<iy+10;y++)setT(ix+4,y,SIDE),setT(ix+5,y,SIDE);
-      fillLot(ix+2,iy+1,6,6,BUILD);
-      const b={x0:(ix+2)*T,y0:(iy+1)*T,x1:(ix+8)*T,y1:(iy+7)*T,h:22,wall:'#f0e0c0',roof:'#9c4a32',kind:'casa',seed:rng()};
-      buildings.push(b);special.casa=b;continue;
-    }
-    if(sp==='posto'||sp==='posto2'){
-      for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);
-      fillLot(ix,iy,10,2,BUILD);
-      buildings.push({x0:ix*T,y0:iy*T,x1:(ix+10)*T,y1:(iy+2)*T,h:16,wall:'#e9e2d0',roof:'#c9342a',kind:'lojaposto',seed:rng()});
-      // cobertura das bombas: não é sólida, os carros passam por baixo
-      buildings.push({x0:(ix+1.5)*T,y0:(iy+3.5)*T,x1:(ix+8.5)*T,y1:(iy+8.5)*T,h:20,wall:'#dddddd',roof:'#f2f2ee',kind:'canopy',seed:rng()});
-      for(let i=0;i<3;i++)pumps.push({x:(ix+3+i*2)*T,y:(iy+6)*T});
-      const z={x0:(ix+1.5)*T,y0:(iy+3.5)*T,x1:(ix+8.5)*T,y1:(iy+8.5)*T,type:'posto',label:'CONSERTO $150'};
-      zones.push(z); special[sp]=z; continue;
-    }
-    if(sp==='armas'){
-      for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);
-      fillLot(ix,iy,10,3,BUILD);
-      buildings.push({x0:ix*T,y0:iy*T,x1:(ix+10)*T,y1:(iy+3)*T,h:24,wall:'#8a3b2f',roof:'#4a2420',kind:'armas',seed:rng()});
-      const z={x0:(ix+1)*T,y0:(iy+4)*T,x1:(ix+9)*T,y1:(iy+9)*T,type:'armas',label:'A PÉ: PISA NA ARMA PRA COMPRAR',pads:[]};
-      ['pistola','escopeta','smg'].forEach((w,i)=>z.pads.push({x0:(ix+1.5+i*2.5)*T,y0:(iy+5)*T,x1:(ix+3.5+i*2.5)*T,y1:(iy+8)*T,weapon:w}));
-      zones.push(z); special.armas=z; continue;
-    }
-    if(sp==='pintura'||sp==='pintura2'||sp==='ze'){
-      for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);
-      fillLot(ix,iy,10,3,BUILD);
-      buildings.push({x0:ix*T,y0:iy*T,x1:(ix+10)*T,y1:(iy+3)*T,h:22,wall:sp==='ze'?'#b5651d':'#2f8f6f',roof:sp==='ze'?'#6a4a2a':'#226b52',kind:sp,seed:rng()});
-      const z={x0:(ix+1)*T,y0:(iy+4)*T,x1:(ix+9)*T,y1:(iy+9)*T,type:sp==='ze'?'ze':'pintura',label:sp==='ze'?'OFICINA DO ZÉ':'PINTURA EXPRESS $500'};
-      zones.push(z); special[sp]=z; continue;
-    }
-    if(sp&&sp.startsWith('estac')){
-      for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++)setT(x,y,PARK);
-      special[sp]={x:(ix+5)*T,y:(iy+5)*T};continue;
-    }
-    const r=rng();
-    if(r<0.11&&downtown<0.6){ // praça
-      for(let y=iy;y<iy+10;y++)for(let x=ix;x<ix+10;x++){
-        const lx=x-ix, ly=y-iy;
-        if(lx===4||lx===5||ly===4||ly===5) setT(x,y,SIDE);
-        else if(rng()<0.22){setT(x,y,TREE);trees.push({x:(x+.5)*T,y:(y+.5)*T,r:rand(13,18),c:pick(['#2e7d32','#388e3c','#33691e','#2f6b3a'])});}
-      }
-      continue;
-    }
-    // lotes de prédios
-    const pattern=rng();
-    let lots=[];
-    if(pattern<0.25) lots=[[0,0,10,10]];
-    else if(pattern<0.55) lots=rng()<.5?[[0,0,5,10],[5,0,5,10]]:[[0,0,10,5],[0,5,10,5]];
-    else if(pattern<0.85) lots=[[0,0,5,5],[5,0,5,5],[0,5,5,5],[5,5,5,5]];
-    else lots=[[0,0,6,10],[6,0,4,4],[6,6,4,4]];
-    for(const [lx,ly,lw,lh] of lots){
-      // pequena margem às vezes (pátio)
-      const inset=rng()<0.3?1:0;
-      const bx=ix+lx+inset, by=iy+ly+inset, bw=lw-inset*2, bh=lh-inset*2;
-      if(bw<2||bh<2)continue;
-      fillLot(bx,by,bw,bh,BUILD);
-      const h=Math.round(18+rng()*30+downtown*downtown*90*rng()+downtown*20);
-      buildings.push({x0:bx*T,y0:by*T,x1:(bx+bw)*T,y1:(by+bh)*T,h,wall:WALLS[Math.floor(rng()*WALLS.length)],roof:ROOFS[Math.floor(rng()*ROOFS.length)],kind:'b',seed:rng()});
-      if(inset){ // pátio vira calçada
-        for(let y=iy+ly;y<iy+ly+lh;y++)for(let x=ix+lx;x<ix+lx+lw;x++)if(map[y*W+x]===GRASS)setT(x,y,rng()<.5?GRASS:SIDE);
-      }
-    }
+  // calçadão da orla (entre a Beira-Mar e a areia)
+  for(let y=13;y<250;y++)for(let x=226;x<BEACH_X0;x++)if(map[y*W+x]!==ROAD)map[y*W+x]=SIDE;
+
+  // quarteirões
+  const cells=[];
+  for(let j=0;j<NH-1;j++)for(let i=0;i<NV-1;i++){
+    const L=VL[i],R=VL[i+1],U=HL[j],D=HL[j+1];
+    const zc=zoneAt((L.c+R.c)/2,(U.c+D.c)/2), sw=SIDEWALK[zc]||1;
+    const left=segV[i][j]?L.w/2+sw:0, right=segV[i+1][j]?R.w/2+sw:0, top=segH[j][i]?U.w/2+sw:0, bot=segH[j+1][i]?D.w/2+sw:0;
+    const x0=Math.ceil(L.c+left), x1=Math.floor(R.c-right), y0=Math.ceil(U.c+top), y1=Math.floor(D.c-bot);
+    if(x1-x0<2||y1-y0<2)continue;
+    if(x0>=226)continue; // nada depois da Beira-Mar (praia)
+    cells.push({i,j,x0,y0,x1,y1,w:x1-x0,h:y1-y0,zone:zc,cx:(x0+x1)/2,cy:(y0+y1)/2,used:false});
   }
-  // alguns prédios viram comércio com placa no telhado
-  const POI={farmacia:{roof:'#f2f2ee',wall:'#d9e8d9'},mercadinho:{roof:'#e8a33a',wall:'#f0d9a8'},padaria:{roof:'#b9824a',wall:'#efdcc0'},
-    escola:{roof:'#3f6fb0',wall:'#e7e0c9'},lanchonete:{roof:'#c0392b',wall:'#f3d36b'}};
-  for(const b of buildings){
-    if(b.kind!=='b')continue;
-    const w=(b.x1-b.x0)/T, h=(b.y1-b.y0)/T; if(w<4||h<4)continue;
-    const r=rng(); let k=null;
-    if(r<0.05)k='farmacia';else if(r<0.10)k='mercadinho';else if(r<0.14)k='padaria';else if(r<0.18&&w>=5&&h>=5)k='escola';else if(r<0.22)k='lanchonete';
-    if(k){b.kind=k;b.roof=POI[k].roof;b.wall=POI[k].wall;b.h=Math.min(b.h,24);}
+  placeSpecials(cells);
+  for(const c of cells)if(!c.used)fillCell(c);
+  beach();
+  port();
+  assignCommerce();
+  placePhones(cells);
+  placeLamps();
+}
+
+// ---------- lugares especiais ----------
+function takeCell(cells,zone,tx,ty,minW=12,minH=12){
+  let best=null,bd=1e9;
+  for(const c of cells){if(c.used||c.zone!==zone||c.w<minW||c.h<minH)continue;const d=Math.hypot(c.cx-tx,c.cy-ty);if(d<bd){bd=d;best=c;}}
+  if(!best)for(const c of cells){if(c.used||c.w<minW||c.h<minH)continue;const d=Math.hypot(c.cx-tx,c.cy-ty);if(d<bd){bd=d;best=c;}}
+  if(best)best.used=true;
+  return best;
+}
+const pushB=(x0,y0,w,h,o)=>{fillLot(x0,y0,w,h,BUILD);const b=Object.assign({x0:x0*T,y0:y0*T,x1:(x0+w)*T,y1:(y0+h)*T,seed:rng()},o);buildings.push(b);return b;};
+function placeSpecials(cells){
+  // hospital e delegacia: prédio em cima, estacionamento embaixo
+  for(const [kind,tx,ty] of [['hospital',128,132],['policia',180,186]]){
+    const c=takeCell(cells,'centro',tx,ty);if(!c)continue;
+    fillLot(c.x0,c.y0,c.w,c.h,PARK);
+    const bh=Math.round(c.h*0.6);
+    pushB(c.x0,c.y0,c.w,bh,{h:kind==='hospital'?40:30,wall:kind==='hospital'?'#f2f2ee':'#c8d2e0',roof:kind==='hospital'?'#e9e9e4':'#2e4d86',kind});
+    const spot={x:(c.x0+c.w/2)*T,y:(c.y1+0.6)*T};
+    if(kind==='hospital')hospitalSpot=spot;else policeSpot=spot;
   }
-  // árvores na orla
-  for(let i=0;i<90;i++){
-    const side=Math.floor(rng()*4); const t=O+Math.floor(rng()*CITY);
-    let x,y; if(side===0){x=t;y=O-2;}else if(side===1){x=t;y=O+CITY+1;}else if(side===2){x=O-2;y=t;}else{x=O+CITY+1;y=t;}
-    if(map[y*W+x]===SAND&&rng()<.5){setT(x,y,TREE);trees.push({x:(x+.5)*T,y:(y+.5)*T,r:rand(12,16),c:'#3f8f3a',palm:true});}
+  // garagens com zona de entrada (pintura, Zé, armas)
+  const garage=(zone,tx,ty,sp,wall,roof,type,label)=>{
+    const c=takeCell(cells,zone,tx,ty);if(!c)return null;
+    fillLot(c.x0,c.y0,c.w,c.h,PARK);
+    const bh=Math.max(3,Math.round(c.h*0.25));
+    pushB(c.x0,c.y0,c.w,bh,{h:22,wall,roof,kind:sp});
+    const z={x0:(c.x0+1)*T,y0:(c.y0+bh+1)*T,x1:(c.x1-1)*T,y1:(c.y1-1)*T,type,label};
+    zones.push(z);special[sp]=z;return {c,z,bh};
+  };
+  garage('jardim',120,30,'pintura','#2f8f6f','#226b52','pintura','PINTURA EXPRESS $500');
+  garage('cajueiro',30,120,'pintura2','#2f8f6f','#226b52','pintura','PINTURA EXPRESS $500');
+  garage('porto',160,236,'ze','#b5651d','#6a4a2a','ze','OFICINA DO ZÉ');
+  {const g=garage('cajueiro',55,100,'armas','#8a3b2f','#4a2420','armas','A PÉ: PISA NA ARMA PRA COMPRAR');
+    if(g){const {z}=g;z.pads=[];const pw=(z.x1-z.x0)/3;
+      ['pistola','escopeta','smg'].forEach((w,i)=>z.pads.push({x0:z.x0+pw*i+12,y0:z.y0+20,x1:z.x0+pw*(i+1)-12,y1:z.y1-12,weapon:w}));}}
+  // postos de gasolina, de frente pra avenida
+  for(const [sp,zone,tx,ty] of [['posto','centro',110,110],['posto2','jardim',135,58]]){
+    const c=takeCell(cells,zone,tx,ty);if(!c)continue;
+    fillLot(c.x0,c.y0,c.w,c.h,PARK);
+    pushB(c.x0,c.y0,c.w,2,{h:16,wall:'#e9e2d0',roof:'#c9342a',kind:'lojaposto'});
+    const cx0=c.x0+2,cy0=c.y0+4,cw=c.w-4,ch=Math.min(6,c.h-6);
+    buildings.push({x0:cx0*T,y0:cy0*T,x1:(cx0+cw)*T,y1:(cy0+ch)*T,h:20,wall:'#dddddd',roof:'#f2f2ee',kind:'canopy',seed:rng()});
+    for(let k=0;k<3;k++)pumps.push({x:(cx0+cw*(k+1)/4)*T,y:(cy0+ch/2)*T});
+    const z={x0:cx0*T,y0:cy0*T,x1:(cx0+cw)*T,y1:(cy0+ch)*T,type:'posto',label:'CONSERTO $150'};
+    zones.push(z);special[sp]=z;
   }
-  // orelhões
-  const phoneBlocks=[[3,2],[1,5],[6,6],[9,1],[8,9],[12,5],[2,9],[11,12]];
-  for(const [bi,bj] of phoneBlocks){
-    const x=O+bi*PER+BAND, y=O+bj*PER+BAND; // canto da calçada
-    phones.push({x:(x+.5)*T,y:(y+.5)*T});
+  // sua casa: casinha com quintal no Jardim
+  {const c=takeCell(cells,'jardim',104,24,10,10);if(c){
+    const bw=Math.min(8,c.w-4),bh=Math.min(7,c.h-5),bx=c.x0+Math.floor((c.w-bw)/2),by=c.y0+1;
+    special.casa=pushB(bx,by,bw,bh,{h:22,wall:'#f0e0c0',roof:'#9c4a32',kind:'casa'});
+    for(let y=by+bh;y<c.y1;y++){setT(bx+Math.floor(bw/2),y,SIDE);setT(bx+Math.floor(bw/2)-1,y,SIDE);}
+    for(let k=0;k<4;k++){const x=c.x0+1+Math.floor(rng()*(c.w-2)),y=c.y0+bh+2+Math.floor(rng()*Math.max(1,c.h-bh-3));if(map[y*W+x]===GRASS)addTree(x,y,'#2f7d3a');}}}
+  // estacionamentos (missões e terminal de ônibus)
+  for(const [sp,zone,tx,ty] of [['estac','centro',176,150],['estac2','rico',160,40],['estac3','centro',140,206]]){
+    const c=takeCell(cells,zone,tx,ty,10,10);if(!c)continue;
+    fillLot(c.x0,c.y0,c.w,c.h,PARK);special[sp]={x:(c.x0+c.w/2)*T,y:(c.y0+c.h/2)*T,rect:c};
   }
-  // postes de luz nas calçadas (cantos e meio de cada quarteirão)
-  for(let j=0;j<NI-1;j++)for(let i=0;i<NI-1;i++){
-    const bx=O+i*PER+BAND, by=O+j*PER+BAND;
-    const pts=[[bx,by],[bx+11,by],[bx,by+11],[bx+11,by+11],[bx+6,by],[bx+6,by+11],[bx,by+6],[bx+11,by+6]];
-    for(const [x,y] of pts){
-      if(map[y*W+x]!==SIDE)continue;
-      const lx=(x+.5)*T, ly=(y+.5)*T;
-      if(phones.some(p=>Math.abs(p.x-lx)<20&&Math.abs(p.y-ly)<20))continue;
-      lamps.push({x:lx,y:ly});
+}
+
+// ---------- quarteirões comuns, cada bairro do seu jeito ----------
+function addTree(x,y,c,palm){setT(x,y,TREE);trees.push({x:(x+.5)*T,y:(y+.5)*T,r:rand(12,18),c:c||pick(['#2e7d32','#388e3c','#33691e','#2f6b3a']),palm:!!palm});}
+function split(c,minSize,maxParts){ // divide o quarteirão em lotes ao longo do lado maior
+  const horiz=c.w>=c.h, len=horiz?c.w:c.h;
+  const n=Math.max(1,Math.min(maxParts,Math.floor(len/minSize)));
+  const out=[];let pos=0;
+  for(let k=0;k<n;k++){const sz=k===n-1?len-pos:Math.round(len/n);out.push(horiz?{x0:c.x0+pos,y0:c.y0,w:sz,h:c.h}:{x0:c.x0,y0:c.y0+pos,w:c.w,h:sz});pos+=sz;}
+  return out;
+}
+function plaza(c){
+  for(let y=c.y0;y<c.y1;y++)for(let x=c.x0;x<c.x1;x++){
+    const mx=Math.floor((c.x0+c.x1)/2),my=Math.floor((c.y0+c.y1)/2);
+    if(Math.abs(x-mx)<=1||Math.abs(y-my)<=1)setT(x,y,SIDE);
+    else if(rng()<0.2)addTree(x,y);
+  }
+}
+function fillCell(c){
+  const z=c.zone;
+  if(z==='centro'){
+    if(rng()<0.1){plaza(c);return;}
+    for(const lot of split(c,8,3)){
+      const ins=rng()<0.3?1:0;const bw=lot.w-ins*2,bh=lot.h-ins*2;if(bw<3||bh<3)continue;
+      pushB(lot.x0+ins,lot.y0+ins,bw,bh,{h:Math.round(60+rng()*110),wall:pick(['#9fb3c8','#c7cfd6','#8fa4b5','#d9d2c3','#7f97a8','#b4c6d1']),roof:pick(['#4f5a62','#5d6670','#3e474e']),kind:'b',style:'torre'});
+      if(ins)for(let y=lot.y0;y<lot.y0+lot.h;y++)for(let x=lot.x0;x<lot.x0+lot.w;x++)if(map[y*W+x]===GRASS)setT(x,y,SIDE);
+    }
+  } else if(z==='rico'){
+    if(c.cx>186&&rng()<0.6){ // condomínio de frente pro mar
+      const bw=Math.min(c.w-4,10),bh=Math.min(c.h-4,10);
+      pushB(c.x0+Math.floor((c.w-bw)/2),c.y0+Math.floor((c.h-bh)/2),bw,bh,{h:Math.round(90+rng()*60),wall:'#eef2f3',roof:'#5d6d75',kind:'b',style:'torre'});
+      fillLot(c.x0+1,c.y1-4,5,3,POOL);
+      return;
+    }
+    for(const lot of split(c,11,2)){ // mansões com piscina e jardim
+      const bw=Math.max(4,Math.round(lot.w*0.5)),bh=Math.max(4,Math.round(lot.h*0.45));
+      const bx=lot.x0+1,by=lot.y0+1;
+      pushB(bx,by,bw,bh,{h:Math.round(18+rng()*10),wall:pick(['#fbf6ec','#efe6d6','#e9eef0','#f5e3c8']),roof:pick(['#7a4a3a','#3d4a52','#8a6a4a']),kind:'b',style:'mansao'});
+      const pw=Math.min(4,lot.w-bw-3),ph=Math.min(6,lot.h-3);
+      if(pw>=2&&ph>=3)fillLot(bx+bw+1,by,pw,ph,POOL);
+      for(let k=0;k<6;k++){const x=lot.x0+Math.floor(rng()*lot.w),y=lot.y0+Math.floor(rng()*lot.h);if(map[y*W+x]===GRASS&&rng()<0.7)addTree(x,y,pick(['#2e7d32','#33691e','#1b5e20']));}
+    }
+  } else if(z==='velha'){
+    if(rng()<0.12){plaza(c);return;}
+    // casarões coloridos geminados, telhado de barro
+    for(const lot of split(c,3,6)){
+      pushB(lot.x0,lot.y0,lot.w,lot.h,{h:Math.round(12+rng()*10),wall:pick(['#f2c14e','#e07a5f','#81b29a','#f4a261','#e9c46a','#6fa8dc','#d36c9f','#f6f1d1']),roof:pick(['#b5532e','#a24a2a','#c0663a']),kind:'b',style:'casario'});
+    }
+  } else if(z==='cajueiro'){
+    for(let y=c.y0;y<c.y1;y++)for(let x=c.x0;x<c.x1;x++)if(rng()<0.5)setT(x,y,DIRT);
+    if(rng()<0.12&&c.w>=12&&c.h>=10){ // campinho de várzea
+      fillLot(c.x0+1,c.y0+1,c.w-2,c.h-2,DIRT);decor.push({type:'campo',x0:(c.x0+1)*T,y0:(c.y0+1)*T,x1:(c.x1-1)*T,y1:(c.y1-1)*T});return;}
+    // casinhas pequenas espalhadas, tijolo aparente
+    let y=c.y0;
+    while(y<c.y1-2){let x=c.x0;const rowH=3+Math.floor(rng()*2);
+      while(x<c.x1-2){const bw=3+Math.floor(rng()*2);if(x+bw>c.x1)break;
+        if(rng()<0.85)pushB(x,y,bw,Math.min(rowH,c.y1-y),{h:Math.round(8+rng()*7),wall:pick(['#b5653e','#c27a50','#d9cbb5','#9e5a3c','#e8d5b0']),roof:pick(['#8b8b8b','#6d6d6d','#a0522d']),kind:'b',style:'casinha'});
+        x+=bw+(rng()<0.4?1:0);}
+      y+=rowH+1;}
+  } else if(z==='jardim'){
+    if(rng()<0.12){plaza(c);return;}
+    if(rng()<0.35){ // prédio residencial
+      const bw=Math.min(c.w-4,9),bh=Math.min(c.h-4,9);
+      pushB(c.x0+2,c.y0+2,bw,bh,{h:Math.round(30+rng()*25),wall:pick(WALLS),roof:pick(ROOFS),kind:'b',style:'predio'});
+      for(let k=0;k<5;k++){const x=c.x0+Math.floor(rng()*c.w),y=c.y0+Math.floor(rng()*c.h);if(map[y*W+x]===GRASS)addTree(x,y);}
+      return;
+    }
+    for(const lot of split(c,6,4)){ // casas com quintal
+      const bw=Math.max(3,lot.w-2),bh=Math.max(3,Math.round(lot.h*0.55));
+      pushB(lot.x0+1,lot.y0+1,bw,bh,{h:Math.round(14+rng()*8),wall:pick(WALLS),roof:pick(['#9c4a32','#7a6a5a','#5d6670']),kind:'b',style:'casa'});
+      const tx=lot.x0+Math.floor(rng()*lot.w),ty=lot.y0+bh+1+Math.floor(rng()*Math.max(1,lot.h-bh-2));
+      if(map[ty*W+tx]===GRASS&&rng()<0.8)addTree(tx,ty);
+    }
+  } else if(z==='orla'){
+    // hotéis e prédios altos de frente pro mar
+    for(const lot of split(c,9,2)){
+      const ins=1;const bw=lot.w-2,bh=lot.h-2;if(bw<3||bh<3)continue;
+      pushB(lot.x0+ins,lot.y0+ins,bw,bh,{h:Math.round(70+rng()*80),wall:pick(['#ffffff','#e8f4f8','#f7efe2','#dfeef2']),roof:pick(['#5d6d75','#46555c']),kind:'b',style:'hotel'});
+      for(let y=lot.y0;y<lot.y0+lot.h;y++)for(let x=lot.x0;x<lot.x0+lot.w;x++)if(map[y*W+x]===GRASS)setT(x,y,SIDE);
+    }
+  } else if(z==='porto'){
+    // galpões e pilhas de contêiner
+    for(const lot of split(c,10,2)){
+      if(rng()<0.55){pushB(lot.x0+1,lot.y0+1,lot.w-2,lot.h-2,{h:Math.round(22+rng()*8),wall:pick(['#8d99a6','#a1887f','#90a4ae']),roof:pick(['#607d8b','#78909c','#8d6e63']),kind:'b',style:'galpao'});}
+      else{for(let y=lot.y0;y<lot.y0+lot.h;y++)for(let x=lot.x0;x<lot.x0+lot.w;x++)setT(x,y,PARK);
+        for(let y=lot.y0+1;y+2<lot.y0+lot.h;y+=3)for(let x=lot.x0+1;x+4<lot.x0+lot.w;x+=5)if(rng()<0.75)
+          {const col=pick(['#c0392b','#2980b9','#27ae60','#f39c12','#8e44ad','#16a085']);pushB(x,y,4,2,{h:8+Math.floor(rng()*3)*8,wall:col,roof:col,kind:'b',style:'conteiner'});}}
     }
   }
 }
-export function fillLot(x0,y0,w,h,t){for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++)setT(x,y,t);}
+
+// ---------- praia ----------
+function beach(){
+  for(let y=16;y<246;y+=2){
+    if(rng()<0.35)addTree(BEACH_X0+Math.floor(rng()*3),y,'#3f8f3a',true);       // coqueiros perto do calçadão
+  }
+  for(let y=24;y<240;y+=18){ // barracas de praia com guarda-sóis
+    const bx=BEACH_X0+5;
+    pushB(bx,y,3,2,{h:9,wall:'#d7b98a',roof:pick(['#e74c3c','#f39c12','#27ae60','#2980b9']),kind:'b',style:'barraca'});
+    for(let k=0;k<4;k++)decor.push({type:'guarda-sol',x:(bx+5+rng()*10)*T,y:(y+rng()*6)*T,c:pick(['#e74c3c','#f1c40f','#3498db','#ffffff','#2ecc71'])});
+  }
+  for(let y=40;y<230;y+=60)decor.push({type:'volei',x:(BEACH_X0+15)*T,y:y*T});
+  for(let y=60;y<230;y+=80)pushB(BEACH_X0+19,y,2,2,{h:14,wall:'#ffffff',roof:'#e53935',kind:'b',style:'salva-vidas'});
+}
+function port(){
+  for(let x=130;x<220;x+=22)decor.push({type:'guindaste',x:x*T,y:252*T});
+}
+
+// ---------- comércio nos prédios baixos ----------
+function assignCommerce(){
+  const POI={farmacia:{roof:'#f2f2ee',wall:'#d9e8d9'},mercadinho:{roof:'#e8a33a',wall:'#f0d9a8'},padaria:{roof:'#b9824a',wall:'#efdcc0'},
+    escola:{roof:'#3f6fb0',wall:'#e7e0c9'},lanchonete:{roof:'#c0392b',wall:'#f3d36b'}};
+  const want={farmacia:5,mercadinho:6,padaria:4,escola:3,lanchonete:6};
+  const cand=buildings.filter(b=>b.kind==='b'&&['casa','casario','predio','casinha','torre'].includes(b.style)&&(b.x1-b.x0)>=4*T&&(b.y1-b.y0)>=4*T);
+  // embaralha de forma determinística
+  for(let i=cand.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[cand[i],cand[j]]=[cand[j],cand[i]];}
+  let ci=0;
+  for(const k of Object.keys(want))for(let n=0;n<want[k]&&ci<cand.length;n++){
+    const b=cand[ci++];if(k==='escola'&&((b.x1-b.x0)<5*T||(b.y1-b.y0)<5*T)){n--;continue;}
+    b.kind=k;b.roof=POI[k].roof;b.wall=POI[k].wall;b.h=Math.min(b.h,24);
+  }
+}
+
+// ---------- orelhões e postes ----------
+function placePhones(cells){
+  const targets=[[30,30],[120,25],[180,40],[60,100],[130,110],[200,100],[70,180],[160,170],[100,230],[200,200],[40,230],[170,236]];
+  const usedC=new Set();
+  for(const [tx,ty] of targets){
+    let best=null,bd=1e9;
+    for(const c of cells){if(usedC.has(c))continue;const d=Math.hypot(c.cx-tx,c.cy-ty);if(d<bd){bd=d;best=c;}}
+    if(!best)continue;usedC.add(best);
+    for(const [x,y] of [[best.x0-1,best.y0-1],[best.x1,best.y0-1],[best.x0-1,best.y1],[best.x1,best.y1]]){
+      if(tileOf(x,y)===SIDE){phones.push({x:(x+.5)*T,y:(y+.5)*T});break;}
+    }
+  }
+}
+function placeLamps(){
+  const add=(x,y)=>{if(tileOf(x,y)!==SIDE)return;const lx=(x+.5)*T,ly=(y+.5)*T;
+    if(phones.some(p=>Math.abs(p.x-lx)<40&&Math.abs(p.y-ly)<40))return;lamps.push({x:lx,y:ly});};
+  for(let j=0;j<NH;j++)for(let i=0;i<NV-1;i++)if(segH[j][i]){const L=HL[j];const step=L.type==='beco'?12:8;
+    for(let x=Math.ceil(VL[i].c+4);x<VL[i+1].c-4;x+=step){add(x,Math.floor(L.c-L.w/2)-1);if(L.type!=='beco')add(x,Math.ceil(L.c+L.w/2));}}
+  for(let i=0;i<NV;i++)for(let j=0;j<NH-1;j++)if(segV[i][j]){const L=VL[i];const step=L.type==='beco'?12:8;
+    for(let y=Math.ceil(HL[j].c+4);y<HL[j+1].c-4;y+=step){add(Math.floor(L.c-L.w/2)-1,y);if(L.type!=='beco')add(Math.ceil(L.c+L.w/2),y);}}
+  for(let y=20;y<246;y+=9)add(227,y); // calçadão
+}
+
 genMap();

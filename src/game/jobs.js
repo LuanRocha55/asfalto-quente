@@ -1,6 +1,6 @@
 // Empregos: taxista, motoboy, motorista de busão, guincho e vigilante noturno
 import { rand, pick, clamp, hyp, fmtMoney } from '../core/utils.js';
-import { T, NI, PX, roadPx, buildings, special, zones, solidAt, tileAt, SIDE, GRASS, PARK, SAND } from '../world/map.js';
+import { T, VL, HL, NV, NH, segH, segV, laneCoords, buildings, special, zones, solidAt, tileAt, SIDE, GRASS, PARK, SAND } from '../world/map.js';
 import { Car } from '../entities/vehicles.js';
 import { Ped } from '../entities/peds.js';
 import { sfxTone, sfxNoise } from '../audio/audio.js';
@@ -39,11 +39,19 @@ export function doorOf(b){
   b._door={x:cx,y:b.y1+18};return b._door;
 }
 // pontos de ônibus: volta nas avenidas 3 e 11 (sentido horário)
-export const BUS_STOPS=(()=>{const st=[];const mid=k=>roadPx(k)+128+(PX-128)/2;
-  for(const k of [4,7,9])st.push({x:mid(k),y:roadPx(3)+96,side:{x:0,y:1}});        // indo pro leste na Av. Sol Nascente
-  for(const k of [4,7,9])st.push({x:roadPx(11)+32,y:mid(k),side:{x:-1,y:0}});      // indo pro sul na Av. do Porto
-  for(const k of [9,7,4])st.push({x:mid(k),y:roadPx(11)+32,side:{x:0,y:-1}});      // indo pro oeste na Av. Atlântica
-  for(const k of [9,7,4])st.push({x:roadPx(3)+96,y:mid(k),side:{x:1,y:0}});        // indo pro norte na Av. dos Coqueiros
+export const BUS_STOPS=(()=>{
+  // volta no retângulo formado pelas duas primeiras avenidas verticais e horizontais (sentido horário)
+  const va=VL.filter(l=>l.type==='ave'), ha=HL.filter(l=>l.type==='ave');
+  const L1=va[0],L2=va[1],H1=ha[0],H2=ha[1],st=[];
+  const outer=(L,d)=>{const c=laneCoords(L,d);return c[c.length-1];};
+  const between=(lines,from,to)=>lines.filter(l=>l.px>=Math.min(from,to)&&l.px<=Math.max(from,to)).map(l=>l.px).sort((a,b)=>from<to?a-b:b-a);
+  const add=(pts,fixed,horiz,d,side)=>{for(let k=0;k<pts.length-1;k++){const m=(pts[k]+pts[k+1])/2;if(Math.abs(pts[k+1]-pts[k])<300)continue;
+      const lane=outer(horiz?fixed:fixed,d);st.push(horiz?{x:m,y:lane,side,off:fixed.w*T/2-(Math.abs(lane-fixed.px))+18}:{x:lane,y:m,side,off:fixed.w*T/2-(Math.abs(lane-fixed.px))+18});}};
+  const vx=between(VL.filter(l=>l.type!=='beco'),L1.px,L2.px), vy=between(HL.filter(l=>l.type!=='beco'),H1.px,H2.px);
+  add(vx,H1,true,0,{x:0,y:1});                                   // leste pela avenida de cima
+  add(vy,L2,false,1,{x:-1,y:0});                                 // sul pela avenida da direita
+  add([...vx].reverse(),H2,true,2,{x:0,y:-1});                   // oeste pela avenida de baixo
+  add([...vy].reverse(),L1,false,3,{x:1,y:0});                   // norte pela avenida da esquerda
   return st;})();
 
 // ---------- veículos de trabalho estacionados (reaparecem se sumirem) ----------

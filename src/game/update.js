@@ -1,12 +1,13 @@
 // Loop de atualização do mundo, colisões e pedestres
 import { CH } from '../core/canvas.js';
 import { rand, randi, pick, clamp, lerp, hyp, fmtMoney } from '../core/utils.js';
-import { O, DX, DY, zones, phones, hospitalSpot, policeSpot, solidAt } from '../world/map.js';
+import { DX, DY, zones, phones, hospitalSpot, policeSpot, solidAt } from '../world/map.js';
 import { AU, sfxNoise, sfxTone } from '../audio/audio.js';
 import { pedWalkable } from '../entities/peds.js';
 import { heatStars, addHeat, msg, big, onScreen, spawnTraffic, spawnPed } from './world.js';
 import { recoverCar, updateTraffic } from '../ai/traffic.js';
-import { computeFlow, updatePolice } from '../ai/police.js';
+import { updatePolice, updatePoliceBrain, updateCopPed, intel, playerSeenRecently, los } from '../ai/police.js';
+import { fire, WEAPONS } from './weapons.js';
 import { explode, killPed, hurtPlayer } from './effects.js';
 import { wasted, busted, respawn } from './player.js';
 import { startMission, finishMission, failMission, inZone } from './missions.js';
@@ -53,7 +54,7 @@ export function update(dt){
     if(c===player.car||c.towed)continue;
     if(c.wreck){c.physics(0,0,true,dt);continue;}
     if(c.ai==='traffic'&&c.driver==='ai')updateTraffic(c,dt);
-    else if(c.ai==='police'&&c.driver==='ai')updatePolice(c,dt);
+    else if((c.ai==='police'||c.ai==='block')&&c.driver==='ai')updatePolice(c,dt);
     else c.physics(0,0,true,dt);
     if(!c.wreck&&c.health<c.t.hp*0.35&&Math.random()<0.15&&onScreen(c.x,c.y))S.parts.push({x:c.x+Math.cos(c.a)*c.t.len*0.35,y:c.y+Math.sin(c.a)*c.t.len*0.35,vx:rand(-10,10),vy:rand(-10,10),life:1.2,max:1.2,size:rand(6,11),col:'rgba(70,70,70,',smoke:true,up:true});
   }
@@ -65,17 +66,17 @@ export function update(dt){
 
   // procurado / polícia
   const stars=heatStars();
-  let copNear=false;
-  for(const c of S.cars)if(c.ai==='police'&&hyp(c.x-player.x,c.y-player.y)<650){copNear=true;break;}
-  if(player.heat>0&&!copNear)player.heat=Math.max(0,player.heat-7*dt);
-  else if(player.heat>0&&copNear)player.heat=Math.max(0,player.heat-1.2*dt);
-  S.flowT-=dt; if(S.flowT<=0&&stars>0){computeFlow();S.flowT=0.35;}
+  updatePoliceBrain(dt);
+  // estrelas só caem quando ninguém te vê há um tempo
+  if(player.heat>0&&intel.seenT>4)player.heat=Math.max(0,player.heat-9*dt);
+  if(stars===0)for(const c of S.cars){if(c.ai==='police'){c.ai='traffic';recoverCar(c);}else if(c.ai==='block')c.remove=true;}
   // preso?
   if(player.state==='play'&&stars>0){
     let close=false;
     for(const c of S.cars){if(c.ai!=='police'||c.driver!=='ai')continue;
       if(player.car){const d=hyp(c.x-player.car.x,c.y-player.car.y);if(d<(c.t.len+player.car.t.len)/2+8&&player.car.speed<30)close=true;}
       else{const d=hyp(c.x-player.x,c.y-player.y);if(d<70&&c.speed<90)close=true;}}
+    if(!player.car)for(const p of S.peds)if(p.cop&&p.state==='cop'&&hyp(p.x-player.x,p.y-player.y)<30)close=true;
     if(close){player.bustT+=dt;if(player.bustT>(player.car?1.6:0.9))busted();}else player.bustT=Math.max(0,player.bustT-dt*2);
   } else player.bustT=0;
 
@@ -86,13 +87,17 @@ export function update(dt){
     S.cars=S.cars.filter(c=>{if(c===player.car||c.mission||c.keep||c.towed)return true;const d=hyp(c.x-pr.x,c.y-pr.y);
       if(c.ai==='police'&&stars===0&&d>900)return false;
       if(d>2300&&!(c.driver===null&&!c.wreck&&d<3200))return false;return true;});
-    S.peds=S.peds.filter(p=>(p.mission||p.job||p.robber||hyp(p.x-pr.x,p.y-pr.y)<1500)&&p.state!=='dead'&&p.state!=='dead2');
+    S.peds=S.peds.filter(p=>(p.mission||p.job||p.robber||(p.cop&&stars>0)||hyp(p.x-pr.x,p.y-pr.y)<1500)&&p.state!=='dead'&&p.state!=='dead2');
     const traffic=S.cars.filter(c=>c.ai==='traffic').length;
-    for(let i=0;i<3&&traffic+i<42;i++)spawnTraffic(800,1700,false);
+    for(let i=0;i<4&&traffic+i<60;i++)spawnTraffic(800,1700,false);
     const np=S.peds.length;for(let i=0;i<3&&np+i<60;i++)spawnPed(500,1100,false);
-    const want=[0,2,3,5,6,8][stars];
+    const want=[0,2,3,5,7,9][stars];
     const cops=S.cars.filter(c=>c.ai==='police').length;
-    if(cops<want){const c=spawnTraffic(650,1100,false,'viatura','police');if(c){c.color='#20242c';}}
+    if(cops<want){
+      // viatura nova aparece na frente de quem está fugindo de carro (e perto de onde te viram)
+      const pc=player.car, fast=pc&&pc.speed>100&&playerSeenRecently();
+      const pred=fast?(x,y)=>((x-pc.x)*pc.vx+(y-pc.y)*pc.vy)>0:null;
+      const c=spawnTraffic(650,1100,false,'viatura','police',pred)||spawnTraffic(650,1100,false,'viatura','police');if(c){c.color='#20242c';c.role=Math.random()<0.4?'intercept':'chase';}}
   }
 
   // zonas
@@ -185,6 +190,11 @@ export function updatePeds(dt){
         else{const nx=(p.x-ci[0])/(d||1),ny=(p.y-ci[1])/(d||1);const nx2=p.x+nx*(ci[2]+5-d),ny2=p.y+ny*(ci[2]+5-d);if(!solidAt(nx2,ny2)){p.x=nx2;p.y=ny2;}}}}
       if(p.state==='dead')break;}
     if(p.state==='dead')continue;
+    if(p.cop&&p.state==='cop'){ // policial a pé: corre atrás e atira
+      const l=updateCopPed(p,dt);
+      if(p.state==='cop'&&heatStars()>=2){p.shootCd-=dt;
+        if(p.shootCd<=0&&l<280&&player.state==='play'&&los(p.x,p.y,player.x,player.y)){fire(p.x,p.y,p.a+rand(-0.12,0.12),WEAPONS.pistola,false,null);p.shootCd=rand(1.2,2.2);}}
+      continue;}
     // fugir de carro rápido perto
     if(p.state==='walk'){const pc=player.car;if(pc&&pc.speed>150&&hyp(pc.x-p.x,pc.y-p.y)<90&&Math.random()<0.1){p.state='flee';p.flee={x:pc.x,y:pc.y};p.t=2.5;}}
     if(p.state==='wait'){p.a=Math.atan2(player.y-p.y,player.x-p.x);continue;}

@@ -2,7 +2,7 @@
 
 Jogo top-down de mundo aberto feito em JavaScript puro com Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
-Versão atual: **0.7.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **0.8.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
 ## Como rodar
 
@@ -50,7 +50,8 @@ src/
     utils.js            aleatório, matemática, cores
     input.js            teclado e mouse
   world/
-    map.js              geração da cidade (tiles, prédios, zonas, orelhões)
+    map.js              malha de ruas e geração da cidade (prédios, praia, porto, lugares)
+    zoning.js           em que bairro fica cada parte do mapa
     chunks.js           cache do chão em blocos e minimapa
     time.js             relógio e ciclo de dia e noite
     districts.js        bairros, avenidas, nomes de rua e semáforos
