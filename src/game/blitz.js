@@ -30,7 +30,7 @@ export function metaOf(z){const d=DISTRICT_ORDER.find(d=>d.z===z);return d?d.met
 // ---- área restrita: o bairro fechado encolhido 4 tiles (as avenidas da divisa continuam livres) ----
 const R=4;
 export const restricted=new Uint8Array(W*H);
-let maskCanvas=null;
+let maskCanvas=null,paperMask=null;
 export function restrictedAt(px,py){const x=px/T|0,y=py/T|0;if(x<0||y<0||x>=W||y>=H)return false;return restricted[y*W+x]===1;}
 export const isOpenAt=(px,py)=>!restrictedAt(px,py);
 function computeRestricted(){
@@ -42,7 +42,7 @@ function computeRestricted(){
     for(let dy=-R;dy<=R&&ok;dy++)for(let dx=-R;dx<=R;dx++){const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=W||yy>=H)continue;if(Z[yy*W+xx]!==z){ok=false;break;}}
     if(ok)restricted[y*W+x]=1;
   }
-  maskCanvas=null;
+  maskCanvas=null;paperMask=null;
 }
 // máscara hachurada pro mapa e minimapa (2 px por tile)
 export function lockMask(){
@@ -51,6 +51,20 @@ export function lockMask(){
   for(let y=0;y<H*2;y++)for(let x=0;x<W*2;x++){if(!restricted[(y>>1)*W+(x>>1)])continue;const o=(y*W*2+x)*4;const stripe=((x+y)%6)<2;
     img.data[o]=stripe?255:20;img.data[o+1]=stripe?60:10;img.data[o+2]=stripe?40:10;img.data[o+3]=stripe?150:90;}
   g.putImageData(img,0,0);maskCanvas=c;return c;
+}
+
+// máscara pro mapa de papel (4 px por tile): vermelho listrado nos fechados e linha forte na divisa
+export function paperLockMask(){
+  if(paperMask)return paperMask;
+  const K=4,c=document.createElement('canvas');c.width=W*K;c.height=H*K;const g=c.getContext('2d');const img=g.createImageData(W*K,H*K),d=img.data;
+  for(let y=0;y<H*K;y++)for(let x=0;x<W*K;x++){const tx=(x/K)|0,ty=(y/K)|0;if(!restricted[ty*W+tx])continue;const o=(y*W*K+x)*4;const stripe=((x+y)%14)<5;
+    d[o]=stripe?190:170;d[o+1]=stripe?36:60;d[o+2]=stripe?24:50;d[o+3]=stripe?120:46;}
+  g.putImageData(img,0,0);
+  g.fillStyle='rgba(176,22,12,0.95)';
+  for(let ty=0;ty<H;ty++)for(let tx=0;tx<W;tx++){const r=restricted[ty*W+tx];
+    if(tx<W-1&&restricted[ty*W+tx+1]!==r)g.fillRect((tx+1)*K-2,ty*K,4,K);
+    if(ty<H-1&&restricted[(ty+1)*W+tx]!==r)g.fillRect(tx*K,(ty+1)*K-2,K,4);}
+  paperMask=c;return c;
 }
 
 // ---- postos de controle: onde uma rua cruza a borda da área restrita ----

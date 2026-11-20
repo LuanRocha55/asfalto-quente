@@ -5,6 +5,12 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.5.1 — 20/11/2026
+**Ajustes depois do teste da 1.5.0**
+- **Filtro 97 desligado por padrão** (a cidade fica nítida). Continua opcional na tecla V ou no menu Gráficos
+- **Avisos grandes menores**: viraram uma faixa compacta no alto da tela, sem tremer nem tapar a rua; nome do bairro e "PARADO AÍ!" também diminuíram
+- **Mapa mostra claramente onde pode entrar**: bairro fechado fica vermelho listrado com linha forte na divisa, triângulo vermelho em cada posto de blitz e legenda "Pode entrar / Fechado (blitz)"
+
 ## 1.5.0 — 20/11/2026
 **Visual 97: interface nova e cidade com cara de jogo de 1997**
 - Fontes novas: **VT323** (texto, estilo terminal) e **Anton** (títulos de impacto), salvas no jogo, funcionam sem internet

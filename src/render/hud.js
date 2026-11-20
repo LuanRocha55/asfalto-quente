@@ -17,7 +17,7 @@ import { hasSave, saveInfo } from '../game/save.js';
 import { JOBS, levelOf, jobHint, jobSpots } from '../game/jobs.js';
 import { cv } from '../core/canvas.js';
 import { sfxTone } from '../audio/audio.js';
-import { C97, pf, ptxt, bevel, lcdPanel, lcdWidth, pixelStar, blocks, impact, HEAT_GRAD, pager, wrap, scanlines, gunIcon, rr } from './style97.js';
+import { C97, pf, lf, ptxt, bevel, lcdPanel, lcdWidth, pixelStar, blocks, impact, HEAT_GRAD, pager, wrap, scanlines, gunIcon, rr } from './style97.js';
 import { TM, titleItems } from '../game/titlemenu.js';
 
 let lastDistrict='', districtFlash=0, lastFrame=performance.now(), fdt=0.016;
@@ -165,25 +165,24 @@ export function drawHUD(g,tgt){
     else if(S.phoneCd<=0&&player.state==='play'&&!tut.active&&!S.interior)
       ptxt(g,'Orelhão tocando = missão  ·  J = empregos',CW/2,30,13,'#ffe9a0','center');}
   {const h=jobHint();if(h){g.font=pf(14);const w=g.measureText(h).width+36;drawKeycap(g,'J',CW/2-w/2,CH-90,h,14);}}
-  if(player.bustT>0.15)impact(g,'PARADO AÍ!',CW/2,CH/2-80,Math.round(clamp(CW/22,34,58)),'#5aa0ff');
+  if(player.bustT>0.15)impact(g,'PARADO AÍ!',CW/2,CH*0.3,Math.round(clamp(CW/40,22,34)),'#5aa0ff');
 
   // nome do bairro grande quando cruza a divisa
   if(districtFlash>0){districtFlash-=fdt;const a=clamp(districtFlash,0,1);g.globalAlpha=a;
     const in_=clamp((2.6-districtFlash)*6,0,1);
-    impact(g,districtAt(player.x,player.y).name.toUpperCase(),CW/2+(1-in_)*-60,CH*0.24,Math.round(clamp(CW/18,40,76)),C97.orelhao);g.globalAlpha=1;}
+    impact(g,districtAt(player.x,player.y).name.toUpperCase(),CW/2+(1-in_)*-40,Math.max(150,CH*0.22),Math.round(clamp(CW/44,20,32)),C97.orelhao);g.globalAlpha=1;}
   drawGuide(g); // dicas ficam por baixo das mensagens grandes
   // mensagens
   {let my=CH-36;for(let i=S.messages.length-1;i>=0;i--){const m=S.messages[i];g.globalAlpha=clamp(m.life,0,1);ptxt(g,m.t,CW/2,my,16,'#ffffff','center');my-=22;}g.globalAlpha=1;}
-  // mensagem grande: entra com tranco (cresce rápido, para e treme)
+  // mensagem grande: faixa compacta no alto da tela (não tapa a rua), entra deslizando
   if(S.bigMsg){const b=S.bigMsg;if(b!==lastBig){lastBig=b;bigT=0;}bigT+=fdt;
-    const a=clamp(b.life*2,0,1);g.globalAlpha=a;
-    const sc=bigT<0.12?lerp(1.7,0.94,bigT/0.12):bigT<0.2?lerp(0.94,1,(bigT-0.12)/0.08):1;
-    const sh=bigT<0.35?(Math.random()-0.5)*6*(1-bigT/0.35):0;
-    let size=Math.round(clamp(CW/15,44,92));const T_=b.t.toUpperCase();
-    {g.save();g.font=Math.round(size)+'px "Anton",Impact,sans-serif';const mw=g.measureText(T_).width;g.restore();if(mw>CW*0.88)size=Math.floor(size*CW*0.88/mw);}
-    size=Math.round(size*sc);
-    impact(g,T_,CW/2+sh,CH/2-14+sh,size,b.col);
-    if(b.sub)ptxt(g,b.sub,CW/2,CH/2+28,18,'#ffffff','center');g.globalAlpha=1;}
+    const a=clamp(b.life*2,0,1)*clamp(bigT*6,0,1);g.globalAlpha=a;
+    const T_=b.t.toUpperCase(),size=Math.round(clamp(CW/40,22,34)),y=Math.max(180,CH*0.25)+(1-clamp(bigT*6,0,1))*-12;
+    g.font=lf(size);const tw=g.measureText(T_).width;g.font=pf(14);const sw=b.sub?g.measureText(b.sub).width:0;
+    const w=Math.max(tw+60,sw+40),h=b.sub?size+34:size+16,x=CW/2-w/2;
+    g.fillStyle='rgba(8,8,12,0.72)';g.fillRect(x,y-size-6,w,h);g.fillStyle=b.col;g.fillRect(x,y-size-6,w,3);
+    impact(g,T_,CW/2,y,size,b.col);
+    if(b.sub)ptxt(g,b.sub,CW/2,y+22,14,'#ffffff','center');g.globalAlpha=1;}
 
   // ---------- minimapa ----------
   const MS=Math.round(Math.min(200,CW*0.22)),VIEW=70; const mx=18,my2=CH-MS-18;
