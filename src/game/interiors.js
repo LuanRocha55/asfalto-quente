@@ -43,15 +43,19 @@ const PLACES = {
       {label:'Pagar fiança  ($300 por estrela)',price:()=>heatStars()*300,disabled:()=>heatStars()===0||heatStars()>2,why:()=>heatStars()===0?'Ficha limpa':'Procurado demais',run:()=>{player.heat=0;for(const c of S.cars)if(c.ai==='police')c.ai='traffic';}},
       {label:'Se entregar',price:0,disabled:()=>heatStars()===0,why:'Ficha limpa',run:()=>{closeMenu();busted();}}] },
   casa:      { title:'SUA CASA', sub:'Teu cantinho em Vila Maresia', items:()=>[
-      {label:'Salvar o jogo',price:0,run:()=>{saveGame(false);}},
-      {label:'Dormir até de manhã (8h)',price:0,disabled:()=>heatStars()>0,why:'Procurado',run:sleepTo(8)},
-      {label:'Dormir até de noite (20h)',price:0,disabled:()=>heatStars()>0,why:'Procurado',run:sleepTo(20)}] },
+      {label:'Salvar o jogo',price:0,station:'mesa',run:()=>{saveGame(false);}},
+      {label:'Dormir até de manhã (8h)',price:0,station:'cama',disabled:()=>heatStars()>0,why:'Procurado',run:sleepTo(8)},
+      {label:'Dormir até de noite (20h)',price:0,station:'cama',disabled:()=>heatStars()>0,why:'Procurado',run:sleepTo(20)}] },
 };
 
-export function openPlace(b){
-  const P=PLACES[b.kind];if(!P)return false;
-  if(b.kind==='policia'&&heatStars()>2){msg('Com '+heatStars()+' estrelas? Entrar na delegacia é se entregar.',2.5);}
-  S.menu={title:P.title,sub:P.sub,kind:b.kind,items:P.items(),sel:0,rects:[]};
+export const placeTitle=k=>PLACES[k]?PLACES[k].title:'';
+// abre o menu de um lugar; station filtra itens (ex.: na casa, a cama dorme e a mesa salva)
+export function openPlace(b,station){
+  const kind=b.kind||b;const P=PLACES[kind];if(!P)return false;
+  let items=P.items();
+  if(station){const f=items.filter(it=>(it.station||'balcao')===station);if(f.length)items=f;}
+  const sub={cama:'Hora de descansar',mesa:'Computador da casa'}[station]||P.sub;
+  S.menu={title:P.title,sub,kind,items,sel:0,rects:[]};
   sfxTone(440,0.06,0.06,'square');
   return true;
 }

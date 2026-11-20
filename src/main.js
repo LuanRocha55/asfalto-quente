@@ -8,6 +8,8 @@ import { update } from './game/update.js';
 import { render } from './render/draw.js';
 import { drawTitle } from './render/hud.js';
 import { drawBigMap, drawMenu } from './render/overlays.js';
+import { updateInterior } from './game/interior.js';
+import { renderInterior } from './render/interiorDraw.js';
 import { S, player, cam, keys } from './core/state.js';
 import { resetWorld } from './game/world.js';
 import './core/input.js';
@@ -30,11 +32,12 @@ function frame(now){
   let dt=Math.min(0.05,(now-last)/1000);last=now;
   requestAnimationFrame(frame); // agenda antes: um erro nunca mais congela o jogo
   try{
-    if(S.started&&!S.paused&&!S.menu&&!S.mapOpen){let rem=dt;while(rem>0){const s=Math.min(1/60,rem);update(s);rem-=s;}}
+    if(S.started&&!S.paused&&!S.menu&&!S.mapOpen){let rem=dt;while(rem>0){const s=Math.min(1/60,rem);if(S.interior)updateInterior(s);else update(s);rem-=s;}}
+
     else if(!S.started){S.gameTime+=dt;cam.x+=Math.cos(S.gameTime*0.1)*40*dt;cam.y+=Math.sin(S.gameTime*0.13)*40*dt;}
     sanitize();
-    render();
-    if(S.mapOpen)drawBigMap();
+    if(S.interior)renderInterior();else render();
+    if(S.mapOpen&&!S.interior)drawBigMap();
     if(S.menu)drawMenu();
     if(!S.started||S.paused)drawTitle();
   }catch(e){

@@ -8,6 +8,7 @@ export const S={
   best:0, NEXT_ID:1, errCount:0, lastErr:'',
   tod:16.5, tracers:[], shopCd:0,
   job:null, floaters:[],
+  interior:null, toasts:[], mapOpenedOnce:false,
   menu:null, mapOpen:false, mapRect:null, waypoint:null, playTime:0, saveFlash:0,
 };
 try{S.best=+localStorage.getItem('aq_best')||0;}catch(e){}

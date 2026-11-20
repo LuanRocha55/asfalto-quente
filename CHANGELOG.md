@@ -5,6 +5,21 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.9.0 — 19/11/2026
+**Interiores onde dá pra andar**
+- F (ou clique direito) na porta entra no lugar: o jogo troca pra uma cena interna vista de cima
+- Cada tipo tem planta própria: loja (prateleiras e geladeiras), lanchonete (mesas), hospital (leitos e recepção), delegacia (mesas e cela), Armas do Tonhão (arara de armas e estande de tiro), escola (sala de aula com alunos) e sua casa (quarto, sala, cozinha)
+- Atendente atrás do balcão, clientes andando; a compra é feita falando com o atendente
+- Na casa: a cama dorme, o computador salva
+- No hospital a vida vai voltando devagar enquanto você está lá dentro
+- Sai pisando no tapete vermelho; procurado pela polícia não entra (só na delegacia)
+
+**Começo guiado**
+- Jogo novo começa com 5 passos curtos, ensinando jogando: andar, pegar o carro, dirigir, abrir o mapa e atender o orelhão
+- Cada passo mostra as teclas desenhadas e uma seta pro objetivo; T pula o tutorial
+- Depois, dicas aparecem só na primeira vez que algo acontece (primeira estrela, vida baixa, carro soltando fumaça, veículo com emprego, noite, primeira grana...)
+- Avisos de interação com tecla desenhada em cima do carro e das portas ("F  Roubar Táxi", "F  Entrar: Farmácia")
+
 ## 0.8.0 — 19/11/2026
 **Cidade nova** (o mapa foi refeito do zero; saves antigos continuam valendo, mas você recomeça no hospital)
 - Ruas de três tipos: **avenidas** de 4 faixas mão dupla, **ruas** de 2 faixas e **becos** estreitos de mão única

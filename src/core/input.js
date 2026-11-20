@@ -8,18 +8,22 @@ import { cycleWeapon, selectWeapon } from '../game/weapons.js';
 import { toggleJob } from '../game/jobs.js';
 import { nearestDoor, openPlace, menuKey, menuMouse, closeMenu } from '../game/interiors.js';
 import { hasSave, loadGame, deleteSave } from '../game/save.js';
+import { enterInterior, interactInterior } from '../game/interior.js';
+import { startTutorial, skipTutorial } from '../game/tutorial.js';
 import { mapClick } from '../render/overlays.js';
 
 function startGame(fresh){
-  if(fresh) deleteSave(); else if(hasSave()) loadGame();
+  if(fresh) deleteSave();
+  if(!fresh&&hasSave()) loadGame(); else startTutorial();
   S.started=true; initAudio(); if(AU.ctx&&AU.ctx.state==='suspended')AU.ctx.resume();
 }
 // F / Enter / clique direito: porta do prédio tem prioridade sobre carro quando está mais perto
 function interact(){
-  if(!player.car&&player.state==='play'){const b=nearestDoor(40);if(b&&openPlace(b))return;}
+  if(S.interior){interactInterior();return;}
+  if(!player.car&&player.state==='play'){const b=nearestDoor(40);if(b){enterInterior(b);return;}}
   enterExit();
 }
-const toggleMap=()=>{S.mapOpen=!S.mapOpen;};
+const toggleMap=()=>{S.mapOpen=!S.mapOpen;if(S.mapOpen)S.mapOpenedOnce=true;};
 
 window.addEventListener('keydown',e=>{
   if(['Space','KeyX','ControlLeft','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','Backspace'].includes(e.code))e.preventDefault();
@@ -33,6 +37,8 @@ window.addEventListener('keydown',e=>{
   if(S.mapOpen){if(e.code==='KeyM'||e.code==='Tab'||e.code==='Escape')S.mapOpen=false;return;}
   if(e.code==='KeyP'||e.code==='Escape'){e.preventDefault();S.paused=!S.paused;return;}
   if(S.paused){if(e.code==='Enter'||e.code==='Space')S.paused=false;return;}
+  if(e.code==='KeyT')skipTutorial();
+  if(S.interior){if(e.code==='KeyF'||e.code==='Enter'||e.code==='KeyE')interactInterior();return;}
   if(e.code==='KeyM'||e.code==='Tab'){toggleMap();return;}
   if(e.code==='KeyF'||e.code==='Enter')interact();
   if(e.code==='Space'&&!player.car&&player.weapon==='punho')punch();
@@ -55,6 +61,7 @@ cv.addEventListener('pointerdown',e=>{
   if(S.mapOpen){mapClick(e.clientX,e.clientY,e.button);return;}
   if(S.paused){S.paused=false;return;}
   mouse.active=true;
+  if(S.interior){if(e.button===2)interactInterior();return;}
   if(e.button===0){mouse.down=true;if(!player.car&&player.weapon==='punho')punch();}
   else if(e.button===2)interact();
 });

@@ -11,6 +11,7 @@ import { WEAPONS } from '../game/weapons.js';
 import { districtAt, streetAt } from '../world/districts.js';
 import { buildings, zones } from '../world/map.js';
 import { mouse } from '../core/state.js';
+import { tut, currentStep, tutorialSteps } from '../game/tutorial.js';
 import { drawIcon, KIND_ICON } from './icons.js';
 import { hasSave, saveSummary } from '../game/save.js';
 import { JOBS, levelOf, jobHint, jobSpots } from '../game/jobs.js';
@@ -29,6 +30,43 @@ function drawCrosshair(g){
   g.strokeStyle=col;g.lineWidth=2;g.beginPath();g.arc(x,y,9,0,Math.PI*2);g.stroke();
   for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){g.beginPath();g.moveTo(x+dx*5,y+dy*5);g.lineTo(x+dx*14,y+dy*14);g.stroke();}
   if(mouse.down&&armed){g.fillStyle=col;g.beginPath();g.arc(x,y,2.5,0,Math.PI*2);g.fill();}
+}
+// tecla desenhada (estilo teclado) com texto ao lado
+export function drawKeycap(g,key,x,y,label,size){
+  size=size||14;g.font='bold '+size+'px "Courier New",monospace';
+  const w=Math.max(size*1.8,g.measureText(key).width+size*0.9),h=size*1.8;
+  g.fillStyle='rgba(0,0,0,0.5)';g.fillRect(x+2,y-h/2+3,w,h);
+  g.fillStyle='#e9e9e9';g.fillRect(x,y-h/2,w,h);g.fillStyle='#bdbdbd';g.fillRect(x,y+h/2-4,w,4);
+  g.fillStyle='#1b1b1b';g.textAlign='center';g.fillText(key,x+w/2,y+size*0.3);
+  let end=x+w;
+  if(label){g.textAlign='left';g.fillStyle='rgba(0,0,0,0.8)';g.fillText(label,end+9,y+size*0.35+1);g.fillStyle='#ffffff';g.fillText(label,end+8,y+size*0.35);end+=8+g.measureText(label).width;}
+  return end;
+}
+// cartão do tutorial (passo atual) e dicas de primeira vez
+function drawGuide(g){
+  const st=currentStep();
+  if(st){
+    const w=Math.min(560,CW-40),h=96,x=(CW-w)/2,y=CH-h-70;
+    g.fillStyle='rgba(10,14,22,0.88)';g.fillRect(x,y,w,h);g.strokeStyle=tut.flash>0?'#7dff6b':'#7fd8ff';g.lineWidth=2;g.strokeRect(x,y,w,h);
+    g.font='bold 12px "Courier New",monospace';g.textAlign='left';g.fillStyle='#7fd8ff';g.fillText('COMEÇANDO  '+(tut.step+1)+'/'+tutorialSteps.length,x+14,y+20);
+    g.textAlign='right';g.fillStyle='rgba(255,255,255,0.5)';g.fillText('T pula',x+w-12,y+20);
+    g.textAlign='left';g.font='bold 18px "Courier New",monospace';g.fillStyle='#ffffff';g.fillText(st.title,x+14,y+44);
+    let kx=x+14;for(const k of st.keys)kx=drawKeycap(g,k,kx,y+70,null,13)+6;
+    g.font='13px "Courier New",monospace';g.fillStyle='rgba(255,255,255,0.85)';g.textAlign='left';g.fillText(st.text,kx+(st.keys.length?8:0),y+75);
+    // barrinha de progresso dos passos
+    for(let i=0;i<tutorialSteps.length;i++){g.fillStyle=i<tut.step?'#7dff6b':i===tut.step?'#7fd8ff':'rgba(255,255,255,0.2)';g.fillRect(x+14+i*22,y+h-10,18,4);}
+  }
+  let ty=150;
+  for(const t of S.toasts){
+    const a=clamp(Math.min(t.life,t.max-t.life)*2,0,1);g.globalAlpha=a;
+    const w=330,h=t.keys.length?78:64,x=18;
+    g.fillStyle='rgba(10,14,22,0.88)';g.fillRect(x,ty,w,h);g.fillStyle='#ffe14a';g.fillRect(x,ty,4,h);
+    g.font='bold 14px "Courier New",monospace';g.textAlign='left';g.fillStyle='#ffe14a';g.fillText(t.title,x+14,ty+20);
+    g.font='12px "Courier New",monospace';g.fillStyle='#eeeeee';
+    const words=t.text.split(' ');let line='',ly=ty+38;for(const wd of words){if(g.measureText(line+wd).width>w-28){g.fillText(line,x+14,ly);line='';ly+=15;}line+=wd+' ';}g.fillText(line,x+14,ly);
+    if(t.keys.length){let kx=x+w-14-t.keys.length*30;for(const k of t.keys)kx=drawKeycap(g,k,kx,ty+20,null,11)+4;}
+    g.globalAlpha=1;ty+=h+8;
+  }
 }
 export function drawHUD(g,tgt){
   g.setTransform(DPR,0,0,DPR,0,0);
@@ -70,7 +108,7 @@ export function drawHUD(g,tgt){
     txt(j.text,CW/2,56,14,'#ffffff','center');
     if(j.time!==undefined){const t=Math.max(0,Math.ceil(j.time));txt(Math.floor(t/60)+':'+String(t%60).padStart(2,'0'),CW/2,82,20,t<10?'#ff5050':'#ffffff','center');}
     txt('J encerra o turno',CW/2,j.time!==undefined?100:74,10,'rgba(255,255,255,0.5)','center');}
-  else if(S.phoneCd<=0&&player.state==='play'){txt('Procura um orelhão tocando pra pegar missão  ·  ou arruma um emprego (J)',CW/2,34,14,'#ffe9a0','center');}
+  else if(S.phoneCd<=0&&player.state==='play'&&!tut.active){txt('Procura um orelhão tocando pra pegar missão  ·  ou arruma um emprego (J)',CW/2,34,14,'#ffe9a0','center');}
   {const h=jobHint();if(h)txt(h,CW/2,CH-80,15,'#7fd8ff','center');}
   if(player.bustT>0.15)txt('PARADO AÍ!',CW/2,CH/2-80,28,'#5aa0ff','center');
   // mensagens
@@ -95,6 +133,7 @@ export function drawHUD(g,tgt){
   g.restore();
   txt('M mapa · N mudo · P pausa · v'+VERSION,mx,my2-10,11,'rgba(255,255,255,0.6)');
   if(S.saveFlash>0){g.globalAlpha=clamp(S.saveFlash,0,1);txt('✔ jogo salvo',mx,my2-28,12,'#7dff6b');g.globalAlpha=1;}
+  drawGuide(g);
   drawCrosshair(g);
 }
 export function drawStar(g,x,y,r,col){g.fillStyle=col;g.strokeStyle='rgba(0,0,0,0.6)';g.lineWidth=2;g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*0.45:r;g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}g.closePath();g.fill();g.stroke();}
