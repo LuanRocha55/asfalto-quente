@@ -77,15 +77,17 @@ src/
     interiors.js        portas e menus (cardápio) de cada lugar
     interior.js         cenas internas onde dá pra andar (plantas em texto)
     tutorial.js         começo guiado e dicas de primeira vez
+    titlemenu.js        menu da tela de título e da pausa
     save.js             salvar e carregar
     missions.js         missões dos orelhões
     update.js           atualização do mundo a cada passo, zonas, colisões e pedestres
   render/
     draw.js             mundo em 2D: carros, pessoas, prédios em perspectiva
-    hud.js              interface, minimapa e tela de título
+    hud.js              interface (HUD), minimapa, tela de título e pausa
+    style97.js          identidade visual 97: fontes, visor LCD, blocos, estrela em pixel, bip, letra de impacto
     lighting.js         escuridão da noite e pontos de luz (2D)
     icons.js            ícones do minimapa, do mapa e da legenda
-    overlays.js         mapa em tela cheia e menus
+    overlays.js         mapa em tela cheia (guia de ruas de papel) e menu das lojas
     interiorDraw.js     interiores em 2D
   render3d/
     build.js            cidade 3D estática (prédios, árvores, postes, estádio...), montada uma vez
@@ -122,6 +124,13 @@ Tudo que muda durante o jogo fica em objetos exportados por `src/core/state.js`,
 | `view` | funções `project`/`unproject` entre mundo e tela. O 3D troca essas funções pra mira e avisos funcionarem nos dois modos |
 
 Mensagens pro jogador: `msg(texto, duração)` (linha pequena) e `big(título, subtítulo, cor, duração)` (aviso grande), em `src/game/world.js`.
+
+### Visual 97 (`render/style97.js`)
+Toda tela desenhada em canvas usa as peças daqui, pra manter a identidade de 1997:
+- Fontes: **VT323** (texto, `pf(tamanho)`; já compensa o tamanho menor dela) e **Anton** (títulos, `impact(...)` com contorno e sombra dura). Ficam em `vendor/fonts` (licença OFL) e `main.js` espera carregar antes de montar a cidade, porque os nomes vão pras texturas.
+- `lcdPanel` / `lcd7`: visor de 7 segmentos (dinheiro, cronômetro). `blocks`: vida, colete e lataria em blocos. `pixelStar`, `gunIcon`: desenhos em pixel. `bevel`: moldura chanfrada. `pager`: o bip da missão/emprego.
+- Cores em `C97`. Amarelo orelhão = ação/seleção, verde LCD = dinheiro, vermelho = perigo.
+- No 3D, o **Filtro 97** (`retroPass` em `r3d.js`) desenha a cena numa resolução baixa fixa (240/300/360 linhas conforme a qualidade) e passa um shader de pontilhado (Bayer 4x4) com 32 níveis por cor. Como desenha menos pixels, é mais leve que o 3D normal.
 
 ## Mundo e coordenadas
 
@@ -231,6 +240,7 @@ Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra con
 | `aq_best` | recorde de dinheiro | não |
 | `aq_gfx` | modo gráfico (`3d2`, `3d1`, `3d0`, `2d`) | não |
 | `aq_fps` | estado do F3 (0, 1, 2) | não |
+| `aq_retro` | Filtro 97 (`1` ligado, `0` desligado) | não |
 
 Pra zerar tudo durante os testes, rode no console do navegador:
 

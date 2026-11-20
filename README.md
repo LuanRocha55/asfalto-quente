@@ -36,6 +36,7 @@ No VS Code, a extensão **Live Server** também resolve.
 | N | liga/desliga o som |
 | P / Esc | pausa |
 | G | troca os gráficos: 3D alta → 3D média → 3D leve → clássico |
+| V | liga/desliga o Filtro 97 (visual de placa de vídeo de 1997, só no 3D) |
 | F3 | desempenho: contador de FPS e qualidade → painel completo (FPS, placa de vídeo usada, onde o tempo vai) → desligado |
 | Mouse | mira |
 | Clique esquerdo | atirar / soco (no carro, atira na direção da mira) |

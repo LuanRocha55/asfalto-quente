@@ -4,10 +4,11 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { ctx, CW, CH, DPR } from '../core/canvas.js';
 import { clamp } from '../core/utils.js';
 import { ITS, THEME, NPC_SHIRT, nearestPoint, interiorTitle } from '../game/interior.js';
-import { drawKeycap } from '../render/hud.js';
+import { drawKeycap, drawInteriorHUD } from '../render/hud.js';
 import { S, player } from '../core/state.js';
 import { Geo } from './build.js';
 import { getRenderer } from './r3d.js';
+import { pf } from '../render/style97.js';
 
 let scene=null, camera=null, built=null, rings=[], people=[];
 const WALL={farmacia:'#e7efe9',mercadinho:'#efe2c8',padaria:'#f0dcc0',lojaposto:'#e6e6e6',lanchonete:'#f6e7b5',hospital:'#eef4f7',policia:'#cfd9e6',armas:'#6d5646',escola:'#e9dcc0',casa:'#e8d2b4'};
@@ -136,10 +137,6 @@ export function renderInterior3D(){
   renderer.render(scene,camera);
   // HUD por cima
   const g=ctx;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,CW*DPR,CH*DPR);g.setTransform(DPR,0,0,DPR,0,0);
-  g.font='bold 22px "Courier New",monospace';g.textAlign='center';g.fillStyle='rgba(0,0,0,0.8)';g.fillText(interiorTitle(),CW/2+2,38);g.fillStyle='#ffe9a0';g.fillText(interiorTitle(),CW/2,36);
+  drawInteriorHUD(g,interiorTitle(),near?null:'Anda com WASD · o tapete vermelho é a saída');
   if(near){const q=near.exit?proj(it.px,it.py,1.9):proj(near.x,near.y,1.5);drawKeycap(g,'F',q.x-60,q.y,near.label);}
-  else{g.font='bold 13px "Courier New",monospace';g.fillStyle='rgba(255,255,255,0.7)';g.fillText('Anda com WASD · o tapete vermelho é a saída',CW/2,CH-24);}
-  const money='$ '+Math.floor(player.money).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
-  g.textAlign='right';g.font='bold 26px "Courier New",monospace';g.fillStyle='rgba(0,0,0,0.75)';g.fillText(money,CW-18,38);g.fillStyle='#7dff6b';g.fillText(money,CW-20,36);
-  g.fillStyle='rgba(0,0,0,0.5)';g.fillRect(18,18,184,16);g.fillStyle='#e53935';g.fillRect(20,20,180*clamp(player.health/100,0,1),12);
 }

@@ -20,6 +20,7 @@ import { BUS_STOPS, jobSpots, doorOf } from '../game/jobs.js';
 import { matchOn, match, opponent, HOME } from '../game/stadium.js';
 import { enterables, nearestDoor } from '../game/interiors.js';
 import { drawIcon, KIND_ICON, ICONS } from './icons.js';
+import { pf } from './style97.js';
 
 let BR=1;      // brilho geral dos prédios/árvores (cai à noite)
 let NIGHT=0;   // 0 dia .. 1 noite
@@ -139,7 +140,7 @@ export function drawBuilding(g,b,camH){
 export function roofSign(g,b,x,y,rw,rh){
   const cx=x+rw/2, cy=y+rh/2, s=Math.min(rw,rh);
   const fs=Math.round(clamp(s*0.13,10,17));
-  const plate=(t,py,bg,fg)=>{g.font='bold '+fs+'px "Courier New",monospace';const w=g.measureText(t).width+12;g.fillStyle=bg;g.fillRect(cx-w/2,py-fs*0.8,w,fs*1.3);label(g,t,cx,py+fs*0.3,fg,fs);};
+  const plate=(t,py,bg,fg)=>{g.font=pf(fs);const w=g.measureText(t).width+12;g.fillStyle=bg;g.fillRect(cx-w/2,py-fs*0.8,w,fs*1.3);label(g,t,cx,py+fs*0.3,fg,fs);};
   const k=b.kind;
   if(k==='hospital'){g.fillStyle='#e53935';const q=s*0.16;g.fillRect(cx-q,cy-q*3,q*2,q*6);g.fillRect(cx-q*3,cy-q,q*6,q*2);plate('HOSPITAL',y+rh-12,'rgba(255,255,255,0.85)','#b71c1c');}
   else if(k==='policia'){star(g,cx,cy-s*0.08,s*0.26,'#f5f5f5');star(g,cx,cy-s*0.08,s*0.15,'#2e4d86');
@@ -232,7 +233,7 @@ function trafficLight(g,x,y,ang,st){
   [['r',-6],['y',0],['g',6]].forEach(([k,o])=>{g.fillStyle=st===k?cols[k][0]:cols[k][1];g.beginPath();g.arc(o,0,2.6,0,Math.PI*2);g.fill();});
   g.restore();
 }
-export function label(g,t,x,y,col,size){g.font='bold '+size+'px "Courier New",monospace';g.textAlign='center';g.fillStyle='rgba(0,0,0,0.5)';g.fillText(t,x+2,y+2);g.fillStyle=col;g.fillText(t,x,y);}
+export function label(g,t,x,y,col,size){g.font=pf(size);g.textAlign='center';g.fillStyle='rgba(0,0,0,0.5)';g.fillText(t,x+2,y+2);g.fillStyle=col;g.fillText(t,x,y);}
 export function drawTree(g,tr,camH){const p=proj(tr.x,tr.y,26,camH);const k=camH/(camH-26);const TC=shade(tr.c,BR);
   g.fillStyle='rgba(0,0,0,0.25)';g.beginPath();g.arc(tr.x+4,tr.y+4,tr.r*0.9,0,Math.PI*2);g.fill();
   if(tr.palm){g.strokeStyle='#7a5a2a';g.lineWidth=3;g.beginPath();g.moveTo(tr.x,tr.y);g.lineTo(p[0],p[1]);g.stroke();
@@ -334,7 +335,7 @@ export function drawGround2D(g,vx0,vx1,vy0,vy1,mode){
     const pulse=on?0:Math.sin(S.gameTime*3+b.x0)*2;
     g.fillStyle=on?'rgba(255,233,160,0.6)':'rgba(255,233,160,0.3)';g.beginPath();g.arc(d.x,d.y,(on?20:17)+pulse,0,Math.PI*2);g.fill();
     drawIcon(g,KIND_ICON[b.kind],d.x,d.y,on?22:18);}
-  if(nearB&&mode==='2d'){const d=doorOf(nearB);const name=ICONS[KIND_ICON[nearB.kind]].name.split(' (')[0].split(' ·')[0];g.font='bold 13px "Courier New",monospace';drawKeycap(g,'F',d.x-(g.measureText('Entrar: '+name).width+30)/2,d.y-30,'Entrar: '+name,13);}
+  if(nearB&&mode==='2d'){const d=doorOf(nearB);const name=ICONS[KIND_ICON[nearB.kind]].name.split(' (')[0].split(' ·')[0];g.font=pf(13);drawKeycap(g,'F',d.x-(g.measureText('Entrar: '+name).width+30)/2,d.y-30,'Entrar: '+name,13);}
   // marcador do alvo
   const tgt=S.mission?S.mission.def.target(S.mission):(S.job?S.job.target:(tutorialTarget()||S.waypoint));
   if(tgt&&!(tgt instanceof Car)&&!(tgt instanceof Ped)){const r=26+Math.sin(S.gameTime*5)*5;g.strokeStyle='#ffe14a';g.lineWidth=4;g.beginPath();g.arc(tgt.x,tgt.y,r,0,Math.PI*2);g.stroke();g.fillStyle='rgba(255,225,74,0.25)';g.fill();}
@@ -364,7 +365,7 @@ export function render(){
     if(p.state==='wait'){const yy=p.y-16+Math.sin(S.gameTime*6)*2;g.fillStyle='#ffe14a';g.beginPath();g.moveTo(p.x,yy+6);g.lineTo(p.x-5,yy-2);g.lineTo(p.x+5,yy-2);g.fill();}}
   // jogador a pé
   if(!player.car&&player.state==='play'){if(!(player.inv>0&&Math.floor(S.gameTime*10)%2))drawPerson(g,player.x,player.y,player.a,'#ff7a1a','#c68642','#111',player.anim/10,(keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight']),1.15);
-    const nc=nearestCar(26);if(nc&&(!nearB||Math.hypot(nc.x-player.x,nc.y-player.y)-nc.t.wid/2<Math.hypot(doorOf(nearB).x-player.x,doorOf(nearB).y-player.y))){g.font='bold 12px "Courier New",monospace';const t=(nc.driver==='ai'?'Roubar ':'Entrar: ')+nc.t.name;drawKeycap(g,'F',nc.x-(g.measureText(t).width+28)/2,nc.y-nc.t.wid-14,t,12);}}
+    const nc=nearestCar(26);if(nc&&(!nearB||Math.hypot(nc.x-player.x,nc.y-player.y)-nc.t.wid/2<Math.hypot(doorOf(nearB).x-player.x,doorOf(nearB).y-player.y))){g.font=pf(12);const t=(nc.driver==='ai'?'Roubar ':'Entrar: ')+nc.t.name;drawKeycap(g,'F',nc.x-(g.measureText(t).width+28)/2,nc.y-nc.t.wid-14,t,12);}}
   // carros
   for(const c of S.cars){if(c.x<vx0-60||c.x>vx1+60||c.y<vy0-60||c.y>vy1+60)continue;drawCar(g,c);
     if(S.mission&&c.mission===S.mission&&!c.wreck&&c.maxHp){const f=clamp(c.health/c.maxHp,0,1);g.fillStyle='rgba(0,0,0,0.6)';g.fillRect(c.x-21,c.y-44,42,7);g.fillStyle=f>0.4?'#4cff6a':'#ff5030';g.fillRect(c.x-20,c.y-43,40*f,5);}

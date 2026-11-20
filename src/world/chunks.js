@@ -135,7 +135,7 @@ function markSegment(g,horiz,L,a0,a1,A,B,nA,nB){
     if(!sig&&!pare)return;
     const pStart=L.type==='beco'?p0:(dirSign*plusSide>0?L.px:p0);
     g.fillStyle='rgba(245,245,245,0.9)';R(a,pStart+2,5,half-4);
-    if(pare){g.save();g.fillStyle='rgba(245,245,245,0.9)';g.font='bold 13px "Courier New",monospace';g.textAlign='center';g.textBaseline='middle';
+    if(pare){g.save();g.fillStyle='rgba(245,245,245,0.9)';g.font='bold 13px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';
       const cx=horiz?a-dirSign*20:pStart+half/2, cy=horiz?pStart+half/2:a-dirSign*20;g.translate(cx,cy);
       g.rotate(horiz?(dirSign>0?Math.PI/2:-Math.PI/2):(dirSign>0?Math.PI:0));g.fillText('PARE',0,0);g.restore();}
   };

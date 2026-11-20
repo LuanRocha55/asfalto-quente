@@ -8,16 +8,11 @@ import { S, keys, player, mouse } from './state.js';
 import { cycleWeapon, selectWeapon } from '../game/weapons.js';
 import { toggleJob } from '../game/jobs.js';
 import { nearestDoor, openPlace, menuKey, menuMouse, closeMenu } from '../game/interiors.js';
-import { hasSave, loadGame, deleteSave } from '../game/save.js';
 import { enterInterior, interactInterior } from '../game/interior.js';
-import { startTutorial, skipTutorial } from '../game/tutorial.js';
+import { skipTutorial } from '../game/tutorial.js';
+import { titleKey, titleMouse, startGame } from '../game/titlemenu.js';
 import { mapClick } from '../render/overlays.js';
 
-function startGame(fresh){
-  if(fresh) deleteSave();
-  if(!fresh&&hasSave()) loadGame(); else startTutorial();
-  S.started=true; initAudio(); if(AU.ctx&&AU.ctx.state==='suspended')AU.ctx.resume();
-}
 // F / Enter / clique direito: porta do prédio tem prioridade sobre carro quando está mais perto
 function interact(){
   if(S.interior){interactInterior();return;}
@@ -37,14 +32,11 @@ window.addEventListener('keydown',e=>{
   if(['Space','KeyX','ControlLeft','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','Backspace'].includes(e.code))e.preventDefault();
   if(e.repeat){keys[e.code]=true;return;}
   keys[e.code]=true;
-  if(!S.started){
-    if(e.code==='Enter'||e.code==='Space')startGame(false);
-    else if(e.code==='Backspace'||e.code==='Delete')startGame(true);
-    return;}
+  if(!S.started){titleKey(e.code);return;}
   if(S.menu){menuKey(e.code);return;}
   if(S.mapOpen){if(e.code==='KeyM'||e.code==='Tab'||e.code==='Escape')S.mapOpen=false;return;}
-  if(e.code==='KeyP'||e.code==='Escape'){e.preventDefault();S.paused=!S.paused;return;}
-  if(S.paused){if(e.code==='Enter'||e.code==='Space')S.paused=false;return;}
+  if(S.paused){titleKey(e.code);return;}
+  if(e.code==='KeyP'||e.code==='Escape'){e.preventDefault();S.paused=true;return;}
   if(e.code==='KeyT')skipTutorial();
   if(S.interior){if(e.code==='KeyF'||e.code==='Enter'||e.code==='KeyE')interactInterior();return;}
   if(e.code==='KeyM'||e.code==='Tab'){toggleMap();return;}
@@ -61,13 +53,13 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>{keys[e.code]=false;});
 window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.down=false;});
 cv.addEventListener('contextmenu',e=>e.preventDefault());
-cv.addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true;if(S.menu)menuMouse(e.clientX,e.clientY,false);});
+cv.addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true;if(S.menu)menuMouse(e.clientX,e.clientY,false);else if(!S.started||S.paused)titleMouse(e.clientX,e.clientY,false);});
 cv.addEventListener('pointerdown',e=>{
   mouse.x=e.clientX;mouse.y=e.clientY;
-  if(!S.started){startGame(false);return;}   // primeiro clique só começa (ou continua) o jogo
+  if(!S.started){titleMouse(e.clientX,e.clientY,true);return;}
   if(S.menu){if(e.button===0)menuMouse(e.clientX,e.clientY,true);else closeMenu();return;}
   if(S.mapOpen){mapClick(e.clientX,e.clientY,e.button);return;}
-  if(S.paused){S.paused=false;return;}
+  if(S.paused){titleMouse(e.clientX,e.clientY,true);return;}
   mouse.active=true;
   if(S.interior){if(e.button===2)interactInterior();return;}
   if(e.button===0){mouse.down=true;if(!player.car&&player.weapon==='punho')punch();}

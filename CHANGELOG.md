@@ -5,6 +5,32 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.5.0 — 20/11/2026
+**Visual 97: interface nova e cidade com cara de jogo de 1997**
+- Fontes novas: **VT323** (texto, estilo terminal) e **Anton** (títulos de impacto), salvas no jogo, funcionam sem internet
+- HUD redesenhado:
+  - dinheiro num **visor LCD de 7 segmentos**, que rola contando quando entra ou sai grana
+  - **estrelas em pixel**; a que acabou de acender pisca branca
+  - **vida, colete e lataria em blocos** (piscam quando estão no fim)
+  - arma numa caixinha com desenho em pixel e munição ao lado
+  - missão e emprego chegam no **bip** (pager) no topo, que bipa e treme quando chega mensagem nova; cronômetro no visor LCD
+  - nome do bairro entra grande e inclinado ao cruzar a divisa
+  - minimapa com moldura chanfrada e **N** em cima; a linha fixa de atalhos saiu da tela (fica em Controles)
+  - mira em pixel, borda vermelha pontilhada ao levar dano e pulsando com vida baixa
+- **Tela de título e pausa com menu**: Continuar/Começar, Novo jogo (com confirmação), Controles, Gráficos, Filtro 97 e Som. O resumo do save aparece no bip
+- **Mapa (M) como guia de ruas de papel**: grade A–H × 1–8, avenidas em amarelo, carimbo vermelho de **BLITZ** nos bairros fechados e índice com a casa da grade do lugar mais perto de cada tipo
+- **Lojas** como tabela de preço: linha pontilhada até o valor, escolha em amarelo, item indisponível apagado com o motivo
+- Mensagens grandes em letra de impacto, entrando com tranco
+- Interiores com o mesmo HUD enxuto (título, LCD e blocos)
+- 3D:
+  - **Filtro 97** (ligado por padrão, tecla **V** ou no menu): resolução baixa com pontilhado e menos cores, como placa de vídeo da época. Deixa o jogo mais leve
+  - **mar com ondas** facetadas e brilho do sol, cor muda com a hora
+  - **letreiros nos comércios** (Farmácia, Lanches, Posto, Tonhão, Oficina do Zé, Pintura, Padaria, Mercadinho, Hospital, Polícia): pintados de dia, neon aceso à noite, com brilho na qualidade alta; farmácia e lanchonete dão aquela falhada
+  - céu e neblina com cores mais quentes no pôr do sol
+  - câmera abre um pouco com a velocidade
+- Sensação de jogo: batida forte dá um **congelamento de 60 ms** além do tranco na câmera
+- Contador de FPS foi pro canto de baixo
+
 ## 1.4.0 — 20/11/2026
 **Bairros liberados por meta (Operação Maré Alta)**
 - A cidade está sob operação policial: começam abertos só o **Centro** e o **Jardim Maresia** (onde ficam sua casa, hospital, delegacia, pintura e armas)
