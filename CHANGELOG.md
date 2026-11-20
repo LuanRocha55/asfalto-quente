@@ -5,6 +5,9 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.1.5 — 20/11/2026
+- Painel F3: corrigido o diagnóstico do gargalo (somava os tempos como texto e sempre culpava o processador)
+
 ## 1.1.4 — 20/11/2026
 - Contador de FPS um pouco menor e mais alto, pra não encostar na linha de dicas/missão
 

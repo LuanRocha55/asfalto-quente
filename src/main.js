@@ -52,7 +52,7 @@ function drawPerf(){
     'tela 3D: '+info.w+'x'+info.h+' (escala '+info.dpr.toFixed(2)+')  ·  qualidade '+QNAMES[info.quality]+'  ·  sombras '+(info.shadows?'sim':'não'),
     'chamadas de desenho: '+info.calls+'  ·  triângulos: '+Math.round(info.tris/1000)+' mil  ·  pedaços de chão: '+info.chunks);
     if(/intel|uhd|iris|microsoft basic|swiftshader|llvmpipe/i.test(info.gpu))lines.push('! O navegador está usando a placa integrada/software, não a dedicada.');
-    const cpu=perf.shown.up+perf.shown.rd, ms=1000/Math.max(1,perf.shown.fps);
+    const cpu=parseFloat(perf.shown.up)+parseFloat(perf.shown.rd), ms=1000/Math.max(1,perf.shown.fps);
     if(ms>20)lines.push(cpu<ms*0.5?'-> o gargalo é a placa de vídeo (a CPU fica esperando)':'-> o gargalo é o processador');}
   else lines.push('(modo clássico ou interior: só 2D)');
   g.setTransform(DPR,0,0,DPR,0,0);g.font='bold 12px "Courier New",monospace';g.textAlign='left';
