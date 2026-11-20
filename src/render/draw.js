@@ -16,6 +16,7 @@ import { darkness } from '../world/time.js';
 import { drawLighting, drawGlows } from './lighting.js';
 import { WEAPONS } from '../game/weapons.js';
 import { BUS_STOPS, jobSpots, doorOf } from '../game/jobs.js';
+import { matchOn, match, opponent, HOME } from '../game/stadium.js';
 import { enterables, nearestDoor } from '../game/interiors.js';
 import { drawIcon, KIND_ICON, ICONS } from './icons.js';
 
@@ -100,6 +101,7 @@ export function proj(px,py,h,camH){const k=camH/(camH-h);return[cam.x+(px-cam.x)
 export function drawBuilding(g,b,camH){
   const h=b.h;const {x0,y0,x1,y1}=b;
   if(b.kind==='canopy'){drawCanopy(g,b,camH);return;}
+  if(b.kind==='estadio'){drawStadium(g,b,camH);return;}
   const A=proj(x0,y0,h,camH),B=proj(x1,y0,h,camH),C=proj(x1,y1,h,camH),D=proj(x0,y1,h,camH);
   const quad=(p1,p2,p3,p4,col)=>{g.fillStyle=col;g.beginPath();g.moveTo(p1[0],p1[1]);g.lineTo(p2[0],p2[1]);g.lineTo(p3[0],p3[1]);g.lineTo(p4[0],p4[1]);g.closePath();g.fill();};
   const floors=Math.max(1,Math.floor(h/12));
@@ -165,6 +167,50 @@ function roofSign(g,b,x,y,rw,rh){
 function star(g,x,y,r,col){g.fillStyle=col;g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*0.45:r;g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}g.closePath();g.fill();}
 function wrench(g,x,y,size){g.save();g.translate(x,y);g.rotate(-Math.PI/4);g.fillStyle='#e0e0e0';g.fillRect(-size*0.08,-size*0.05,size*0.55,size*0.1);
   g.beginPath();g.arc(-size*0.12,0,size*0.16,0,Math.PI*2);g.fill();g.fillStyle='#8a4a1a';g.fillRect(-size*0.3,-size*0.05,size*0.16,size*0.1);g.restore();}
+// estádio: arquibancada inclinada (alta por fora, baixa na beira do gramado), torcida e refletores
+function drawStadium(g,b,camH){
+  const H=b.h, Hi=H*0.3, I=b.inner;
+  const P=(x,y,h)=>proj(x,y,h,camH);
+  const O=[P(b.x0,b.y0,H),P(b.x1,b.y0,H),P(b.x1,b.y1,H),P(b.x0,b.y1,H)];
+  const N=[P(I.x0,I.y0,Hi),P(I.x1,I.y0,Hi),P(I.x1,I.y1,Hi),P(I.x0,I.y1,Hi)];
+  const G=[[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]];
+  const GI=[[I.x0,I.y0],[I.x1,I.y0],[I.x1,I.y1],[I.x0,I.y1]];
+  const quad=(a,c,d,e,col)=>{g.fillStyle=col;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(c[0],c[1]);g.lineTo(d[0],d[1]);g.lineTo(e[0],e[1]);g.closePath();g.fill();};
+  const wall=shade(b.wall,BR);
+  // paredes de fora (lados virados pra câmera)
+  if(cam.y<b.y0)quad(G[0],G[1],O[1],O[0],shade(b.wall,0.82*BR));
+  if(cam.y>b.y1)quad(G[3],G[2],O[2],O[3],shade(b.wall,0.92*BR));
+  if(cam.x<b.x0)quad(G[0],G[3],O[3],O[0],shade(b.wall,0.72*BR));
+  if(cam.x>b.x1)quad(G[1],G[2],O[2],O[1],shade(b.wall,0.78*BR));
+  // muretas de dentro (beira do gramado)
+  if(cam.y>I.y0)quad(GI[0],GI[1],N[1],N[0],shade('#607d8b',BR));
+  if(cam.y<I.y1)quad(GI[3],GI[2],N[2],N[3],shade('#607d8b',BR));
+  if(cam.x>I.x0)quad(GI[0],GI[3],N[3],N[0],shade('#546e7a',BR));
+  if(cam.x<I.x1)quad(GI[1],GI[2],N[2],N[1],shade('#546e7a',BR));
+  // arquibancada (4 faixas inclinadas)
+  const sides=[[0,1],[1,2],[2,3],[3,0]], cols=['#78909c','#8d9ea7','#78909c','#8d9ea7'];
+  const live=matchOn(), m=live?match():null, opp=opponent();
+  for(let k=0;k<4;k++){const [a,c]=sides[k];quad(O[a],O[c],N[c],N[a],shade(cols[k],BR));
+    // degraus
+    g.strokeStyle='rgba(0,0,0,0.18)';g.lineWidth=1.5;
+    for(let r=1;r<6;r++){const t=r/6;g.beginPath();g.moveTo(lerp(N[a][0],O[a][0],t),lerp(N[a][1],O[a][1],t));g.lineTo(lerp(N[c][0],O[c][0],t),lerp(N[c][1],O[c][1],t));g.stroke();}
+    // torcida: pontinhos coloridos (lota em dia de jogo)
+    const dens=live?0.8:0.06;
+    for(let r=0;r<5;r++){const t=(r+0.5)/6;const ax=lerp(N[a][0],O[a][0],t),ay=lerp(N[a][1],O[a][1],t),cx2=lerp(N[c][0],O[c][0],t),cy2=lerp(N[c][1],O[c][1],t);
+      const len=Math.hypot(cx2-ax,cy2-ay),n=Math.floor(len/9);
+      for(let q=0;q<n;q++){const h=hash(b.seed*999+k*131+r*17+q);if(h>dens)continue;
+        const hh=hash(h*77+q);const col=hh<0.68?HOME.colors[hh<0.4?0:1]:opp.colors[hh<0.84?0:1];
+        const jump=live?Math.sin(S.gameTime*8+q+r)*1.2:0;
+        g.fillStyle=col;g.fillRect(lerp(ax,cx2,q/n)-2,lerp(ay,cy2,q/n)-2+jump,4,4);}}}
+  // placa e refletores
+  label(g,'ARENA MARESIA',(O[2][0]+O[3][0])/2,O[2][1]-8,'#ffffff',16);
+  if(live&&m)label(g,HOME.name+' '+m.hs+' x '+m.as+' '+opp.name,(O[0][0]+O[1][0])/2,O[0][1]+22,'#ffe14a',13);
+  const lit=NIGHT>0.2||live;
+  for(const [gx,gy] of [[b.x0-16,b.y0-16],[b.x1+16,b.y0-16],[b.x0-16,b.y1+16],[b.x1+16,b.y1+16]]){
+    const top=P(gx,gy,H+50);g.strokeStyle=shade('#9e9e9e',BR);g.lineWidth=5;g.beginPath();g.moveTo(gx,gy);g.lineTo(top[0],top[1]);g.stroke();
+    g.fillStyle=lit?'#fffde7':'#616161';g.fillRect(top[0]-12,top[1]-7,24,14);
+    if(lit){g.globalCompositeOperation='lighter';const gr=g.createRadialGradient(top[0],top[1],0,top[0],top[1],60);gr.addColorStop(0,'rgba(255,250,220,0.5)');gr.addColorStop(1,'rgba(255,250,220,0)');g.fillStyle=gr;g.beginPath();g.arc(top[0],top[1],60,0,Math.PI*2);g.fill();g.globalCompositeOperation='source-over';}}
+}
 function drawCanopy(g,b,camH){
   const A=proj(b.x0,b.y0,b.h,camH),C=proj(b.x1,b.y1,b.h,camH);
   // pilares

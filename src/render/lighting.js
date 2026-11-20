@@ -1,6 +1,6 @@
 // Iluminação: escurece a tela à noite e abre "buracos" de luz (postes, faróis, fogo)
 import { ctx, CW, CH, DPR } from '../core/canvas.js';
-import { lamps, zones, phones } from '../world/map.js';
+import { lamps, zones, phones, special } from '../world/map.js';
 import { darkness, golden } from '../world/time.js';
 import { heatStars } from '../game/world.js';
 import { S, player, cam } from '../core/state.js';
@@ -50,6 +50,7 @@ export function drawLighting(v){
       if(c.ai==='police'&&heatStars()>0) hole(c.x,c.y,70,0.5*a);
     }
     if(!player.car&&player.state==='play') hole(player.x,player.y,75,0.55*a);
+    if(special.estadio){const I=special.estadio.inner;const cx=(I.x0+I.x1)/2,cy=(I.y0+I.y1)/2;if(inView(cx,cy,v,600))hole(cx,cy,Math.max(I.x1-I.x0,I.y1-I.y0)*0.75,0.95*a);}
     for(const p of S.parts) if(p.fire&&inView(p.x,p.y,v,40)) hole(p.x,p.y,p.size*5,0.7*a);
     for(const t of S.tracers) hole(t.x2,t.y2,30,0.8*a);
   }

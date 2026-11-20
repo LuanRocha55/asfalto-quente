@@ -45,7 +45,7 @@ export function drawBigMap(){
   // legenda
   const lx=ox+size+30; let ly=oy+6;
   txt(g,'LEGENDA',lx,ly,16,'#ffe9a0'); ly+=20;
-  const order=['casa','phone','hospital','farmacia','policia','ze','pintura','armas','posto','lanchonete','mercadinho','padaria','escola','terminal','taxi','waypoint'];
+  const order=['casa','phone','estadio','hospital','farmacia','policia','ze','pintura','armas','posto','lanchonete','mercadinho','padaria','escola','terminal','taxi','waypoint'];
   const step=Math.max(18,Math.min(26,(size-110)/order.length));
   for(const k of order){drawIcon(g,k,lx+9,ly+step/2-2,Math.min(18,step-4));txt(g,ICONS[k].name,lx+26,ly+step/2+3,Math.round(clamp(step*0.5,10,13)),'#e8e8e8');ly+=step;}
   ly+=8;

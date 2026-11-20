@@ -26,7 +26,7 @@ function interact(){
     if(b){ // porta só ganha se estiver mais perto que o carro
       const d=doorOf(b), c=nearestCar(26);
       const dd=Math.hypot(d.x-player.x,d.y-player.y), dc=c?Math.hypot(c.x-player.x,c.y-player.y)-c.t.wid/2:1e9;
-      if(dd<=dc){enterInterior(b);return;}
+      if(dd<=dc){if(b.kind==='estadio')openPlace(b);else enterInterior(b);return;}
     }
   }
   enterExit();

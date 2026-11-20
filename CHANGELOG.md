@@ -5,6 +5,16 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.10.0 — 19/11/2026
+**Arena Maresia (estádio)**
+- Estádio no Centro, ocupando o espaço de 4 quarteirões: arquibancada inclinada, gramado com marcação, 4 portões e 4 refletores que acendem à noite e em dia de jogo
+- Dia de jogo todo dia das 15h30 às 18h: Maresia FC contra um adversário diferente a cada dia (times inventados)
+- Arquibancada lota com a torcida nas cores dos times, torcida chega na praça em volta e dá pra ouvir o barulho de perto
+- Gols acontecem durante o jogo e aparecem na tela se você estiver perto; placar ao vivo em cima do estádio
+- Bilheteria (F no portão de baixo): assistir ao jogo ($20, pula até o fim e recupera um pouco de vida), apostar $100 no Maresia FC (paga 2,5x) e ver o placar
+- Ícone de estádio no minimapa, no mapa e na legenda
+- O hospital e um dos postos mudaram de lugar pra abrir espaço
+
 ## 0.9.3 — 19/11/2026
 - Telhado da escola agora tem um livro aberto grande (antes parecia um campo de futebol)
 

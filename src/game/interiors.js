@@ -8,8 +8,9 @@ import { busted } from './player.js';
 import { saveGame } from './save.js';
 import { sfxTone } from '../audio/audio.js';
 import { S, player } from '../core/state.js';
+import { stadiumItems, stadiumSub } from './stadium.js';
 
-const ENTERABLE = ['hospital','policia','armas','farmacia','mercadinho','padaria','lanchonete','escola','casa','lojaposto'];
+const ENTERABLE = ['estadio','hospital','policia','armas','farmacia','mercadinho','padaria','lanchonete','escola','casa','lojaposto'];
 export const enterables = () => buildings.filter(b=>ENTERABLE.includes(b.kind));
 
 export function nearestDoor(r=40){
@@ -27,6 +28,7 @@ function sleepTo(h){return ()=>{S.tod=h;player.health=100;S.cars=S.cars.filter(c
 
 // ---- cardápio de cada lugar ----
 const PLACES = {
+  estadio:   { title:'ARENA MARESIA', sub:'', items:()=>stadiumItems() },
   farmacia:  { title:'FARMÁCIA', sub:'Remédio pra quem levou pancada', items:()=>[heal(30,25,'Curativo  (+30 vida)'),heal(100,80,'Kit completo  (vida cheia)'),colete] },
   mercadinho:{ title:'MERCADINHO', sub:'Tem de tudo um pouco', items:()=>[food('Refrigerante',10,5),food('Biscoito recheado',20,10),food('Marmita',50,25),
       {label:'Raspadinha  (chance de ganhar $250)',price:10,run:()=>{if(Math.random()<0.12){player.money+=250;big('GANHOU!','+$250 na raspadinha','#7dff6b',2);}else msg('Não foi dessa vez.',2);}}] },
@@ -54,7 +56,7 @@ export function openPlace(b,station){
   const kind=b.kind||b;const P=PLACES[kind];if(!P)return false;
   let items=P.items();
   if(station){const f=items.filter(it=>(it.station||'balcao')===station);if(f.length)items=f;}
-  const sub={cama:'Hora de descansar',mesa:'Computador da casa'}[station]||P.sub;
+  const sub={cama:'Hora de descansar',mesa:'Computador da casa'}[station]||(kind==='estadio'?stadiumSub():P.sub);
   S.menu={title:P.title,sub,kind,items,sel:0,rects:[]};
   sfxTone(440,0.06,0.06,'square');
   return true;

@@ -45,6 +45,18 @@ export function renderChunk(cx,cy){
     const L=VL[i],a0=HL[j].px,a1=HL[j+1].px,p=L.px;
     if(a1<by0-200||a0>by1+200||p<bx0-200||p>bx1+200)continue;
     markSegment(g,false,L,a0,a1,HL[j],HL[j+1],[i,j],[i,j+1]);}
+  // gramado do estádio
+  for(const d of decor){if(d.type!=='estadio-campo')continue;if(d.x1<bx0||d.x0>bx1||d.y1<by0||d.y0>by1)continue;
+    const w=d.x1-d.x0,h=d.y1-d.y0,vert=h>w;
+    for(let k=0;k<12;k++){g.fillStyle=k%2?'#4caf50':'#43a047';if(vert)g.fillRect(d.x0,d.y0+k*h/12,w,h/12);else g.fillRect(d.x0+k*w/12,d.y0,w/12,h);}
+    const m=24;g.strokeStyle='rgba(255,255,255,0.9)';g.lineWidth=3;g.strokeRect(d.x0+m,d.y0+m,w-2*m,h-2*m);
+    const cx=(d.x0+d.x1)/2,cy=(d.y0+d.y1)/2;
+    g.beginPath();if(vert){g.moveTo(d.x0+m,cy);g.lineTo(d.x1-m,cy);}else{g.moveTo(cx,d.y0+m);g.lineTo(cx,d.y1-m);}g.stroke();
+    g.beginPath();g.arc(cx,cy,Math.min(w,h)*0.12,0,Math.PI*2);g.stroke();
+    const pw=Math.min(w,h)*0.45,pd=Math.min(w,h)*0.16;
+    if(vert){g.strokeRect(cx-pw/2,d.y0+m,pw,pd);g.strokeRect(cx-pw/2,d.y1-m-pd,pw,pd);g.fillStyle='#ffffff';g.fillRect(cx-30,d.y0+m-8,60,6);g.fillRect(cx-30,d.y1-m+2,60,6);}
+    else{g.strokeRect(d.x0+m,cy-pw/2,pd,pw);g.strokeRect(d.x1-m-pd,cy-pw/2,pd,pw);g.fillStyle='#ffffff';g.fillRect(d.x0+m-8,cy-30,6,60);g.fillRect(d.x1-m+2,cy-30,6,60);}
+  }
   // campinho de várzea
   for(const d of decor){if(d.type!=='campo')continue;if(d.x1<bx0||d.x0>bx1||d.y1<by0||d.y0>by1)continue;
     g.strokeStyle='rgba(255,255,255,0.7)';g.lineWidth=3;g.strokeRect(d.x0+6,d.y0+6,d.x1-d.x0-12,d.y1-d.y0-12);

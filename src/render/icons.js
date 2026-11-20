@@ -2,6 +2,7 @@
 // Cada lugar tem cor de fundo própria + desenho branco, pra não depender de letra.
 
 export const ICONS = {
+  estadio:    { bg:'#2e7d32', name:'Arena Maresia (jogo às 15h30)' },
   hospital:   { bg:'#e53935', name:'Hospital' },
   farmacia:   { bg:'#2e9e4a', name:'Farmácia' },
   policia:    { bg:'#2e4d86', name:'Polícia' },
@@ -21,7 +22,7 @@ export const ICONS = {
 };
 
 // mapeia o "kind" do prédio para o ícone
-export const KIND_ICON = { hospital:'hospital', farmacia:'farmacia', policia:'policia', ze:'ze', pintura:'pintura', pintura2:'pintura',
+export const KIND_ICON = { estadio:'estadio', hospital:'hospital', farmacia:'farmacia', policia:'policia', ze:'ze', pintura:'pintura', pintura2:'pintura',
   armas:'armas', lojaposto:'posto', lanchonete:'lanchonete', mercadinho:'mercadinho', padaria:'padaria', escola:'escola', casa:'casa' };
 
 export function drawIcon(g,key,x,y,s){
@@ -40,6 +41,9 @@ export function drawIcon(g,key,x,y,s){
       if(key==='farmacia'){g.fillStyle=ic.bg;g.beginPath();g.arc(0,0,u*0.8,0,Math.PI*2);g.fill();}
       break;
     case 'policia': star(g,0,u*0.3,u*4); break;
+    case 'estadio': // arquibancada oval com gramado no meio
+      g.beginPath();g.ellipse(0,0,u*4.2,u*3.2,0,0,Math.PI*2);g.fill();g.fillStyle='#66bb6a';g.beginPath();g.ellipse(0,0,u*2.6,u*1.7,0,0,Math.PI*2);g.fill();
+      g.strokeStyle=fg;g.lineWidth=Math.max(1,s*0.06);g.beginPath();g.moveTo(0,-u*1.7);g.lineTo(0,u*1.7);g.stroke();break;
     case 'ze': // chave inglesa
       g.save();g.rotate(-Math.PI/4);g.fillRect(-u*0.8,-u*0.8,u*5,u*1.6);g.beginPath();g.arc(-u*1.6,0,u*2,0,Math.PI*2);g.fill();
       g.fillStyle=ic.bg;g.fillRect(-u*3.8,-u*0.7,u*1.8,u*1.4);g.restore(); break;
