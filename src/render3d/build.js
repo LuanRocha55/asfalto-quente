@@ -2,10 +2,11 @@
 // semáforos, enfeites, estádio. Unidade: 1 = 1 tile (32 px). X = x do mundo, Z = y do mundo, Y = altura.
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { mulberry } from '../core/utils.js';
-import { T, buildings, trees, lamps, decor, pumps, phones, special, VL, HL, NV, NH, isJunction } from '../world/map.js';
+import { T, ROAD, tileAt, buildings, trees, lamps, decor, pumps, phones, special, VL, HL, NV, NH, isJunction } from '../world/map.js';
 import { signalized } from '../world/districts.js';
 import { BUS_STOPS } from '../game/jobs.js';
 import { roofSign } from '../render/draw.js';
+import { mergePlain } from './models97.js';
 
 export const U=1/T;                         // px -> unidade
 export const HSCALE=2.2/T;                  // altura "2D" -> unidade
@@ -69,8 +70,67 @@ function gable(G,x0,z0,x1,z1,y,h,roof){
     const w=C('#e8e0d0');G.tri([x0,y,z1],[x1,y,z1],[xm,y+h,z1],0,0,1,w);G.tri([x1,y,z0],[x0,y,z0],[xm,y+h,z0],0,0,-1,w);}
 }
 
+// telhado de quatro águas com beiral (casa brasileira dos anos 80/90), telha de barro
+function hip(G,x0,z0,x1,z1,y,h,roof){
+  const ov=0.18;x0-=ov;z0-=ov;x1+=ov;z1+=ov;
+  const col=C(roof),dark=col.clone().multiplyScalar(0.78),mid=col.clone().multiplyScalar(0.9);
+  const along=(x1-x0)>=(z1-z0),inset=Math.min(x1-x0,z1-z0)/2;
+  const r0=along?[x0+inset,y+h,(z0+z1)/2]:[(x0+x1)/2,y+h,z0+inset], r1=along?[x1-inset,y+h,(z0+z1)/2]:[(x0+x1)/2,y+h,z1-inset];
+  if(along){
+    G.quad([x0,y,z1],[x1,y,z1],r1,r0,0,0.75,0.66,col);
+    G.quad([x1,y,z0],[x0,y,z0],r0,r1,0,0.75,-0.66,dark);
+    G.tri([x0,y,z0],[x0,y,z1],r0,-0.66,0.75,0,mid);G.tri([x1,y,z1],[x1,y,z0],r1,0.66,0.75,0,mid);
+  }else{
+    G.quad([x1,y,z1],[x1,y,z0],r0,r1,0.66,0.75,0,mid);
+    G.quad([x0,y,z0],[x0,y,z1],r1,r0,-0.66,0.75,0,mid);
+    G.tri([x0,y,z1],[x1,y,z1],r1,0,0.75,0.66,col);G.tri([x1,y,z0],[x0,y,z0],r0,0,0.75,-0.66,dark);
+  }
+  // espessura do beiral (faixa escura embaixo da telha)
+  G.quad([x0,y-0.06,z1],[x1,y-0.06,z1],[x1,y,z1],[x0,y,z1],0,0,1,dark);
+}
+// detalhes de fachada de época na frente (lado sul, que fica de frente pra câmera)
+const SHUTTERS=['#2e6b4f','#2c4f7c','#7a4a2a','#a33b2b','#3b6e6e'];
+function facade(G,b,x0,z0,x1,z1,H,kind){
+  const r=mulberry(Math.floor(b.seed*1e9)+31), w=x1-x0, zf=z1+0.012;
+  const base=C(b.wall).multiplyScalar(0.62);
+  // barra (rodapé pintado mais escuro) em volta
+  G.quad([x0,0,zf],[x1,0,zf],[x1,0.28,zf],[x0,0.28,zf],0,0,1,base);
+  G.quad([x0-0.012,0,z0],[x0-0.012,0,z1],[x0-0.012,0.28,z1],[x0-0.012,0.28,z0],-1,0,0,base);
+  G.quad([x1+0.012,0,z1],[x1+0.012,0,z0],[x1+0.012,0.28,z0],[x1+0.012,0.28,z1],1,0,0,base);
+  if(kind==='casa'){
+    // porta de madeira e janelas com veneziana
+    const sh=C(SHUTTERS[Math.floor(r()*SHUTTERS.length)]),door=C('#6b4a2e'),frame=C('#f2efe8');
+    const dx=x0+w*(0.2+r()*0.15);
+    G.quad([dx-0.05,0,zf+0.002],[dx+0.55,0,zf+0.002],[dx+0.55,0.95,zf+0.002],[dx-0.05,0.95,zf+0.002],0,0,1,frame);
+    G.quad([dx,0,zf+0.004],[dx+0.5,0,zf+0.004],[dx+0.5,0.9,zf+0.004],[dx,0.9,zf+0.004],0,0,1,door);
+    const n=Math.max(1,Math.floor((w-1.2)/1.1));
+    for(let k=0;k<n;k++){const wx=dx+0.9+k*1.05;if(wx+0.7>x1-0.15)break;
+      G.quad([wx-0.05,0.38,zf+0.002],[wx+0.75,0.38,zf+0.002],[wx+0.75,1.0,zf+0.002],[wx-0.05,1.0,zf+0.002],0,0,1,frame);
+      G.quad([wx,0.42,zf+0.004],[wx+0.33,0.42,zf+0.004],[wx+0.33,0.96,zf+0.004],[wx,0.96,zf+0.004],0,0,1,sh);
+      G.quad([wx+0.37,0.42,zf+0.004],[wx+0.7,0.42,zf+0.004],[wx+0.7,0.96,zf+0.004],[wx+0.37,0.96,zf+0.004],0,0,1,sh);}
+  } else if(kind==='loja'){
+    // porta de aço de enrolar e toldo listrado
+    const steel=C('#8e9499'),steel2=C('#6f757a');
+    const dw=Math.min(w*0.7,3.2),dx=x0+(w-dw)/2;
+    for(let k=0;k<8;k++){const y0=k*0.12,y1=y0+0.12;G.quad([dx,y0,zf+0.003],[dx+dw,y0,zf+0.003],[dx+dw,y1,zf+0.003],[dx,y1,zf+0.003],0,0,1,k%2?steel:steel2);}
+    G.quad([dx-0.06,0,zf+0.002],[dx+dw+0.06,0,zf+0.002],[dx+dw+0.06,1.02,zf+0.002],[dx-0.06,1.02,zf+0.002],0,0,1,C('#3a3a3a'));
+    const cols=[C(['#c62828','#1565c0','#2e7d32','#ef6c00'][Math.floor(r()*4)]),C('#f5f1e6')];
+    const aw=Math.min(w*0.86,3.8),ax=x0+(w-aw)/2,n=Math.max(4,Math.round(aw/0.3)),y=1.25,d=0.55;
+    for(let k=0;k<n;k++){const a=ax+aw*k/n,bb=ax+aw*(k+1)/n,c=cols[k%2];
+      G.quad([a,y-0.32,zf+d],[bb,y-0.32,zf+d],[bb,y,zf],[a,y,zf],0,0.85,0.5,c);
+      G.quad([a,y-0.42,zf+d],[bb,y-0.42,zf+d],[bb,y-0.32,zf+d],[a,y-0.32,zf+d],0,0,1,c);}
+  } else if(kind==='predio'){
+    // varandas com guarda-corpo em cada andar (prédio residencial dos anos 80/90)
+    const floorH=0.95,rows=Math.floor((H-0.4)/floorH),rail=C('#e9e6df'),slab=C('#cfcac0');
+    const bw=Math.min(w*0.8,4),bx=x0+(w-bw)/2;
+    for(let row=1;row<rows;row++){const y=row*floorH+0.1;
+      G.box(bx,z1,bx+bw,z1+0.35,y,y+0.06,'#cfcac0','#bdb7ab');
+      G.quad([bx,y+0.06,z1+0.35],[bx+bw,y+0.06,z1+0.35],[bx+bw,y+0.38,z1+0.35],[bx,y+0.38,z1+0.35],0,0,1,rail);}
+  }
+}
+
 // janelas: vidro em todas e luz acesa em parte delas (aparece só de noite)
-function windows(Gw,Gl,b,x0,z0,x1,z1,H){
+function windows(Gw,Gl,b,x0,z0,x1,z1,H,startY){
   if(['conteiner','barraca','salva-vidas'].includes(b.style))return;
   const floorH=b.style==='galpao'?2.2:0.95, rows=Math.max(1,Math.floor((H-0.3)/floorH));
   const r=mulberry(Math.floor(b.seed*1e9)+7);
@@ -80,7 +140,7 @@ function windows(Gw,Gl,b,x0,z0,x1,z1,H){
   for(const [ax,az,bx,bz,nx,nz] of faces){
     const len=Math.hypot(bx-ax,bz-az), n=Math.max(1,Math.floor(len/1.1)), off=0.02;
     for(let row=0;row<rows;row++){
-      const y0=0.35+row*floorH, y1=y0+floorH*0.5; if(y1>H-0.15)break;
+      const y0=(startY||0.35)+row*floorH, y1=y0+floorH*0.5; if(y1>H-0.15)break;
       for(let k=0;k<n;k++){
         const t0=(k+0.25)/n,t1=(k+0.75)/n;
         const p0=[ax+(bx-ax)*t0+nx*off,0,az+(bz-az)*t0+nz*off],p1=[ax+(bx-ax)*t1+nx*off,0,az+(bz-az)*t1+nz*off];
@@ -116,8 +176,11 @@ export function buildCity(scene,mats){
     const pitched=['casa','casario','casinha','mansao'].includes(b.style)&&b.kind==='b';
     const isPOI=b.kind!=='b';
     G.box(x0,z0,x1,z1,0,H,(isPOI||pitched)?null:(b.roof||b.wall),b.wall);
-    windows(Gw,Gl,b,x0,z0,x1,z1,H);
-    if(pitched)gable(G,x0,z0,x1,z1,H,Math.min(1.2,Math.min(x1-x0,z1-z0)*0.35),b.roof);
+    if(pitched){facade(G,b,x0,z0,x1,z1,H,'casa');if(H>1.6)windows(Gw,Gl,b,x0,z0,x1,z1,H,1.2);}
+    else{windows(Gw,Gl,b,x0,z0,x1,z1,H);if(isPOI&&!['hospital','policia','escola','casa','canopy','lojaposto'].includes(b.kind))facade(G,b,x0,z0,x1,z1,H,'loja');
+      else if(b.kind==='casa')facade(G,b,x0,z0,x1,z1,H,'casa');
+      else if(b.style==='predio'||b.style==='casario')facade(G,b,x0,z0,x1,z1,H,'predio');}
+    if(pitched)hip(G,x0,z0,x1,z1,H,Math.min(1.0,Math.min(x1-x0,z1-z0)*0.3),b.roof);
     else if(isPOI){ // telhado com placa: malha separada com textura
       const geo=new THREE.PlaneGeometry(x1-x0,z1-z0);geo.rotateX(-Math.PI/2);
       const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:roofTexture(b)}));m.position.set((x0+x1)/2,H+0.01,(z0+z1)/2);m.receiveShadow=true;scene.add(m);
@@ -134,10 +197,13 @@ export function buildCity(scene,mats){
   for(const s of BUS_STOPS){const x=(s.x+s.side.x*s.off)*U,z=(s.y+s.side.y*s.off)*U;const horiz=s.side.x===0;G=SG.at(x,z);
     const w=horiz?1.4:0.4,d=horiz?0.4:1.4;G.box(x-w,z-d,x+w,z+d,1.5,1.62,'#1565c0','#1565c0');
     for(const [px,pz] of [[x-w,z-d],[x+w-0.1,z+d-0.1]])G.box(px,pz,px+0.1,pz+0.1,0,1.5,'#cfd8dc','#cfd8dc');}
-  for(const ph of phones){const x=ph.x*U,z=ph.y*U;G=SG.at(x,z);G.box(x-0.05,z-0.05,x+0.05,z+0.05,0,1.3,'#555','#555');G.box(x-0.35,z-0.35,x+0.35,z+0.35,1.3,1.75,'#f2a900','#f2a900');}
+  for(const ph of phones){const x=ph.x*U,z=ph.y*U;G=SG.at(x,z);G.box(x-0.05,z-0.05,x+0.05,z+0.05,0,1.45,'#555','#555');}
+  const shellG=new THREE.SphereGeometry(0.42,12,8,0,Math.PI*2,0,Math.PI*0.62);shellG.scale(1,1.15,1);
   // guindastes do porto
   for(const d of decor)if(d.type==='guindaste'){const x=d.x*U,z=d.y*U;G=SG.at(x,z);G.box(x-1.2,z-0.8,x+1.2,z+0.8,0,6,'#f9a825','#f9a825');G.box(x-0.3,z-0.3,x+0.3,z+5,6,6.6,'#f9a825','#f9a825');}
 
+  {const shells=new SInst(shellG,mats.shell,phones.map(ph=>[ph.x*U,ph.y*U]));const M=new THREE.Matrix4();
+    phones.forEach((ph,i)=>{M.makeTranslation(ph.x*U,1.25,ph.y*U);shells.setMatrixAt(i,M);});shells.add(scene,true);}
   const city=SG.meshes(mats.city);for(const m of city){m.castShadow=true;m.receiveShadow=true;scene.add(m);}
   const win=SGw.meshes(mats.glass);for(const m of win)scene.add(m);
   const lit=SGl.meshes(mats.lit);for(const m of lit){m.renderOrder=1;scene.add(m);}
@@ -161,15 +227,22 @@ export function buildCity(scene,mats){
 
   // postes
   const poleG=new THREE.CylinderGeometry(0.05,0.07,2.6,5);poleG.translate(0,1.3,0);
-  const headG=new THREE.BoxGeometry(0.5,0.12,0.25);
+  // poste de concreto da época: fuste cônico, braço curvo pra rua e luminária alongada (vapor de sódio)
+  const lampPoleG=(()=>{const parts=[];
+    const f=new THREE.CylinderGeometry(0.045,0.085,2.75,8);f.translate(0,1.375,0);parts.push(f);
+    const arm=new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(0,2.6,0),new THREE.Vector3(0,2.95,0),new THREE.Vector3(0.75,2.92,0)),8,0.03,6);parts.push(arm);
+    return mergePlain(parts);})();
+  const headG=(()=>{const g=new THREE.SphereGeometry(0.2,12,8,0,Math.PI*2,0,Math.PI/2);g.scale(1.9,0.55,1);g.translate(0.92,2.86,0);return g;})();
   const lp=lamps.map(l=>[l.x*U,l.y*U]);
-  const poles=new SInst(poleG,mats.pole,lp), heads=new SInst(headG,mats.lampHead,lp);
-  lamps.forEach((l,i)=>{M.compose(P.set(l.x*U,0,l.y*U),Q.identity(),S3.set(1,1,1));poles.setMatrixAt(i,M);M.compose(P.set(l.x*U,2.6,l.y*U),Q.identity(),S3.set(1,1,1));heads.setMatrixAt(i,M);});
+  const poles=new SInst(lampPoleG,mats.concrete||mats.pole,lp), heads=new SInst(headG,mats.lampHead,lp);
+  const roadDir=l=>{let best=0,bd=1e9;for(let k=0;k<4;k++){const dx=[1,0,-1,0][k],dy=[0,1,0,-1][k];for(let d=1;d<=3;d++){if(tileAt(l.x+dx*d*T,l.y+dy*d*T)===ROAD){if(d<bd){bd=d;best=k;}break;}}}return -best*Math.PI/2;};
+  const lampRot=lamps.map(roadDir);
+  lamps.forEach((l,i)=>{Q.setFromEuler(E.set(0,lampRot[i],0));M.compose(P.set(l.x*U,0,l.y*U),Q,S3.set(1,1,1));poles.setMatrixAt(i,M);heads.setMatrixAt(i,M);});
   poles.add(scene);heads.add(scene);
   // poça de luz no chão em volta dos postes (só de noite)
   const poolG=new THREE.PlaneGeometry(1,1);poolG.rotateX(-Math.PI/2);
   const pools=new SInst(poolG,mats.lightPool,lp);
-  lamps.forEach((l,i)=>{M.compose(P.set(l.x*U,0.03,l.y*U),Q.identity(),S3.set(8,1,8));pools.setMatrixAt(i,M);});
+  lamps.forEach((l,i)=>{const r=lampRot[i];M.compose(P.set(l.x*U+Math.cos(r)*0.9,0.03,l.y*U-Math.sin(r)*0.9),Q.identity(),S3.set(8,1,8));pools.setMatrixAt(i,M);});
   pools.add(scene);for(const m of pools.list)m.renderOrder=2;
 
   // guarda-sóis da praia

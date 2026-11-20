@@ -18,7 +18,7 @@ export const CT={
   luxo:{name:'Sedã Executivo',len:44,wid:20,maxSpd:390,accel:310,brake:560,grip:8.4,turn:2.6,hp:120,mass:1.3,val:1100,colors:['#111111','#2c3e50','#ecf0f1','#7f8c8d','#4a0e0e']},
   suv:{name:'Utilitário',len:44,wid:22,maxSpd:320,accel:260,brake:500,grip:7.8,turn:2.4,hp:160,mass:1.6,val:800,colors:['#ffffff','#1c2833','#566573','#7b241c','#1d3557']},
   caminhao:{name:'Caminhão Baú',len:72,wid:24,maxSpd:210,accel:120,brake:320,grip:7,turn:1.8,hp:300,mass:3.5,val:900,colors:['#e0e0e0','#f5b041','#5dade2']},
-  viatura:{name:'Viatura',len:40,wid:19,maxSpd:390,accel:330,brake:560,grip:8.6,turn:2.9,hp:150,mass:1.3,val:1200,colors:['#20242c']},
+  viatura:{name:'Viatura',len:40,wid:19,maxSpd:390,accel:330,brake:560,grip:8.6,turn:2.9,hp:150,mass:1.3,val:1200,colors:['#f2f2ee']},
   // forças que entram com o procurado alto
   swat:{name:'Van da SWAT',len:54,wid:24,maxSpd:330,accel:250,brake:480,grip:8,turn:2.2,hp:340,mass:2.6,val:1800,colors:['#15171c']},
   fbi:{name:'Sedã do FBI',len:44,wid:20,maxSpd:450,accel:380,brake:600,grip:9,turn:2.8,hp:170,mass:1.4,val:2000,colors:['#0b0b0d']},
