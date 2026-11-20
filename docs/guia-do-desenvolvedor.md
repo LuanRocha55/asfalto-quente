@@ -130,7 +130,7 @@ Toda tela desenhada em canvas usa as peças daqui, pra manter a identidade de 19
 - Fontes: **VT323** (texto, `pf(tamanho)`; já compensa o tamanho menor dela) e **Anton** (títulos, `impact(...)` com contorno e sombra dura). Ficam em `vendor/fonts` (licença OFL) e `main.js` espera carregar antes de montar a cidade, porque os nomes vão pras texturas.
 - `lcdPanel` / `lcd7`: visor de 7 segmentos (dinheiro, cronômetro). `blocks`: vida, colete e lataria em blocos. `pixelStar`, `gunIcon`: desenhos em pixel. `bevel`: moldura chanfrada. `pager`: o bip da missão/emprego.
 - Cores em `C97`. Amarelo orelhão = ação/seleção, verde LCD = dinheiro, vermelho = perigo.
-- No 3D, o **Filtro 97** (`retroPass` em `r3d.js`) desenha a cena numa resolução baixa fixa (240/300/360 linhas conforme a qualidade) e passa um shader de pontilhado (Bayer 4x4) com 32 níveis por cor. Como desenha menos pixels, é mais leve que o 3D normal.
+- No 3D, o **Filtro 97** (opcional, desligado por padrão) (`retroPass` em `r3d.js`) desenha a cena numa resolução baixa fixa (240/300/360 linhas conforme a qualidade) e passa um shader de pontilhado (Bayer 4x4) com 32 níveis por cor. Como desenha menos pixels, é mais leve que o 3D normal.
 
 ## Mundo e coordenadas
 
@@ -240,7 +240,7 @@ Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra con
 | `aq_best` | recorde de dinheiro | não |
 | `aq_gfx` | modo gráfico (`3d2`, `3d1`, `3d0`, `2d`) | não |
 | `aq_fps` | estado do F3 (0, 1, 2) | não |
-| `aq_retro` | Filtro 97 (`1` ligado, `0` desligado) | não |
+| `aq_retro2` | Filtro 97 (`1` ligado; desligado por padrão) | não |
 
 Pra zerar tudo durante os testes, rode no console do navegador:
 

@@ -5,7 +5,7 @@ import { T, W, buildings, phones } from '../world/map.js';
 import { mini } from '../world/chunks.js';
 import { DISTRICTS } from '../world/districts.js';
 import { ZONE_LABELS } from '../world/zoning.js';
-import { lockMask, nextDistrict, isOpenZone, metaOf } from '../game/blitz.js';
+import { paperLockMask, checkpoints, nextDistrict, isOpenZone, metaOf } from '../game/blitz.js';
 import { jobSpots } from '../game/jobs.js';
 import { isDisabled, whyOf, priceLabel } from '../game/interiors.js';
 import { drawIcon, ICONS, KIND_ICON } from './icons.js';
@@ -57,7 +57,7 @@ export function drawBigMap(){
   const tw=g.measureText('GUIA DE RUAS · VILA MARESIA').width;
   ptxt(g,'EDIÇÃO 1997 · ESCALA 1:8.000',px0+40+tw,py0+top*0.62,13,C97.tinta,'left',false);
   // mapa
-  g.imageSmoothingEnabled=true;g.drawImage(paperMap(),ox,oy,size,size);
+  g.imageSmoothingEnabled=true;g.drawImage(paperMap(),ox,oy,size,size);g.drawImage(paperLockMask(),ox,oy,size,size);
   g.strokeStyle=C97.tinta;g.lineWidth=2;g.strokeRect(ox,oy,size,size);
   // grade A-H x 1-8
   g.strokeStyle='rgba(42,34,22,0.32)';g.lineWidth=1;
@@ -74,6 +74,9 @@ export function drawBigMap(){
   for(const [k,[tx,ty]] of Object.entries(ZONE_LABELS)){const p=toS(tx*T,ty*T);const name=DISTRICTS[k].name.toUpperCase();
     g.font=pf(fs);g.textAlign='center';g.lineWidth=4;g.strokeStyle='rgba(241,231,204,0.95)';g.lineJoin='round';g.strokeText(name,p[0],p[1]);g.fillStyle=C97.tinta;g.fillText(name,p[0],p[1]);
     if(!isOpenZone(k)){const mt=metaOf(k);const next=nd&&nd.z===k;stamp(g,p[0],p[1]+fs*1.9,next?'faltam '+fmtMoney(Math.max(0,mt-Math.floor(player.money))):'meta '+fmtMoney(mt),fs,((tx*7+ty*3)%17-8)*0.02);}}
+  // blitz nas ruas que entram nos bairros fechados
+  for(const cp of checkpoints){const p=toS(cp.x,cp.y);const s=Math.max(5,isz*0.36);g.fillStyle=C97.carimbo;g.strokeStyle='#fff';g.lineWidth=1.5;
+    g.beginPath();g.moveTo(p[0],p[1]-s);g.lineTo(p[0]+s,p[1]+s*0.8);g.lineTo(p[0]-s,p[1]+s*0.8);g.closePath();g.fill();g.stroke();}
   // polícia
   for(const c of S.cars){if(c.ai!=='police')continue;const p=toS(c.x,c.y);g.fillStyle=Math.floor(S.gameTime*6)%2?'#e0281e':'#2a52d8';g.fillRect(p[0]-4,p[1]-4,8,8);g.strokeStyle=C97.tinta;g.lineWidth=1;g.strokeRect(p[0]-4,p[1]-4,8,8);}
   // alvo e marcador
@@ -98,10 +101,13 @@ export function drawBigMap(){
   for(const k of order){const n=nearestOf(k);if(!n)continue;row(ICONS[k].name.split(' (')[0].split(' ·')[0],cellOf(n.x,n.y));}
   if(tgt)row('Objetivo',cellOf(tgt.x,tgt.y));
   ly+=step*0.4;head('LEGENDA');
-  row('Orelhão tocando','fone');row('Viatura','■ piscando');row('Objetivo','◎ vermelho');row('Bairro fechado','BLITZ');
+  swatch(g,lx,ly,step,rowF,false);row('     Pode entrar','liberado');swatch(g,lx,ly,step,rowF,true);row('     Fechado (blitz)','não entra');
+  row('Triângulo vermelho','posto de blitz');row('Orelhão tocando','fone');row('Viatura','■ piscando');row('Objetivo','◎ vermelho');
   ly+=step*0.4;
   row('Clique','marca destino');row('Clique direito','apaga');row('M ou Esc','fecha');
 }
+function swatch(g,x,y,step,fs,locked){const w=fs*1.6,h=fs*0.9,yy=y-fs*0.75;g.fillStyle=locked?'rgba(190,40,26,0.45)':'#fbf6e8';g.fillRect(x,yy,w,h);
+  if(locked){g.fillStyle='rgba(176,22,12,0.95)';g.fillRect(x,yy,w,2);g.fillRect(x,yy+h-2,w,2);g.fillRect(x,yy,2,h);g.fillRect(x+w-2,yy,2,h);}else{g.strokeStyle=C97.tinta;g.lineWidth=1;g.strokeRect(x+0.5,yy+0.5,w-1,h-1);}}
 function stamp(g,x,y,sub,fs,rot){
   g.save();g.translate(x,y);g.rotate(rot-0.12);g.globalAlpha=0.82;
   g.font=lf(Math.round(fs*1.5));g.textAlign='center';const w1=g.measureText('BLITZ').width;
