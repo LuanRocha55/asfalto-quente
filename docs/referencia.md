@@ -2,7 +2,7 @@
 
 Valores tirados direto do código da versão 1.4.0, pra consulta e pra balancear o jogo. Cada tabela diz em que arquivo o número mora.
 
-Unidades: distância e velocidade em **pixels do mundo** (1 tile = 32 px; a cidade tem 262 × 262 tiles). Tempo em segundos reais.
+Unidades: distância e velocidade em **pixels do mundo** (1 tile = 32 px; a cidade tem 376 × 376 tiles). Tempo em segundos reais.
 
 ## Procurado
 
@@ -213,20 +213,20 @@ Arquivo: `src/world/map.js`, `src/world/zoning.js`
 
 | Item | Quantidade |
 |---|---|
-| Tamanho | 262 × 262 tiles de 32 px |
-| Comércios | 5 farmácias, 6 mercadinhos, 4 padarias, 3 escolas, 6 lanchonetes |
+| Tamanho | 376 × 376 tiles de 32 px |
+| Comércios | 8 farmácias, 10 mercadinhos, 6 padarias, 4 escolas, 10 lanchonetes (pelo menos 1/3 de cada no Centro e no Jardim) |
 | Serviços | 1 hospital, 1 delegacia, 2 Pinturas Express, 1 Armas do Tonhão, 2 Postos Maresia, 1 Oficina do Zé, 1 casa, 1 estádio |
-| Orelhões | 12 |
+| Orelhões | 22 |
 | Motocas de trabalho | em até 6 lanchonetes |
 
 A cidade é gerada sempre igual (semente fixa `mulberry(1337)` em `src/core/utils.js`). Onde cada lugar fica, na geração atual:
 
 | Bairro | Lugares |
 |---|---|
-| Centro | hospital, delegacia, Arena, 3 escolas, 2 mercadinhos, 1 farmácia, 1 padaria, 2 orelhões |
-| Jardim Maresia | sua casa, 2 Pinturas Express, Armas do Tonhão, 1 orelhão |
-| Alto do Cajueiro | terminal de ônibus, 3 lanchonetes, 2 mercadinhos, 1 padaria, 2 orelhões |
-| Alto da Maresia | 2 Postos Maresia, ponto de táxi, estacionamento do Brisa, 1 orelhão |
-| Orla | Oficina do Zé, 2 orelhões (na divisa, acessíveis desde o começo) |
-| Vila Velha | 4 farmácias, 3 lanchonetes, 2 mercadinhos, 2 padarias, 3 orelhões |
-| Porto | 1 orelhão (na divisa, acessível desde o começo) |
+| Centro | hospital, delegacia, Arena, Oficina do Zé, 1 Posto Maresia, 4 escolas, 4 lanchonetes, 4 mercadinhos, 2 farmácias, 2 padarias, 7 orelhões |
+| Jardim Maresia | sua casa, 1 Pintura Express, 1 Posto Maresia, 1 farmácia, 2 orelhões |
+| Alto do Cajueiro | 1 Pintura Express, Armas do Tonhão, 2 lanchonetes, 1 mercadinho, 1 farmácia, 1 padaria, 4 orelhões |
+| Alto da Maresia | estacionamento do Brisa, 3 orelhões |
+| Orla | hotéis e praia |
+| Vila Velha | 5 mercadinhos, 4 farmácias, 4 lanchonetes, 3 padarias, 4 orelhões |
+| Porto | 2 orelhões |

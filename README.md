@@ -4,7 +4,7 @@ Jogo de mundo aberto visto de cima, feito em JavaScript com gráficos 3D (Three.
 
 **Jogar no navegador:** https://luanrocha55.github.io/maresia-97/
 
-Versão atual: **1.7.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **1.8.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
 **Documentação completa:** [docs/](docs/README.md) — [guia do jogador](docs/guia-do-jogador.md), [referência de números](docs/referencia.md), [guia do desenvolvedor](docs/guia-do-desenvolvedor.md) e [roadmap](docs/roadmap.md).
 

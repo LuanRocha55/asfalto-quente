@@ -381,6 +381,9 @@ function syncCheckpoints(){
 // ---------- pessoas ----------
 // Todo mundo desenhado de uma vez (instanciado): 5 chamadas pra GPU, não importa quantas pessoas.
 const MAXP=320;
+// escala das pessoas: um andar dos prédios tem 0,95 de altura (uns 3 m) e um carro uns 1,1 de comprimento,
+// então gente de verdade fica com ~0,6 (uns 1,9 m). O jogador é um pouco maior pra continuar fácil de achar na tela.
+const PED_SCALE=0.56, PLAYER_SCALE=0.75;
 const legG=new THREE.BoxGeometry(0.1,0.36,0.1);legG.translate(0,-0.18,0);
 const bodyG=new THREE.CylinderGeometry(0.17,0.15,0.5,7);
 const headG=new THREE.SphereGeometry(0.13,8,6);
@@ -396,7 +399,7 @@ const L_BODY=new THREE.Matrix4().makeTranslation(0,0.6,0), L_HEAD=new THREE.Matr
   L_HAIR=new THREE.Matrix4().compose(new THREE.Vector3(-0.02,1.04,0),new THREE.Quaternion(),new THREE.Vector3(1.05,0.6,1.05));
 function putPerson(n,x,y,a,anim,moving,down,scale,shirt,skin,hair){
   _e.set(down?0:0,-a,down?Math.PI/2:0,'YXZ');_q.setFromEuler(_e);
-  _B.compose(_p.set(x*U,down?0.15:0,y*U),_q,_s.set(scale,scale,scale));
+  _B.compose(_p.set(x*U,down?0.15*scale:0,y*U),_q,_s.set(scale,scale,scale));
   const sw=moving?Math.sin(anim*10)*0.6:0;
   _L.makeRotationZ(sw).setPosition(0,0.36,-0.08);PI_.l1.setMatrixAt(n,_M.multiplyMatrices(_B,_L));
   _L.makeRotationZ(-sw).setPosition(0,0.36,0.08);PI_.l2.setMatrixAt(n,_M.multiplyMatrices(_B,_L));
@@ -407,14 +410,14 @@ function syncPeople(){
   let n=0;
   const vis=!player.car&&player.state==='play'&&!(player.inv>0&&Math.floor(S.gameTime*10)%2);
   if(vis){const mv=keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'];
-    putPerson(n++,player.x,player.y,player.a,player.anim/10,mv,false,1.15,'#ff7a1a','#c68642','#111');}
+    putPerson(n++,player.x,player.y,player.a,player.anim/10,mv,false,PLAYER_SCALE,'#ff7a1a','#c68642','#111');}
   // só quem está perto da câmera (o resto não aparece mesmo)
   const r2=(46*T)*(46*T);
   for(const p of S.peds){
     if(n>=MAXP)break;
     if(p.state==='dead'||p.state==='gone'||p.state==='dead2')continue;
     const dx=p.x-cam.x,dy=p.y-cam.y;if(dx*dx+dy*dy>r2)continue;
-    putPerson(n++,p.x,p.y,p.a,p.anim,p.state!=='wait',p.state==='down',1,p.shirt,p.skin,p.hair);
+    putPerson(n++,p.x,p.y,p.a,p.anim,p.state!=='wait',p.state==='down',PED_SCALE,p.shirt,p.skin,p.hair);
   }
   for(const m of Object.values(PI_)){m.count=n;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;}
 }
@@ -628,11 +631,11 @@ function drawPrompts(g){
   if(!player.car&&player.state==='play'){
     const nc=nearestCar(26);
     const carCloser=nc&&(!nearB||hyp(nc.x-player.x,nc.y-player.y)-nc.t.wid/2<hyp(doorOf(nearB).x-player.x,doorOf(nearB).y-player.y));
-    if(nc&&carCloser){const p=P(nc.x,nc.y,1.6);g.font=pf(12);const t=(nc.driver==='ai'?'Roubar ':'Entrar: ')+nc.t.name;drawKeycap(g,'F',p.x-(g.measureText(t).width+28)/2,p.y,t,12);}
+    if(nc&&carCloser){const p=P(nc.x,nc.y,1.2);g.font=pf(12);const t=(nc.driver==='ai'?'Roubar ':'Entrar: ')+nc.t.name;drawKeycap(g,'F',p.x-(g.measureText(t).width+28)/2,p.y,t,12);}
     else if(nearB){const d=doorOf(nearB);const p=P(d.x,d.y,1.4);const name=ICONS[KIND_ICON[nearB.kind]].name.split(' (')[0].split(' ·')[0];g.font=pf(13);drawKeycap(g,'F',p.x-(g.measureText('Entrar: '+name).width+30)/2,p.y,'Entrar: '+name,13);}
   }
   // passageiro esperando e carros da missão: setinha amarela em cima
-  for(const p of S.peds)if(p.state==='wait'){const q=P(p.x,p.y,1.6+Math.sin(S.gameTime*6)*0.1);arrowDown(g,q.x,q.y);}
+  for(const p of S.peds)if(p.state==='wait'){const q=P(p.x,p.y,1.05+Math.sin(S.gameTime*6)*0.1);arrowDown(g,q.x,q.y);}
   if(S.mission)for(const c of S.cars)if(c.mission===S.mission&&!c.wreck){const q=P(c.x,c.y,1.8+Math.sin(S.gameTime*6)*0.1);arrowDown(g,q.x,q.y);
     if(c.maxHp){const f=clamp(c.health/c.maxHp,0,1);g.fillStyle='rgba(0,0,0,0.6)';g.fillRect(q.x-21,q.y-24,42,7);g.fillStyle=f>0.4?'#4cff6a':'#ff5030';g.fillRect(q.x-20,q.y-23,40*f,5);}}
   for(const f of S.floaters){const q=P(f.x,f.y,1.5);g.globalAlpha=clamp(f.life,0,1);label(g,f.t,q.x,q.y,f.col,15);}g.globalAlpha=1;

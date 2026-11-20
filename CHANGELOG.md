@@ -5,6 +5,15 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.8.0 — 20/11/2026
+**Cidade maior e gente do tamanho certo**
+- **A cidade cresceu**: de 262 pra 376 tiles de lado (uns 2× de área). Os quarteirões têm o mesmo tamanho, mas cada bairro ganhou mais ruas. Centro e Jardim, que já vêm abertos, ficaram com mais que o dobro de espaço pras missões
+- Ruas novas: Rua da Jangadinha, Rua do Caju, Rua da Renda, Rua das Dunas, Rua do Coqueiral, Rua da Lagosta, Rua da Peixada, Rua do Cais e mais becos na Vila Velha
+- **Mais coisa aberta no começo**: os dois Postos Maresia, a Oficina do Zé e parte das lanchonetes, mercadinhos, farmácias e padarias agora ficam no Centro e no Jardim. Dá pra trabalhar de motoboy, busão e guincho desde o início
+- Mais comércio (8 farmácias, 10 mercadinhos, 6 padarias, 4 escolas, 10 lanchonetes) e 22 orelhões
+- **Pessoas na proporção certa**: antes um pedestre tinha a altura de um carro inteiro; agora tem uns 1,9 m perto dos carros e prédios. O jogador é um pouquinho maior pra ser fácil de achar
+- Saves de antes desta versão continuam valendo (dinheiro, bairros, missões), mas começam no hospital, porque a cidade mudou
+
 ## 1.7.0 — 20/11/2026
 **Carros com modelos 3D**
 - Os carros agora usam modelos 3D do **Car Kit do Kenney** (licença CC0): Jegue, Brisa GT, Táxi, Caminhonete, Guincho, Sedã Executivo, Utilitário, Caminhão Baú, Viatura, Van da SWAT, Sedã do FBI e Jipe do Exército

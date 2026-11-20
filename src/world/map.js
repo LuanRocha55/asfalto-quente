@@ -1,9 +1,9 @@
 // Geração da cidade: malha de ruas (avenidas, ruas, becos), bairros, prédios, praia e lugares especiais
 import { rng, rand, pick } from '../core/utils.js';
-import { zoneAt, VV, BEACH_X0, BEACH_X1 } from './zoning.js';
+import { zoneAt, VV, BEACH_X0, BEACH_X1, LAND_Y1, CITY_X1 } from './zoning.js';
 
 export const T=32;
-export const W=262, H=262;
+export const W=376, H=376;
 export const WORLD=W*T;
 export const WATER=0,SAND=1,ROAD=2,SIDE=3,GRASS=4,BUILD=5,TREE=6,PARK=7,POOL=8,DIRT=9;
 export const map=new Uint8Array(W*H);
@@ -39,14 +39,16 @@ const LANES={ave:2,rua:1,beco:1};
 const WIDTH={ave:8,rua:4,beco:2};
 function mkLines(list){return list.sort((a,b)=>a[0]-b[0]).map(([c,type,name],idx)=>({idx,c,px:c*T,type,w:WIDTH[type],lanes:LANES[type],name,oneway:0}));}
 export const VL=mkLines([
-  [16,'rua','Rua da Brisa'],[42,'rua','Rua do Sal'],[68,'ave','Av. dos Coqueiros'],[94,'rua','Rua Tapioca'],[120,'rua','Rua da Rede'],
-  [146,'ave','Av. Maresia'],[172,'rua','Rua Carnaúba'],[198,'rua','Rua do Farol'],[222,'ave','Av. Beira-Mar'],
-  [29,'beco','Beco do Vaqueiro'],[55,'beco','Beco da Rendeira'],[81,'beco','Beco do Xote'],[107,'beco','Beco do Baião'],
+  [16,'rua','Rua da Brisa'],[42,'rua','Rua do Sal'],[68,'rua','Rua da Jangadinha'],[94,'ave','Av. dos Coqueiros'],[120,'rua','Rua Tapioca'],
+  [146,'rua','Rua da Rede'],[172,'rua','Rua do Caju'],[198,'rua','Rua da Renda'],[224,'ave','Av. Maresia'],[250,'rua','Rua Carnaúba'],
+  [276,'rua','Rua das Dunas'],[302,'rua','Rua do Farol'],[328,'ave','Av. Beira-Mar'],
+  [29,'beco','Beco do Vaqueiro'],[55,'beco','Beco da Rendeira'],[81,'beco','Beco do Xote'],[107,'beco','Beco do Baião'],[133,'beco','Beco do Forró'],[159,'beco','Beco do Repente'],
 ]);
 export const HL=mkLines([
-  [16,'rua','Rua das Jangadas'],[42,'rua','Rua do Cajueiro'],[68,'ave','Av. Sol Nascente'],[94,'rua','Rua dos Pescadores'],[120,'rua','Rua das Gaivotas'],
-  [146,'ave','Av. Atlântica'],[172,'rua','Rua da Maré'],[198,'rua','Rua do Mangue'],[224,'rua','Rua Areia Branca'],[248,'rua','Av. do Porto'],
-  [159,'beco','Beco das Flores'],[185,'beco','Beco do Sino'],[211,'beco','Beco da Lua'],[236,'beco','Beco dos Ventos'],
+  [16,'rua','Rua das Jangadas'],[42,'rua','Rua do Cajueiro'],[68,'rua','Rua do Coqueiral'],[94,'ave','Av. Sol Nascente'],[120,'rua','Rua dos Pescadores'],
+  [146,'rua','Rua das Gaivotas'],[172,'rua','Rua da Lagosta'],[198,'ave','Av. Atlântica'],[224,'rua','Rua da Maré'],[250,'rua','Rua do Mangue'],
+  [276,'rua','Rua da Peixada'],[302,'rua','Rua Areia Branca'],[328,'rua','Rua do Cais'],[354,'rua','Av. do Porto'],
+  [237,'beco','Beco das Flores'],[263,'beco','Beco do Sino'],[289,'beco','Beco da Lua'],[315,'beco','Beco dos Ventos'],[341,'beco','Beco do Bumba'],
 ]);
 // becos alternam o sentido (mão única): +1 = leste/sul, -1 = oeste/norte
 {let k=0;for(const l of VL)if(l.type==='beco')l.oneway=(k++%2)?1:-1;}
@@ -95,9 +97,9 @@ function buildGraph(){
     segV[i][j]= L.type!=='beco' || (inVV(L.c,y0)&&inVV(L.c,y1));
   }
   // estádio: junta 4 quarteirões no Centro tirando os trechos de rua do meio
-  {const v94=VL.findIndex(l=>l.c===94),v120=VL.findIndex(l=>l.c===120),h94=HL.findIndex(l=>l.c===94),h120=HL.findIndex(l=>l.c===120);
-    segV[v120][h94]=false;segV[v120][h120]=false;
-    for(let i=v94;i<VL.findIndex(l=>l.c===146);i++)segH[h120][i]=false;}
+  {const vA=VL.findIndex(l=>l.c===224),vM=VL.findIndex(l=>l.c===250),vB=VL.findIndex(l=>l.c===276),hA=HL.findIndex(l=>l.c===224),hM=HL.findIndex(l=>l.c===250);
+    segV[vM][hA]=false;segV[vM][hM]=false;
+    for(let i=vA;i<vB;i++)segH[hM][i]=false;}
   // bairro rico e periferia: tira alguns trechos de rua (quarteirões maiores e mais irregulares)
   const tryRemove=(isH,a,b,prob)=>{
     const L=isH?HL[a]:VL[a]; if(L.type!=='rua')return;
@@ -123,11 +125,11 @@ export function genMap(){
   map.fill(WATER);
   buildGraph();
   // terra firme
-  for(let y=10;y<254;y++)for(let x=10;x<BEACH_X1;x++)map[y*W+x]=GRASS;
-  for(let y=10;y<254;y++)for(let x=10;x<BEACH_X1;x++){
+  for(let y=10;y<LAND_Y1;y++)for(let x=10;x<BEACH_X1;x++)map[y*W+x]=GRASS;
+  for(let y=10;y<LAND_Y1;y++)for(let x=10;x<BEACH_X1;x++){
     if(x<13||y<13)map[y*W+x]=SAND;                 // borda oeste/norte
     if(x>=BEACH_X0)map[y*W+x]=SAND;                 // praia
-    if(y>=250&&x<BEACH_X0)map[y*W+x]=PARK;          // cais do porto
+    if(y>=LAND_Y1-4&&x<BEACH_X0)map[y*W+x]=PARK;    // cais do porto
   }
   // ruas
   for(let j=0;j<NH;j++)for(let i=0;i<NV-1;i++)if(segH[j][i]){const L=HL[j];fillLot(Math.round(VL[i].c),Math.round(L.c-L.w/2),Math.round(VL[i+1].c-VL[i].c),L.w,ROAD);}
@@ -150,7 +152,7 @@ export function genMap(){
     }
   }
   // calçadão da orla (entre a Beira-Mar e a areia)
-  for(let y=13;y<250;y++)for(let x=226;x<BEACH_X0;x++)if(map[y*W+x]!==ROAD)map[y*W+x]=SIDE;
+  for(let y=13;y<LAND_Y1-4;y++)for(let x=CITY_X1+4;x<BEACH_X0;x++)if(map[y*W+x]!==ROAD)map[y*W+x]=SIDE;
 
   // quarteirões
   const cells=[];
@@ -160,7 +162,7 @@ export function genMap(){
     const left=segV[i][j]?L.w/2+sw:0, right=segV[i+1][j]?R.w/2+sw:0, top=segH[j][i]?U.w/2+sw:0, bot=segH[j+1][i]?D.w/2+sw:0;
     const x0=Math.ceil(L.c+left), x1=Math.floor(R.c-right), y0=Math.ceil(U.c+top), y1=Math.floor(D.c-bot);
     if(x1-x0<2||y1-y0<2)continue;
-    if(x0>=226)continue; // nada depois da Beira-Mar (praia)
+    if(x0>=CITY_X1+4)continue; // nada depois da Beira-Mar (praia)
     cells.push({i,j,x0,y0,x1,y1,w:x1-x0,h:y1-y0,zone:zc,cx:(x0+x1)/2,cy:(y0+y1)/2,used:false});
   }
   buildStadium(cells);
@@ -175,7 +177,7 @@ export function genMap(){
 }
 
 // ---------- estádio (Arena Maresia) ----------
-export const STADIUM={x0:98,y0:98,x1:140,y1:142};
+export const STADIUM={x0:230,y0:228,x1:270,y1:270};
 function buildStadium(cells){
   const {x0,y0,x1,y1}=STADIUM;
   for(const c of cells)if(c.cx>x0&&c.cx<x1&&c.cy>y0&&c.cy<y1)c.used=true;
@@ -206,7 +208,7 @@ function takeCell(cells,zone,tx,ty,minW=12,minH=12){
 const pushB=(x0,y0,w,h,o)=>{fillLot(x0,y0,w,h,BUILD);const b=Object.assign({x0:x0*T,y0:y0*T,x1:(x0+w)*T,y1:(y0+h)*T,seed:rng()},o);buildings.push(b);return b;};
 function placeSpecials(cells){
   // hospital e delegacia: prédio em cima, estacionamento embaixo
-  for(const [kind,tx,ty] of [['hospital',128,132],['policia',180,186]]){
+  for(const [kind,tx,ty] of [['hospital',208,212],['policia',290,290]]){
     const c=takeCell(cells,'centro',tx,ty);if(!c)continue;
     fillLot(c.x0,c.y0,c.w,c.h,PARK);
     const bh=Math.round(c.h*0.6);
@@ -223,14 +225,14 @@ function placeSpecials(cells){
     const z={x0:(c.x0+1)*T,y0:(c.y0+bh+1)*T,x1:(c.x1-1)*T,y1:(c.y1-1)*T,type,label};
     zones.push(z);special[sp]=z;return {c,z,bh};
   };
-  garage('jardim',120,30,'pintura','#2f8f6f','#226b52','pintura','PINTURA EXPRESS $500');
-  garage('cajueiro',30,120,'pintura2','#2f8f6f','#226b52','pintura','PINTURA EXPRESS $500');
-  garage('porto',160,236,'ze','#b5651d','#6a4a2a','ze','OFICINA DO ZÉ');
-  {const g=garage('cajueiro',55,100,'armas','#8a3b2f','#4a2420','armas','A PÉ: PISA NA ARMA PRA COMPRAR');
+  garage('jardim',185,55,'pintura','#2f8f6f','#226b52','pintura','PINTURA EXPRESS $500');
+  garage('cajueiro',45,180,'pintura2','#2f8f6f','#226b52','pintura','PINTURA EXPRESS $500');
+  garage('porto',240,341,'ze','#b5651d','#6a4a2a','ze','OFICINA DO ZÉ');
+  {const g=garage('cajueiro',82,150,'armas','#8a3b2f','#4a2420','armas','A PÉ: PISA NA ARMA PRA COMPRAR');
     if(g){const {z}=g;z.pads=[];const pw=(z.x1-z.x0)/3;
       ['pistola','escopeta','smg'].forEach((w,i)=>z.pads.push({x0:z.x0+pw*i+12,y0:z.y0+20,x1:z.x0+pw*(i+1)-12,y1:z.y1-12,weapon:w}));}}
   // postos de gasolina, de frente pra avenida
-  for(const [sp,zone,tx,ty] of [['posto','centro',165,135],['posto2','jardim',135,58]]){
+  for(const [sp,zone,tx,ty] of [['posto','centro',185,185],['posto2','jardim',210,105]]){
     const c=takeCell(cells,zone,tx,ty);if(!c)continue;
     fillLot(c.x0,c.y0,c.w,c.h,PARK);
     pushB(c.x0,c.y0,c.w,2,{h:16,wall:'#e9e2d0',roof:'#c9342a',kind:'lojaposto'});
@@ -241,13 +243,13 @@ function placeSpecials(cells){
     zones.push(z);special[sp]=z;
   }
   // sua casa: casinha com quintal no Jardim
-  {const c=takeCell(cells,'jardim',104,24,10,10);if(c){
+  {const c=takeCell(cells,'jardim',160,30,10,10);if(c){
     const bw=Math.min(8,c.w-4),bh=Math.min(7,c.h-5),bx=c.x0+Math.floor((c.w-bw)/2),by=c.y0+1;
     special.casa=pushB(bx,by,bw,bh,{h:22,wall:'#f0e0c0',roof:'#9c4a32',kind:'casa'});
     for(let y=by+bh;y<c.y1;y++){setT(bx+Math.floor(bw/2),y,SIDE);setT(bx+Math.floor(bw/2)-1,y,SIDE);}
     for(let k=0;k<4;k++){const x=c.x0+1+Math.floor(rng()*(c.w-2)),y=c.y0+bh+2+Math.floor(rng()*Math.max(1,c.h-bh-3));if(map[y*W+x]===GRASS)addTree(x,y,'#2f7d3a');}}}
   // estacionamentos (missões e terminal de ônibus)
-  for(const [sp,zone,tx,ty] of [['estac','centro',176,150],['estac2','rico',160,40],['estac3','centro',140,206]]){
+  for(const [sp,zone,tx,ty] of [['estac','centro',264,210],['estac2','rico',262,60],['estac3','centro',185,309]]){
     const c=takeCell(cells,zone,tx,ty,10,10);if(!c)continue;
     fillLot(c.x0,c.y0,c.w,c.h,PARK);special[sp]={x:(c.x0+c.w/2)*T,y:(c.y0+c.h/2)*T,rect:c};
   }
@@ -279,7 +281,7 @@ function fillCell(c){
       if(ins)for(let y=lot.y0;y<lot.y0+lot.h;y++)for(let x=lot.x0;x<lot.x0+lot.w;x++)if(map[y*W+x]===GRASS)setT(x,y,SIDE);
     }
   } else if(z==='rico'){
-    if(c.cx>186&&rng()<0.6){ // condomínio de frente pro mar
+    if(c.cx>276&&rng()<0.6){ // condomínio de frente pro mar
       const bw=Math.min(c.w-4,10),bh=Math.min(c.h-4,10);
       pushB(c.x0+Math.floor((c.w-bw)/2),c.y0+Math.floor((c.h-bh)/2),bw,bh,{h:Math.round(90+rng()*60),wall:'#eef2f3',roof:'#5d6d75',kind:'b',style:'torre'});
       fillLot(c.x0+1,c.y1-4,5,3,POOL);
@@ -344,19 +346,19 @@ function fillCell(c){
 
 // ---------- praia ----------
 function beach(){
-  for(let y=16;y<246;y+=2){
+  for(let y=16;y<LAND_Y1-8;y+=2){
     if(rng()<0.35)addTree(BEACH_X0+Math.floor(rng()*3),y,'#3f8f3a',true);       // coqueiros perto do calçadão
   }
-  for(let y=24;y<240;y+=18){ // barracas de praia com guarda-sóis
+  for(let y=24;y<LAND_Y1-20;y+=18){ // barracas de praia com guarda-sóis
     const bx=BEACH_X0+5;
     pushB(bx,y,3,2,{h:9,wall:'#d7b98a',roof:pick(['#e74c3c','#f39c12','#27ae60','#2980b9']),kind:'b',style:'barraca'});
     for(let k=0;k<4;k++)decor.push({type:'guarda-sol',x:(bx+5+rng()*10)*T,y:(y+rng()*6)*T,c:pick(['#e74c3c','#f1c40f','#3498db','#ffffff','#2ecc71'])});
   }
-  for(let y=40;y<230;y+=60)decor.push({type:'volei',x:(BEACH_X0+15)*T,y:y*T});
-  for(let y=60;y<230;y+=80)pushB(BEACH_X0+19,y,2,2,{h:14,wall:'#ffffff',roof:'#e53935',kind:'b',style:'salva-vidas'});
+  for(let y=40;y<LAND_Y1-30;y+=60)decor.push({type:'volei',x:(BEACH_X0+15)*T,y:y*T});
+  for(let y=60;y<LAND_Y1-30;y+=80)pushB(BEACH_X0+19,y,2,2,{h:14,wall:'#ffffff',roof:'#e53935',kind:'b',style:'salva-vidas'});
 }
 function port(){
-  for(let x=130;x<220;x+=22)decor.push({type:'guindaste',x:x*T,y:252*T});
+  for(let x=190;x<322;x+=22)decor.push({type:'guindaste',x:x*T,y:(LAND_Y1-2)*T});
 }
 
 // ---------- comércio nos prédios baixos ----------
@@ -402,20 +404,26 @@ function setDoor(b){
 function assignCommerce(){
   const POI={farmacia:{roof:'#f2f2ee',wall:'#d9e8d9'},mercadinho:{roof:'#e8a33a',wall:'#f0d9a8'},padaria:{roof:'#b9824a',wall:'#efdcc0'},
     escola:{roof:'#3f6fb0',wall:'#e7e0c9'},lanchonete:{roof:'#c0392b',wall:'#f3d36b'}};
-  const want={farmacia:5,mercadinho:6,padaria:4,escola:3,lanchonete:6};
+  const want={farmacia:8,mercadinho:10,padaria:6,escola:4,lanchonete:10};
   const cand=buildings.filter(b=>b.kind==='b'&&['casa','casario','predio','casinha','torre'].includes(b.style)&&(b.x1-b.x0)>=4*T&&(b.y1-b.y0)>=4*T&&(()=>{const f=frontOf(b,5);return f&&f.dist<=4;})());
   // embaralha de forma determinística
   for(let i=cand.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[cand[i],cand[j]]=[cand[j],cand[i]];}
-  let ci=0;
-  for(const k of Object.keys(want))for(let n=0;n<want[k]&&ci<cand.length;n++){
-    const b=cand[ci++];if(k==='escola'&&((b.x1-b.x0)<5*T||(b.y1-b.y0)<5*T)){n--;continue;}
-    b.kind=k;b.roof=POI[k].roof;b.wall=POI[k].wall;b.h=Math.min(b.h,24);
-  }
+  // pelo menos 1/3 de cada comércio fica nos bairros abertos desde o começo (Centro e Jardim),
+  // senão os empregos (motoboy, vigilante) e as lojas só funcionam depois de liberar bairro
+  const startZone=b=>{const z=zoneAt((b.x0+b.x1)/2/T|0,(b.y0+b.y1)/2/T|0);return z==='centro'||z==='jardim';};
+  const taken=new Set();
+  const give=(k,b)=>{taken.add(b);b.kind=k;b.roof=POI[k].roof;b.wall=POI[k].wall;b.h=Math.min(b.h,24);};
+  const fits=(k,b)=>k!=='escola'||((b.x1-b.x0)>=5*T&&(b.y1-b.y0)>=5*T);
+  for(const k of Object.keys(want)){let n=Math.ceil(want[k]/3);
+    for(const b of cand){if(n<=0)break;if(taken.has(b)||!startZone(b)||!fits(k,b))continue;give(k,b);n--;}}
+  for(const k of Object.keys(want)){let n=want[k]-buildings.filter(b=>b.kind===k).length;
+    for(const b of cand){if(n<=0)break;if(taken.has(b)||!fits(k,b))continue;give(k,b);n--;}}
 }
 
 // ---------- orelhões e postes ----------
 function placePhones(cells){
-  const targets=[[30,30],[120,25],[180,40],[60,100],[130,110],[200,100],[70,180],[160,170],[100,230],[200,200],[40,230],[170,236]];
+  const targets=[[30,30],[120,25],[190,40],[270,40],[60,100],[180,110],[260,120],[300,100],[60,170],[190,170],[280,190],
+    [170,230],[220,250],[290,250],[70,260],[130,320],[40,330],[200,300],[260,300],[230,341],[300,341],[180,200]];
   const usedC=new Set();
   for(const [tx,ty] of targets){
     let best=null,bd=1e9;
@@ -433,7 +441,7 @@ function placeLamps(){
     for(let x=Math.ceil(VL[i].c+4);x<VL[i+1].c-4;x+=step){add(x,Math.floor(L.c-L.w/2)-1);if(L.type!=='beco')add(x,Math.ceil(L.c+L.w/2));}}
   for(let i=0;i<NV;i++)for(let j=0;j<NH-1;j++)if(segV[i][j]){const L=VL[i];const step=L.type==='beco'?12:8;
     for(let y=Math.ceil(HL[j].c+4);y<HL[j+1].c-4;y+=step){add(Math.floor(L.c-L.w/2)-1,y);if(L.type!=='beco')add(Math.ceil(L.c+L.w/2),y);}}
-  for(let y=20;y<246;y+=9)add(227,y); // calçadão
+  for(let y=20;y<LAND_Y1-12;y+=9)add(CITY_X1+5,y); // calçadão
 }
 
 genMap();

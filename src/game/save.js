@@ -38,9 +38,9 @@ export function loadGame(){
   if(Array.isArray(d.unlocked)) S.unlocked=[...d.unlocked];
   else { S.unlocked=[...START_OPEN]; player.money=0; S.migratedDistricts=true; }
   initDistricts();
-  // saves de antes da cidade nova (0.8.0) não têm posição válida: começa no hospital
+  // saves de antes da cidade atual (a cidade cresceu na 1.8.0) não têm posição válida: começa no hospital
   const [ma,mi]=(d.v||'0.0').split('.').map(Number);
-  const sameCity=ma>0||mi>=8;
+  const sameCity=ma>1||(ma===1&&mi>=8);
   if(sameCity&&typeof d.x==='number'&&isFinite(d.x)&&!solidAt(d.x,d.y)&&!restrictedAt(d.x,d.y)){ player.x=d.x; player.y=d.y; }
   else d.car=null;
   if(d.car&&CT[d.car.type]){
