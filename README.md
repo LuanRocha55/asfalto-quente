@@ -1,8 +1,8 @@
 # Asfalto Quente — Vila Maresia
 
-Jogo top-down de mundo aberto feito em JavaScript puro com Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
+Jogo de mundo aberto visto de cima, feito em JavaScript com gráficos 3D (Three.js) e um modo clássico em Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
-Versão atual: **0.10.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **1.0.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
 ## Como rodar
 
@@ -33,6 +33,7 @@ No VS Code, a extensão **Live Server** também resolve.
 | T | pular o tutorial |
 | N | liga/desliga o som |
 | P / Esc | pausa |
+| G | alterna gráficos 3D / clássico |
 | Mouse | mira |
 | Clique esquerdo | atirar / soco (no carro, atira na direção da mira) |
 | Clique direito | entrar, sair ou roubar carro |
@@ -41,7 +42,8 @@ No VS Code, a extensão **Live Server** também resolve.
 ## Estrutura
 
 ```
-index.html              página e canvas
+index.html              página (canvas 3D + canvas 2D por cima pro HUD)
+vendor/three/           Three.js (licença MIT)
 src/
   main.js               loop principal (com recuperação de erros)
   core/
@@ -82,6 +84,9 @@ src/
     icons.js            ícones do minimapa, do mapa e da legenda
     overlays.js         mapa em tela cheia e menus
     interiorDraw.js     desenho dos interiores
+  render3d/
+    build.js            cidade 3D estática (prédios, árvores, postes, estádio...)
+    r3d.js              câmera, luz do dia, carros, pessoas, efeitos e HUD por cima
   audio/
     audio.js            motor, sirene e efeitos sintetizados
 ```

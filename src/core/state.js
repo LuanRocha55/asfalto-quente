@@ -19,4 +19,9 @@ export const cam={x:0,y:0,zoom:1};
 export const keys={};
 // mouse: posição na tela, botões e se o jogador está usando o mouse pra mirar
 export const mouse={x:0,y:0,down:false,active:false};
-export function mouseWorld(){return {x:cam.x+(mouse.x-window.innerWidth/2)/cam.zoom, y:cam.y+(mouse.y-window.innerHeight/2)/cam.zoom};}
+// projeção atual (2D ou 3D): o renderizador 3D troca essas funções
+export const view={
+  project:(x,y)=>({x:(x-cam.x)*cam.zoom+window.innerWidth/2,y:(y-cam.y)*cam.zoom+window.innerHeight/2}),
+  unproject:(sx,sy)=>({x:cam.x+(sx-window.innerWidth/2)/cam.zoom,y:cam.y+(sy-window.innerHeight/2)/cam.zoom}),
+};
+export function mouseWorld(){return view.unproject(mouse.x,mouse.y);}

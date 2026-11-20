@@ -27,6 +27,7 @@ export function renderChunk(cx,cy){
     g.fillStyle=TILE_COL[t]; g.fillRect(px,py,T,T);
     if(t===WATER){g.fillStyle='rgba(255,255,255,0.06)';for(let i=0;i<3;i++)g.fillRect(px+r()*28,py+r()*30,6,1);}
     else if(t===SAND){g.fillStyle='rgba(150,120,60,0.18)';for(let i=0;i<5;i++)g.fillRect(px+r()*30,py+r()*30,2,2);}
+    else if(t===TREE&&(tileOf(X-1,Y)===SAND||tileOf(X+1,Y)===SAND||tileOf(X,Y-1)===SAND||tileOf(X,Y+1)===SAND)){g.fillStyle=TILE_COL[SAND];g.fillRect(px,py,T,T);}
     else if(t===GRASS||t===TREE){g.fillStyle='rgba(30,70,20,0.25)';for(let i=0;i<6;i++)g.fillRect(px+r()*30,py+r()*30,2,3);}
     else if(t===DIRT){g.fillStyle='rgba(60,40,20,0.25)';for(let i=0;i<6;i++)g.fillRect(px+r()*30,py+r()*30,3,2);}
     else if(t===POOL){g.fillStyle='rgba(255,255,255,0.25)';g.fillRect(px+r()*20,py+r()*24,10,2);g.strokeStyle='#e0f7fa';g.lineWidth=2;

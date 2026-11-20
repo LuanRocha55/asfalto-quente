@@ -10,7 +10,7 @@ import { clockText, darkness } from '../world/time.js';
 import { WEAPONS } from '../game/weapons.js';
 import { districtAt, streetAt } from '../world/districts.js';
 import { buildings, zones } from '../world/map.js';
-import { mouse } from '../core/state.js';
+import { mouse, view } from '../core/state.js';
 import { tut, currentStep, tutorialSteps } from '../game/tutorial.js';
 import { drawIcon, KIND_ICON } from './icons.js';
 import { hasSave, saveSummary } from '../game/save.js';
@@ -72,7 +72,7 @@ export function drawHUD(g,tgt){
   g.setTransform(DPR,0,0,DPR,0,0);
   const txt=(t,x,y,size,col,align)=>{g.font='bold '+size+'px "Courier New",monospace';g.textAlign=align||'left';g.fillStyle='rgba(0,0,0,0.75)';g.fillText(t,x+2,y+2);g.fillStyle=col;g.fillText(t,x,y);};
   // seta pro alvo
-  if(tgt){const sx=(tgt.x-cam.x)*cam.zoom+CW/2, sy=(tgt.y-cam.y)*cam.zoom+CH/2;
+  if(tgt){const pp=view.project(tgt.x,tgt.y,0);const sx=pp.x, sy=pp.y;
     if(sx<20||sx>CW-20||sy<20||sy>CH-20){const a=Math.atan2(sy-CH/2,sx-CW/2);const r=Math.min(CW,CH)/2-50;
       const ax=CW/2+Math.cos(a)*Math.min(r*1.6,Math.abs((CW/2-40)/Math.cos(a))||r), ay=CH/2+Math.sin(a)*Math.min(r*1.6,Math.abs((CH/2-40)/Math.sin(a))||r);
       g.save();g.translate(clamp(ax,40,CW-40),clamp(ay,40,CH-40));g.rotate(a);g.fillStyle='#ffe14a';g.strokeStyle='#000';g.lineWidth=2;
@@ -131,7 +131,7 @@ export function drawHUD(g,tgt){
   g.fillStyle='#fff';const pp=toM(player.x,player.y);g.save();g.translate(pp[0],pp[1]);g.rotate(player.a);g.beginPath();g.moveTo(6,0);g.lineTo(-4,-4);g.lineTo(-4,4);g.closePath();g.fill();g.restore();
   if(tgt){const p=toM(tgt.x,tgt.y);const cp=[clamp(p[0],mx+4,mx+MS-4),clamp(p[1],my2+4,my2+MS-4)];g.fillStyle='#ffe14a';g.beginPath();g.arc(cp[0],cp[1],5,0,Math.PI*2);g.fill();g.strokeStyle='#000';g.lineWidth=1;g.stroke();}
   g.restore();
-  txt('M mapa · N mudo · P pausa · v'+VERSION,mx,my2-10,11,'rgba(255,255,255,0.6)');
+  txt('M mapa · G gráficos · N mudo · P pausa · v'+VERSION,mx,my2-10,11,'rgba(255,255,255,0.6)');
   if(S.saveFlash>0){g.globalAlpha=clamp(S.saveFlash,0,1);txt('✔ jogo salvo',mx,my2-28,12,'#7dff6b');g.globalAlpha=1;}
   drawGuide(g);
   drawCrosshair(g);

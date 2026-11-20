@@ -10,11 +10,19 @@ import { drawTitle } from './render/hud.js';
 import { drawBigMap, drawMenu } from './render/overlays.js';
 import { updateInterior } from './game/interior.js';
 import { renderInterior } from './render/interiorDraw.js';
+import { init3D, set3D, render3D, R } from './render3d/r3d.js';
+import { signalState } from './world/districts.js';
+import { msg } from './game/world.js';
 import { S, player, cam, keys } from './core/state.js';
 import { resetWorld } from './game/world.js';
 import './core/input.js';
 
 resetWorld();
+// gráficos: 3D por padrão; G alterna com o clássico (fica salvo no navegador)
+let pref='3d';try{pref=localStorage.getItem('aq_gfx')||'3d';}catch(e){}
+init3D();set3D(pref==='3d');
+window.addEventListener('keydown',e=>{if(e.code==='KeyG'&&S.started&&!S.menu){const on=!R.on;if(on&&!R.ok){msg('Este navegador não tem suporte a 3D (WebGL).',3);return;}
+  set3D(on);try{localStorage.setItem('aq_gfx',on?'3d':'2d');}catch(err){}msg(on?'Gráficos: 3D':'Gráficos: clássico (2D)',2);}});
 let last=performance.now();
 // remove qualquer coisa que tenha virado NaN/Infinity e destrava o estado
 function sanitize(hard){
@@ -36,7 +44,9 @@ function frame(now){
 
     else if(!S.started){S.gameTime+=dt;cam.x+=Math.cos(S.gameTime*0.1)*40*dt;cam.y+=Math.sin(S.gameTime*0.13)*40*dt;}
     sanitize();
-    if(S.interior)renderInterior();else render();
+    const use3D=R.on&&!S.interior;
+    document.getElementById('gl').style.visibility=use3D?'visible':'hidden';
+    if(S.interior)renderInterior();else if(use3D)render3D(signalState);else render();
     if(S.mapOpen&&!S.interior)drawBigMap();
     if(S.menu)drawMenu();
     if(!S.started||S.paused)drawTitle();

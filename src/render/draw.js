@@ -131,7 +131,7 @@ export function drawBuilding(g,b,camH){
   }
 }
 // ---- placas e ícones nos telhados ----
-function roofSign(g,b,x,y,rw,rh){
+export function roofSign(g,b,x,y,rw,rh){
   const cx=x+rw/2, cy=y+rh/2, s=Math.min(rw,rh);
   const fs=Math.round(clamp(s*0.13,10,17));
   const plate=(t,py,bg,fg)=>{g.font='bold '+fs+'px "Courier New",monospace';const w=g.measureText(t).width+12;g.fillStyle=bg;g.fillRect(cx-w/2,py-fs*0.8,w,fs*1.3);label(g,t,cx,py+fs*0.3,fg,fs);};
@@ -237,22 +237,7 @@ export function drawTree(g,tr,camH){const p=proj(tr.x,tr.y,26,camH);const k=camH
   g.fillStyle=TC;g.beginPath();g.arc(p[0]-2,p[1]-2,tr.r*k*0.75,0,Math.PI*2);g.fill();
   g.fillStyle=shade(tr.c,1.25*BR);g.beginPath();g.arc(p[0]-4,p[1]-4,tr.r*k*0.35,0,Math.PI*2);g.fill();}
 
-export function render(){
-  const g=ctx;
-  g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle='#1f5f8b';g.fillRect(0,0,CW,CH);
-  const sx=(Math.random()-.5)*S.shake,sy=(Math.random()-.5)*S.shake;
-  const setCam=()=>g.setTransform(DPR*cam.zoom,0,0,DPR*cam.zoom,DPR*(CW/2+sx)-cam.x*DPR*cam.zoom,DPR*(CH/2+sy)-cam.y*DPR*cam.zoom);
-  setCam();
-  NIGHT=darkness(); BR=1-NIGHT*0.5;
-  const hw=CW/2/cam.zoom, hh=CH/2/cam.zoom;
-  const vx0=cam.x-hw-40,vx1=cam.x+hw+40,vy0=cam.y-hh-40,vy1=cam.y+hh+40;
-  // chão
-  const c0x=Math.max(0,Math.floor(vx0/CPX)),c1x=Math.min(Math.ceil(W/CHUNK)-1,Math.floor(vx1/CPX));
-  const c0y=Math.max(0,Math.floor(vy0/CPX)),c1y=Math.min(Math.ceil(H/CHUNK)-1,Math.floor(vy1/CPX));
-  for(let cy=c0y;cy<=c1y;cy++)for(let cx=c0x;cx<=c1x;cx++)g.drawImage(getChunk(cx,cy),cx*CPX,cy*CPX);
-  // ondas animadas
-  g.fillStyle='rgba(255,255,255,0.08)';
-  for(let i=0;i<40;i++){const wx=Math.floor(vx0/64)*64+((i*137)%Math.max(64,(vx1-vx0)))+Math.sin(S.gameTime+i)*10;const wy=Math.floor(vy0/64)*64+((i*251)%Math.max(64,(vy1-vy0)));if(tileAt(wx,wy)===WATER)g.fillRect(wx,wy,14,2);}
+export function drawGround2D(g,vx0,vx1,vy0,vy1,mode){
   // decalques
   for(const d of S.decals){if(d.x<vx0||d.x>vx1||d.y<vy0||d.y>vy1)continue;const a=clamp(d.life/5,0,1);
     if(d.type==='scorch'){g.fillStyle='rgba(15,10,5,'+(0.55*a)+')';g.beginPath();g.arc(d.x,d.y,d.r,0,Math.PI*2);g.fill();}
@@ -270,13 +255,14 @@ export function render(){
         label(g,w.name.length>9?'SMG':w.name.toUpperCase(),(pd.x0+pd.x1)/2,(pd.y0+pd.y1)/2-2,'#fff',11);label(g,'$'+w.price,(pd.x0+pd.x1)/2,(pd.y0+pd.y1)/2+14,'#9dff8a',11);}}
     else if(z.type!=='posto')label(g,z.label,(z.x0+z.x1)/2,(z.y0+z.y1)/2+6,'#fff',16);}
   // postes
-  for(const l of lamps){if(l.x<vx0||l.x>vx1||l.y<vy0||l.y>vy1)continue;
+  if(mode==='2d')for(const l of lamps){if(l.x<vx0||l.x>vx1||l.y<vy0||l.y>vy1)continue;
     g.fillStyle='rgba(0,0,0,0.3)';g.beginPath();g.arc(l.x+2,l.y+2,4,0,Math.PI*2);g.fill();
     g.fillStyle='#3d3d42';g.beginPath();g.arc(l.x,l.y,4,0,Math.PI*2);g.fill();
     g.fillStyle=NIGHT>0.05?'#fff1b8':'#c9c9c0';g.beginPath();g.arc(l.x,l.y,2,0,Math.PI*2);g.fill();}
   // enfeites: guarda-sol, rede de vôlei, guindaste do porto
   for(const d of decor){
     if(d.type==='campo')continue;
+    if(mode!=='2d'&&(d.type==='guarda-sol'||d.type==='guindaste'||d.type==='refletor'))continue;
     if(d.x<vx0-120||d.x>vx1+120||d.y<vy0-120||d.y>vy1+120)continue;
     if(d.type==='guarda-sol'){g.fillStyle='rgba(0,0,0,0.25)';g.beginPath();g.arc(d.x+5,d.y+5,15,0,Math.PI*2);g.fill();
       for(let k=0;k<8;k++){g.fillStyle=k%2?d.c:'#ffffff';g.beginPath();g.moveTo(d.x,d.y);g.arc(d.x,d.y,15,k*Math.PI/4,(k+1)*Math.PI/4);g.closePath();g.fill();}}
@@ -293,7 +279,7 @@ export function render(){
     if(!isJunction(i,j))continue;
     const hv=VL[i].w*T/2, hh=HL[j].w*T/2;
     g.fillStyle='#1f6b3a';g.fillRect(ox+hv+4,oy+hh+4,20,8);g.fillStyle='#ffffff';g.fillRect(ox+hv+6,oy+hh+7,16,1.5);
-    if(!signalized(i,j))continue;
+    if(!signalized(i,j)||mode!=='2d')continue;
     const sh=signalState(i,j,'h'), sv=signalState(i,j,'v');
     trafficLight(g,ox-hv-8,oy+hh+8,Math.PI,sh);   // quem vem do oeste
     trafficLight(g,ox+hv+8,oy-hh-8,0,sh);         // quem vem do leste
@@ -324,10 +310,29 @@ export function render(){
     const pulse=on?0:Math.sin(S.gameTime*3+b.x0)*2;
     g.fillStyle=on?'rgba(255,233,160,0.6)':'rgba(255,233,160,0.3)';g.beginPath();g.arc(d.x,d.y,(on?20:17)+pulse,0,Math.PI*2);g.fill();
     drawIcon(g,KIND_ICON[b.kind],d.x,d.y,on?22:18);}
-  if(nearB){const d=doorOf(nearB);const name=ICONS[KIND_ICON[nearB.kind]].name.split(' (')[0].split(' ·')[0];g.font='bold 13px "Courier New",monospace';drawKeycap(g,'F',d.x-(g.measureText('Entrar: '+name).width+30)/2,d.y-30,'Entrar: '+name,13);}
+  if(nearB&&mode==='2d'){const d=doorOf(nearB);const name=ICONS[KIND_ICON[nearB.kind]].name.split(' (')[0].split(' ·')[0];g.font='bold 13px "Courier New",monospace';drawKeycap(g,'F',d.x-(g.measureText('Entrar: '+name).width+30)/2,d.y-30,'Entrar: '+name,13);}
   // marcador do alvo
   const tgt=S.mission?S.mission.def.target(S.mission):(S.job?S.job.target:(tutorialTarget()||S.waypoint));
   if(tgt&&!(tgt instanceof Car)&&!(tgt instanceof Ped)){const r=26+Math.sin(S.gameTime*5)*5;g.strokeStyle='#ffe14a';g.lineWidth=4;g.beginPath();g.arc(tgt.x,tgt.y,r,0,Math.PI*2);g.stroke();g.fillStyle='rgba(255,225,74,0.25)';g.fill();}
+  return {tgt,nearB};
+}
+export function render(){
+  const g=ctx;
+  g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle='#1f5f8b';g.fillRect(0,0,CW,CH);
+  const sx=(Math.random()-.5)*S.shake,sy=(Math.random()-.5)*S.shake;
+  const setCam=()=>g.setTransform(DPR*cam.zoom,0,0,DPR*cam.zoom,DPR*(CW/2+sx)-cam.x*DPR*cam.zoom,DPR*(CH/2+sy)-cam.y*DPR*cam.zoom);
+  setCam();
+  NIGHT=darkness(); BR=1-NIGHT*0.5;
+  const hw=CW/2/cam.zoom, hh=CH/2/cam.zoom;
+  const vx0=cam.x-hw-40,vx1=cam.x+hw+40,vy0=cam.y-hh-40,vy1=cam.y+hh+40;
+  // chão
+  const c0x=Math.max(0,Math.floor(vx0/CPX)),c1x=Math.min(Math.ceil(W/CHUNK)-1,Math.floor(vx1/CPX));
+  const c0y=Math.max(0,Math.floor(vy0/CPX)),c1y=Math.min(Math.ceil(H/CHUNK)-1,Math.floor(vy1/CPX));
+  for(let cy=c0y;cy<=c1y;cy++)for(let cx=c0x;cx<=c1x;cx++)g.drawImage(getChunk(cx,cy),cx*CPX,cy*CPX);
+  // ondas animadas
+  g.fillStyle='rgba(255,255,255,0.08)';
+  for(let i=0;i<40;i++){const wx=Math.floor(vx0/64)*64+((i*137)%Math.max(64,(vx1-vx0)))+Math.sin(S.gameTime+i)*10;const wy=Math.floor(vy0/64)*64+((i*251)%Math.max(64,(vy1-vy0)));if(tileAt(wx,wy)===WATER)g.fillRect(wx,wy,14,2);}
+  const {tgt,nearB}=drawGround2D(g,vx0,vx1,vy0,vy1,'2d');
   // pedestres
   for(const p of S.peds){if(p.state==='dead'||p.state==='gone'||p.state==='dead2')continue;if(p.x<vx0||p.x>vx1||p.y<vy0||p.y>vy1)continue;
     if(p.state==='down'){g.save();g.translate(p.x,p.y);g.fillStyle=p.shirt;g.fillRect(-7,-4,14,8);g.fillStyle=p.skin;g.beginPath();g.arc(8,0,3.5,0,Math.PI*2);g.fill();g.restore();continue;}

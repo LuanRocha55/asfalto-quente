@@ -5,6 +5,23 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.0.0 — 19/11/2026
+**Gráficos em 3D** (Three.js; a lógica do jogo continua a mesma)
+- Câmera inclinada acima do jogador, que afasta com a velocidade
+- Prédios em 3D com janelas, telhado de duas águas nas casas, caixa d'água e ar-condicionado em cima; janelas acendem à noite
+- Telhados dos lugares especiais com as placas e ícones (livro da escola, cruz do hospital, estrela da polícia...)
+- Sol que cruza o céu durante o dia, com sombras de verdade; céu e neblina mudam de cor no pôr do sol e à noite
+- Árvores, coqueiros com folhas, guarda-sóis, postes com poça de luz à noite, semáforos com luz acesa, orelhões, pontos de ônibus, bombas de gasolina e guindastes
+- Arena Maresia em 3D: arquibancada inclinada, torcida que pula em dia de jogo e refletores que iluminam o gramado
+- Carros em 3D para cada modelo (ônibus com janelas, caminhão, moto com piloto, viatura com giroflex), luz de freio, faróis que iluminam a rua à noite
+- Pessoas em 3D com pernas que andam
+- Fumaça, fogo, explosões e rastros de tiro em 3D
+- Avisos com tecla, setinhas e dinheiro flutuante acompanham os objetos em 3D; a mira do mouse aponta direto no chão em 3D
+- **G alterna entre 3D e o visual clássico (2D)** e a escolha fica salva; se o computador não tiver 3D, o jogo usa o clássico sozinho
+- Se o computador não aguentar, o jogo reduz a resolução e depois as sombras automaticamente
+- Interiores continuam no visual de cima
+- Three.js incluído no repositório (pasta vendor/three, licença MIT)
+
 ## 0.10.0 — 19/11/2026
 **Arena Maresia (estádio)**
 - Estádio no Centro, ocupando o espaço de 4 quarteirões: arquibancada inclinada, gramado com marcação, 4 portões e 4 refletores que acendem à noite e em dia de jogo
