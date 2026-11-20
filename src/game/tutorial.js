@@ -1,6 +1,7 @@
 // Começo guiado (ensina jogando) e dicas de primeira vez
 import { hyp } from '../core/utils.js';
 import { phones } from '../world/map.js';
+import { isOpenAt } from './blitz.js';
 import { heatStars, big } from './world.js';
 import { nearestDoor } from './interiors.js';
 import { JOBS } from './jobs.js';
@@ -12,7 +13,7 @@ const DONE_KEY='aq_tutorial_done', HINT_KEY='aq_hints';
 const store={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
 
 export const tut={active:false,step:0,acc:0,last:null,car:null,flash:0};
-const nearestPhone=()=>{let b=null,bd=1e9;for(const p of phones){const d=hyp(p.x-player.x,p.y-player.y);if(d<bd){bd=d;b=p;}}return b;};
+const nearestPhone=()=>{let b=null,bd=1e9;for(const p of phones){if(!isOpenAt(p.x,p.y))continue;const d=hyp(p.x-player.x,p.y-player.y);if(d<bd){bd=d;b=p;}}return b;};
 const STEPS=[
   {title:'Anda pela calçada',keys:['W','A','S','D'],text:'Usa WASD (ou as setas) pra andar. SHIFT corre.',
     done:()=>tut.acc>160},

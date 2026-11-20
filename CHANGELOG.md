@@ -5,6 +5,20 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.4.0 — 20/11/2026
+**Bairros liberados por meta (Operação Maré Alta)**
+- A cidade está sob operação policial: começam abertos só o **Centro** e o **Jardim Maresia** (onde ficam sua casa, hospital, delegacia, pintura e armas)
+- Os outros bairros abrem ao juntar dinheiro, nesta ordem: **Alto do Cajueiro** ($2.000) → **Alto da Maresia** ($5.000) → **Orla** ($10.000, Oficina do Zé) → **Vila Velha** ($16.000) → **Porto** ($25.000)
+- Ao bater a meta, o contato "desenrola" e a blitz daquele bairro é desmontada (aviso grande na tela)
+- **Blitz** em cada rua que entra num bairro fechado: cones afunilando, cancela listrada, placa, tapete de pregos, duas viaturas na calçada e policiais em pé
+  - devagar: "Área sob operação, só morador. Volta!" e o carro é barrado; a pé, a grade não deixa passar
+  - rápido: quebra a cancela, ganha **3 estrelas** na hora, a blitz vem atrás e o tapete de pregos **fura os pneus** (carro lento e escorregando até consertar no posto)
+  - dentro de bairro fechado a operação te acha em poucos segundos e não larga (mínimo 3 estrelas)
+- As avenidas da divisa entre bairros continuam livres
+- Mapa e minimapa mostram os bairros fechados hachurados em vermelho, com a meta escrita; o HUD mostra quanto falta pro próximo
+- Missões, empregos, orelhões e o tutorial só mandam pra bairros abertos; a missão do Brisa espera a Orla e o Alto da Maresia abrirem
+- Saves antigos: dinheiro zerado e só Centro e Jardim abertos
+
 ## 1.3.0 — 20/11/2026
 **Procurado que escala (agora até 6 estrelas)**
 - 1–3 estrelas: viaturas, bloqueios e policiais a pé (como antes)

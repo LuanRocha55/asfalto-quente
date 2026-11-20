@@ -72,6 +72,7 @@ src/
     weapons.js          armas, tiros, loja e inimigos atirando
     jobs.js             empregos, carreira e veículos de trabalho
     stadium.js          Arena Maresia: dia de jogo, gols e aposta
+    blitz.js            bairros fechados (Operação Maré Alta), metas e blitz
     interiors.js        portas e menus dos comércios
     interior.js         cenas internas onde dá pra andar (plantas em texto)
     tutorial.js         começo guiado e dicas de primeira vez

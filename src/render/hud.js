@@ -2,6 +2,7 @@
 import { ctx, CW, CH, DPR } from '../core/canvas.js';
 import { clamp, hyp, fmtMoney } from '../core/utils.js';
 import { T, H, phones } from '../world/map.js';
+import { lockMask, nextDistrict } from '../game/blitz.js';
 import { mini } from '../world/chunks.js';
 import { heatStars } from '../game/world.js';
 import { S, player, cam } from '../core/state.js';
@@ -84,6 +85,7 @@ export function drawHUD(g,tgt){
   for(let i=0;i<6;i++){const x=CW-28-i*28,y=72;const on=i<st;const blink=on&&st>0&&Math.floor(S.gameTime*4)%2===0;
     drawStar(g,x,y,12,on?(blink?'#ffffff':'#ffd84a'):'rgba(255,255,255,0.15)');}
   txt('Recorde: '+fmtMoney(S.best),CW-20,108,12,'#cfcfcf','right');
+  {const nd=nextDistrict();if(nd){const f=Math.max(0,nd.meta-Math.floor(player.money));txt('Libera '+nd.name+': faltam '+fmtMoney(f),CW-20,190,11,f<=0?'#7dff6b':'#ffb36b','right');}}
   txt((darkness()>0.5?'☾ ':'☀ ')+clockText(),CW-20,132,16,'#ffe9a0','right');
   // bairro e rua
   {const now=performance.now(), fdt=Math.min(0.1,(now-lastFrame)/1000); lastFrame=now;
@@ -120,6 +122,7 @@ export function drawHUD(g,tgt){
   g.save();g.fillStyle='rgba(0,0,0,0.6)';g.fillRect(mx-3,my2-3,MS+6,MS+6);g.beginPath();g.rect(mx,my2,MS,MS);g.clip();
   const ptx=player.x/T,pty=player.y/T;g.imageSmoothingEnabled=false;
   g.drawImage(mini,ptx-VIEW/2,pty-VIEW/2,VIEW,VIEW,mx,my2,MS,MS);
+  g.drawImage(lockMask(),(ptx-VIEW/2)*2,(pty-VIEW/2)*2,VIEW*2,VIEW*2,mx,my2,MS,MS); // bairros fechados (hachurado)
   const toM=(x,y)=>[mx+(x/T-ptx+VIEW/2)*MS/VIEW,my2+(y/T-pty+VIEW/2)*MS/VIEW];
   const inMini=p=>!(p[0]<mx-8||p[0]>mx+MS+8||p[1]<my2-8||p[1]>my2+MS+8);
   {const ringing=!S.mission&&!S.job&&S.phoneCd<=0;for(const ph of phones){const p=toM(ph.x,ph.y);if(!inMini(p))continue;g.globalAlpha=ringing?1:0.4;drawIcon(g,'phone',p[0],p[1],12);g.globalAlpha=1;}}

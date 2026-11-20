@@ -5,6 +5,7 @@ import { T, W, buildings, phones } from '../world/map.js';
 import { mini } from '../world/chunks.js';
 import { DISTRICTS } from '../world/districts.js';
 import { ZONE_LABELS } from '../world/zoning.js';
+import { lockMask, nextDistrict, isOpenZone, metaOf } from '../game/blitz.js';
 import { jobSpots } from '../game/jobs.js';
 import { isDisabled, whyOf, priceLabel } from '../game/interiors.js';
 import { drawIcon, ICONS, KIND_ICON } from './icons.js';
@@ -21,11 +22,14 @@ export function drawBigMap(){
   const ox=30, oy=Math.max(50,(CH-size)/2+10), sc=size/W;
   S.mapRect={ox,oy,size,sc};
   const toS=(wx,wy)=>[ox+wx/T*sc, oy+wy/T*sc];
-  g.imageSmoothingEnabled=false; g.drawImage(mini,ox,oy,size,size); g.imageSmoothingEnabled=true;
+  g.imageSmoothingEnabled=false; g.drawImage(mini,ox,oy,size,size); g.drawImage(lockMask(),ox,oy,size,size); g.imageSmoothingEnabled=true;
   g.strokeStyle='rgba(255,255,255,0.3)';g.lineWidth=2;g.strokeRect(ox,oy,size,size);
   txt(g,'MAPA DE VILA MARESIA',ox,oy-16,18,'#ffe9a0');
   // nomes dos bairros
-  for(const [k,[tx,ty]] of Object.entries(ZONE_LABELS)){const p=toS(tx*T,ty*T);g.globalAlpha=0.8;txt(g,DISTRICTS[k].name,p[0],p[1],Math.round(clamp(size/48,10,15)),'#ffffff','center');g.globalAlpha=1;}
+  const nd=nextDistrict();
+  for(const [k,[tx,ty]] of Object.entries(ZONE_LABELS)){const p=toS(tx*T,ty*T);const fs=Math.round(clamp(size/48,10,15));g.globalAlpha=0.85;txt(g,DISTRICTS[k].name,p[0],p[1],fs,'#ffffff','center');g.globalAlpha=1;
+    if(!isOpenZone(k)){const m=metaOf(k);const t=nd&&nd.z===k?'FECHADO · faltam '+fmtMoney(Math.max(0,m-Math.floor(player.money))):'FECHADO · meta '+fmtMoney(m);
+      txt(g,t,p[0],p[1]+fs+4,Math.max(9,fs-2),nd&&nd.z===k?'#ffb36b':'#ff7a6b','center');}}
   // ícones
   const isz=Math.round(clamp(size/42,12,22));
   for(const b of buildings){const k=KIND_ICON[b.kind];if(!k)continue;const p=toS((b.x0+b.x1)/2,(b.y0+b.y1)/2);drawIcon(g,k,p[0],p[1],isz);}

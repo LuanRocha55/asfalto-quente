@@ -9,14 +9,15 @@ import { Ped } from '../entities/peds.js';
 import { addHeat, msg, big, spawnTraffic } from './world.js';
 import { update } from './update.js';
 import { S, player } from '../core/state.js';
+import { isOpenAt, isOpenZone } from './blitz.js';
 
 export function roadPointFar(dmin,dmax){
   let best=null;
-  for(let i=0;i<120;i++){const p=randomRoadPoint();const d=hyp(p.x-player.x,p.y-player.y);if(d>=dmin&&d<=dmax)return{x:p.x,y:p.y};if(!best||Math.abs(d-dmin)<Math.abs(hyp(best.x-player.x,best.y-player.y)-dmin))best=p;}
+  for(let i=0;i<160;i++){const p=randomRoadPoint();if(!isOpenAt(p.x,p.y))continue;const d=hyp(p.x-player.x,p.y-player.y);if(d>=dmin&&d<=dmax)return{x:p.x,y:p.y};if(!best||Math.abs(d-dmin)<Math.abs(hyp(best.x-player.x,best.y-player.y)-dmin))best=p;}
   return{x:best.x,y:best.y};
 }
 export function sidewalkPointFar(dmin,dmax){
-  for(let i=0;i<400;i++){const x=Math.random()*W*T,y=Math.random()*H*T;if(tileAt(x,y)!==SIDE)continue;const d=hyp(x-player.x,y-player.y);if(d>=dmin&&d<=dmax)return{x:(Math.floor(x/T)+.5)*T,y:(Math.floor(y/T)+.5)*T};}
+  for(let i=0;i<600;i++){const x=Math.random()*W*T,y=Math.random()*H*T;if(tileAt(x,y)!==SIDE||!isOpenAt(x,y))continue;const d=hyp(x-player.x,y-player.y);if(d>=dmin&&d<=dmax)return{x:(Math.floor(x/T)+.5)*T,y:(Math.floor(y/T)+.5)*T};}
   return phones[0];
 }
 export const MISSIONS=[
@@ -32,7 +33,7 @@ export const MISSIONS=[
       else{if(!player.car){m.text='Volta pro carro! O passageiro tá esperando.';}
         else if(hyp(player.car.x-m.dest.x,player.car.y-m.dest.y)<60&&player.car.speed<120)return'done';}},
     target(m){return m.stage===0?m.p:m.dest;}},
-  {title:'O Brisa do Doutor',start(m){const e=pick([special.estac,special.estac2,special.estac3]);
+  {title:'O Brisa do Doutor',needs:['rico','orla'],start(m){const e=pick([special.estac,special.estac2,special.estac3]);
       m.car=new Car('brisa',e.x,e.y,0,'#e8242b');m.car.mission=m;S.cars.push(m.car);m.reward=2500;m.time=200;m.stage=0;
       m.text='Rouba o Brisa GT vermelho do estacionamento e leva pra Oficina do Zé.';
       m.onDestroyed=()=>{m.lost=true;};
@@ -52,6 +53,8 @@ export const MISSIONS=[
     target(m){return null;}},
 ];
 export function startMission(){
+  // pula missão que depende de bairro ainda fechado (ela volta na próxima rodada)
+  for(let k=0;k<MISSIONS.length;k++){const d=MISSIONS[S.missionIdx%MISSIONS.length];if(!d.needs||d.needs.every(isOpenZone))break;S.missionIdx++;}
   const def=MISSIONS[S.missionIdx%MISSIONS.length];const round=Math.floor(S.missionIdx/MISSIONS.length);
   S.mission={def,title:def.title};def.start(S.mission);S.mission.reward=Math.round(S.mission.reward*(1+round*0.6));
   big(def.title,'Missão '+(S.missionIdx+1),'#ffd84a',2.5);sfxTone(660,0.2,0.1);sfxTone(880,0.3,0.1,'square',0.18);

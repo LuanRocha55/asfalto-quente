@@ -4,6 +4,7 @@ import { Car, CT } from '../entities/vehicles.js';
 import { heatStars, msg } from './world.js';
 import { solidAt } from '../world/map.js';
 import { S, player, cam } from '../core/state.js';
+import { START_OPEN, initDistricts, restrictedAt } from './blitz.js';
 
 const KEY='aq_save';
 
@@ -17,7 +18,7 @@ export function saveGame(silent){
   const d={ v:VERSION, t:Date.now(),
     money:player.money, health:player.health, armor:player.armor,
     ammo:player.ammo, weapon:player.weapon, skills:player.skills,
-    missionIdx:S.missionIdx, tod:S.tod, playTime:S.playTime||0,
+    missionIdx:S.missionIdx, tod:S.tod, playTime:S.playTime||0, unlocked:S.unlocked,
     x:player.x, y:player.y,
     car: c&&!c.wreck&&c.burnT<=0 ? {type:c.type,color:c.color,a:c.a,health:c.health} : null };
   try{ localStorage.setItem(KEY,JSON.stringify(d)); S.saveFlash=2.5; if(!silent)msg('Jogo salvo.',2); return true; }
@@ -32,10 +33,14 @@ export function loadGame(){
   if(player.weapon!=='punho'&&!(player.ammo[player.weapon]>0)) player.weapon='punho';
   Object.assign(player.skills, d.skills||{});
   S.missionIdx=d.missionIdx||0; S.tod=(typeof d.tod==='number')?d.tod:16.5; S.playTime=d.playTime||0;
+  // bairros: saves de antes da 1.4 não tinham isso -> começa do zero (dinheiro zerado, só Centro e Jardim)
+  if(Array.isArray(d.unlocked)) S.unlocked=[...d.unlocked];
+  else { S.unlocked=[...START_OPEN]; player.money=0; S.migratedDistricts=true; }
+  initDistricts();
   // saves de antes da cidade nova (0.8.0) não têm posição válida: começa no hospital
   const [ma,mi]=(d.v||'0.0').split('.').map(Number);
   const sameCity=ma>0||mi>=8;
-  if(sameCity&&typeof d.x==='number'&&isFinite(d.x)&&!solidAt(d.x,d.y)){ player.x=d.x; player.y=d.y; }
+  if(sameCity&&typeof d.x==='number'&&isFinite(d.x)&&!solidAt(d.x,d.y)&&!restrictedAt(d.x,d.y)){ player.x=d.x; player.y=d.y; }
   else d.car=null;
   if(d.car&&CT[d.car.type]){
     const c=new Car(d.car.type,player.x,player.y,d.car.a||0,d.car.color);

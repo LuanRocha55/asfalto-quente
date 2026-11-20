@@ -9,6 +9,7 @@ import { roadPointFar, sidewalkPointFar, inZone } from './missions.js';
 import { darkness } from '../world/time.js';
 import { fire, WEAPONS } from './weapons.js';
 import { S, player } from '../core/state.js';
+import { isOpenAt } from './blitz.js';
 import { saveGame } from './save.js';
 
 // ---------- carreira (nível sobe a cada 5 serviços) ----------
@@ -28,8 +29,9 @@ export const JOBS={
 };
 
 // ---------- lugares dos empregos ----------
-export const lanchonetes=()=>buildings.filter(b=>b.kind==='lanchonete');
-export const lojas=()=>buildings.filter(b=>b.kind==='mercadinho'||b.kind==='farmacia');
+const openB=b=>isOpenAt((b.x0+b.x1)/2,(b.y0+b.y1)/2);
+export const lanchonetes=()=>buildings.filter(b=>b.kind==='lanchonete'&&openB(b));
+export const lojas=()=>buildings.filter(b=>(b.kind==='mercadinho'||b.kind==='farmacia')&&openB(b));
 const walkable=(x,y)=>{const t=tileAt(x,y);return t===SIDE||t===GRASS||t===PARK||t===SAND;};
 // ponto de calçada na frente de um prédio (porta)
 export function doorOf(b){
@@ -60,7 +62,7 @@ const spots=[];
 export function setupJobSpots(){
   spots.length=0;
   // motocas só em algumas lanchonetes (no máximo 6, espalhadas)
-  lanchonetes().filter((b,i,arr)=>i%Math.max(1,Math.ceil(arr.length/6))===0).forEach(b=>{const d=doorOf(b);b.hasMoto=true;spots.push({type:'moto',x:d.x+56,y:d.y,a:0});});
+  buildings.filter(b=>b.kind==='lanchonete').filter((b,i,arr)=>i%Math.max(1,Math.ceil(arr.length/6))===0).forEach(b=>{const d=doorOf(b);b.hasMoto=true;spots.push({type:'moto',x:d.x+56,y:d.y,a:0});});
   for(const k of ['posto','posto2']){const z=special[k];if(z)spots.push({type:'guincho',x:(z.x0+z.x1)/2,y:z.y1-24,a:0});}
   if(special.estac3)spots.push({type:'busao',x:special.estac3.x,y:special.estac3.y,a:0,terminal:true});
   if(special.estac)spots.push({type:'taxi',x:special.estac.x,y:special.estac.y,a:0,ponto:true});
@@ -209,7 +211,7 @@ function updTow(j,dt){
   if(j.stage==='buscar'){
     const r=rearOf(c);
     if(hyp(r.x-car.x,r.y-car.y)<car.t.len/2+30&&c.speed<40){car.towed=true;j.data.towed=car;j.stage='levar';
-      const zs=zones.filter(z=>z.type==='posto'||z.type==='ze');let best=zs[0],bd=1e9;for(const z of zs){const d=hyp((z.x0+z.x1)/2-c.x,(z.y0+z.y1)/2-c.y);if(d<bd){bd=d;best=z;}}
+      const zs=zones.filter(z=>(z.type==='posto'||z.type==='ze')&&isOpenAt((z.x0+z.x1)/2,(z.y0+z.y1)/2));let best=zs[0],bd=1e9;for(const z of zs){const d=hyp((z.x0+z.x1)/2-c.x,(z.y0+z.y1)/2-c.y);if(d<bd){bd=d;best=z;}}
       j.data.zone=best;j.data.dist=bd;j.target={x:(best.x0+best.x1)/2,y:(best.y0+best.y1)/2};j.text='Leva o carro pro posto ou pra Oficina do Zé.';sfxNoise(0.2,0.2,600);}
   }else{
     // carro rebocado vai atrás do guincho
@@ -283,7 +285,7 @@ const JOB_INFO={
   vigilante:{short:'loja, só de noite',how:'De noite, na porta de mercadinho ou farmácia, aperta J.',pay:'por assaltante'},
 };
 function whereJob(type){
-  const near=list=>{let b=null,bd=1e9;for(const p of list){if(!p)continue;const d=hyp(p.x-player.x,p.y-player.y);if(d<bd){bd=d;b=p;}}return b;};
+  const near=list=>{let b=null,bd=1e9;for(const p of list){if(!p||!isOpenAt(p.x,p.y))continue;const d=hyp(p.x-player.x,p.y-player.y);if(d<bd){bd=d;b=p;}}return b;};
   if(type==='taxi')return near([...S.cars.filter(c=>c.type==='taxi'&&!c.wreck),...spots.filter(s=>s.type==='taxi')]);
   if(type==='motoboy')return near(spots.filter(s=>s.type==='moto').map(s=>s.car||s));
   if(type==='onibus')return near(spots.filter(s=>s.type==='busao').map(s=>s.car||s));

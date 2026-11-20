@@ -56,6 +56,7 @@ export class Car{
     if(ground===SAND&&!t.sand){gripM=0.5;dragM=2.2;spdM=0.6;}
     else if(ground===SAND&&t.sand){gripM=0.9;spdM=1.05;}
     else if(ground===GRASS){gripM=0.75;dragM=1.8;spdM=0.75;}
+    if(this.flat){spdM*=0.5;gripM*=0.55;} // pneu furado (tapete de pregos da blitz)
     const maxS=t.maxSpd*spdM*(this.health<t.hp*0.25?0.75:1);
     this.brakeLight=false;
     if(thr>0){ if(vF<-5){vF+=t.brake*dt;this.brakeLight=true;} else if(vF<maxS)vF+=t.accel*thr*dt*(1-vF/maxS*0.55); }

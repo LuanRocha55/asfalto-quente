@@ -14,6 +14,7 @@ import { drawHUD, drawKeycap } from '../render/hud.js';
 import { ICONS, KIND_ICON } from '../render/icons.js';
 import { buildCity, U, bh } from './build.js';
 import { S, player, cam, keys, view } from '../core/state.js';
+import { checkpoints } from '../game/blitz.js';
 
 export const R={ok:false,on:false};
 export const DBG={};
@@ -183,6 +184,41 @@ function syncCars(night){
     if(g.userData.beam)g.userData.beam.visible=night>0.05&&!!c.driver&&!c.wreck;
   }
   for(const [c,g] of carMeshes)if(!seen.has(c)){scene.remove(g);carMeshes.delete(c);}
+}
+
+// ---------- blitz (postos de controle dos bairros fechados) ----------
+const cpMeshes=new Map();
+const coneG=new THREE.ConeGeometry(0.16,0.45,10);coneG.translate(0,0.225,0);
+const coneBandG=new THREE.CylinderGeometry(0.105,0.125,0.08,10);coneBandG.translate(0,0.22,0);
+let signMat=null;
+function blitzSign(){
+  if(signMat)return signMat;
+  const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d');
+  g.fillStyle='#ffd600';g.fillRect(0,0,256,128);g.fillStyle='#111';g.fillRect(6,6,244,116);g.fillStyle='#ffd600';g.fillRect(12,12,232,104);
+  g.fillStyle='#111';g.font='bold 52px Arial';g.textAlign='center';g.fillText('BLITZ',128,64);g.font='bold 18px Arial';g.fillText('OPERAÇÃO MARÉ ALTA',128,92);g.font='bold 14px Arial';g.fillText('SÓ MORADOR',128,110);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;signMat=new THREE.MeshLambertMaterial({map:t});return signMat;
+}
+function makeCheckpoint(cp){
+  const g=new THREE.Group(), hw=cp.L.w*T/2*U;
+  g.position.set(cp.x*U,0,cp.y*U);g.rotation.y=-Math.atan2(cp.dy,cp.dx);
+  // cones afunilando (do lado de fora)
+  for(let k=0;k<5;k++){const s=(-110+k*22)*U,l=hw-(8+k*6)*U;for(const sg of[-1,1]){const c=new THREE.Mesh(coneG,mat('#ff6d00'));c.position.set(s,0,sg*l);c.castShadow=true;g.add(c);const b=new THREE.Mesh(coneBandG,mat('#f5f5f5'));b.position.copy(c.position);g.add(b);}}
+  // cancela: pilar + braço listrado que gira pra cima quando quebrada
+  const post=new THREE.Mesh(boxG,mat('#424242'));post.scale.set(0.25,0.9,0.25);post.position.set(0,0.45,-hw-0.35);post.castShadow=true;g.add(post);
+  const arm=new THREE.Group();arm.position.set(0,0.85,-hw-0.35);g.add(arm);
+  const n=Math.ceil((hw*2+0.3)/0.38);for(let k=0;k<n;k++){const p=new THREE.Mesh(boxG,mat(k%2?'#ffffff':'#e53935'));p.scale.set(0.09,0.09,0.38);p.position.set(0,0,0.19+k*0.38);p.castShadow=true;arm.add(p);}
+  g.userData.arm=arm;
+  // placa
+  const pole=new THREE.Mesh(boxG,mat('#616161'));pole.scale.set(0.06,1.3,0.06);pole.position.set(-0.6,0.65,hw+0.6);g.add(pole);
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.3,0.65),blitzSign());sign.position.set(-0.62,1.45,hw+0.6);sign.rotation.y=-Math.PI/2;sign.castShadow=true;g.add(sign);
+  scene.add(g);return g;
+}
+function syncCheckpoints(){
+  const live=new Set();
+  for(const cp of checkpoints){if(!cp.props)continue;live.add(cp);
+    let g=cpMeshes.get(cp);if(!g){g=makeCheckpoint(cp);cpMeshes.set(cp,g);}
+    const arm=g.userData.arm;const target=cp.broken>0?-1.3:0;arm.rotation.x=lerp(arm.rotation.x,target,0.25);}
+  for(const [cp,g] of cpMeshes)if(!live.has(cp)){scene.remove(g);cpMeshes.delete(cp);}
 }
 
 // ---------- pessoas ----------
@@ -387,7 +423,7 @@ export function render3D(signalState){
     R.last=drawGround2D(g,vx0,vx0+64*T,vy0,vy0+64*T,'3d');
     overlayTex.needsUpdate=true;
   }
-  syncCars(night);syncPeople();syncParticles();syncTracers();
+  syncCars(night);syncCheckpoints();syncPeople();syncParticles();syncTracers();
   renderer.render(scene,camera);
   // HUD e avisos por cima, em 2D
   const g=ctx;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,CW*DPR,CH*DPR);g.setTransform(DPR,0,0,DPR,0,0);

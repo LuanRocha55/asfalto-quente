@@ -9,6 +9,7 @@ import { heatStars } from '../game/world.js';
 import { nearestCar } from '../game/player.js';
 import { drawHUD, drawKeycap } from './hud.js';
 import { tutorialTarget } from '../game/tutorial.js';
+import { checkpoints } from '../game/blitz.js';
 import { S, player, cam, keys } from '../core/state.js';
 import { lamps, special, pumps, decor, VL, HL, NV, NH, isJunction } from '../world/map.js';
 import { signalized, signalState } from '../world/districts.js';
@@ -241,6 +242,23 @@ export function drawTree(g,tr,camH){const p=proj(tr.x,tr.y,26,camH);const k=camH
   g.fillStyle=TC;g.beginPath();g.arc(p[0]-2,p[1]-2,tr.r*k*0.75,0,Math.PI*2);g.fill();
   g.fillStyle=shade(tr.c,1.25*BR);g.beginPath();g.arc(p[0]-4,p[1]-4,tr.r*k*0.35,0,Math.PI*2);g.fill();}
 
+function drawCheckpoint(g,cp,mode){
+  const px=-cp.dy,py=cp.dx,hw=cp.L.w*T/2, P=(s,l)=>[cp.x+cp.dx*s+px*l,cp.y+cp.dy*s+py*l];
+  g.save();g.translate(cp.x,cp.y);g.rotate(Math.atan2(cp.dy,cp.dx));
+  // tapete de pregos (dentro)
+  g.fillStyle='#2b2b2b';g.fillRect(34,-hw+4,10,hw*2-8);g.fillStyle='#bdbdbd';for(let l=-hw+8;l<hw-6;l+=7){g.fillRect(36,l,2,2);g.fillRect(40,l+3,2,2);}
+  // faixa de PARE pintada (fora)
+  g.fillStyle='rgba(255,255,255,0.75)';g.fillRect(-34,-hw+4,5,hw*2-8);
+  if(mode!=='3d'){
+    // cones afunilando
+    for(let k=0;k<5;k++){const s=-110+k*22,l=hw-8-k*6;for(const sg of[-1,1]){g.fillStyle='rgba(0,0,0,0.3)';g.beginPath();g.arc(s+2,sg*l+2,5,0,Math.PI*2);g.fill();g.fillStyle='#ff6d00';g.beginPath();g.arc(s,sg*l,5,0,Math.PI*2);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(s,sg*l,2,0,Math.PI*2);g.fill();}}
+    // cancela listrada
+    g.fillStyle='#424242';g.fillRect(-4,-hw-14,8,8);
+    if(cp.broken>0){g.save();g.rotate(0.5);g.fillStyle='#e53935';g.fillRect(6,-hw,30,4);g.restore();g.fillStyle='#e53935';g.fillRect(20,hw-30,24,4);}
+    else for(let l=-hw-8,k=0;l<hw-2;l+=12,k++){g.fillStyle=k%2?'#ffffff':'#e53935';g.fillRect(-2,l,4,12);}
+  }
+  g.restore();
+}
 export function drawGround2D(g,vx0,vx1,vy0,vy1,mode){
   // decalques
   for(const d of S.decals){if(d.x<vx0||d.x>vx1||d.y<vy0||d.y>vy1)continue;const a=clamp(d.life/5,0,1);
@@ -290,6 +308,8 @@ export function drawGround2D(g,vx0,vx1,vy0,vy1,mode){
     trafficLight(g,ox-hv-8,oy-hh-8,-Math.PI/2,sv);// quem vem do norte
     trafficLight(g,ox+hv+8,oy+hh+8,Math.PI/2,sv); // quem vem do sul
   }
+  // blitz (tapete de pregos sempre; cones e cancela só no 2D, no 3D são modelos)
+  for(const cp of checkpoints){if(cp.x<vx0-200||cp.x>vx1+200||cp.y<vy0-200||cp.y>vy1+200)continue;drawCheckpoint(g,cp,mode);}
   // orelhões
   for(const ph of phones){if(ph.x<vx0||ph.x>vx1||ph.y<vy0||ph.y>vy1)continue;
     const ring=!S.mission&&S.phoneCd<=0;
