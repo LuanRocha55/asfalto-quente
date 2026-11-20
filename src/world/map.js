@@ -164,6 +164,7 @@ export function genMap(){
   beach();
   port();
   assignCommerce();
+  for(const b of buildings)if(ENTER_KINDS.includes(b.kind))setDoor(b);
   placePhones(cells);
   placeLamps();
 }
@@ -333,11 +334,50 @@ function port(){
 }
 
 // ---------- comércio nos prédios baixos ----------
+// ---------- portas: sempre viradas pra rua, com caminho livre ----------
+const ENTER_KINDS=['hospital','policia','armas','farmacia','mercadinho','padaria','lanchonete','escola','casa','lojaposto'];
+// procura o lado do prédio com o caminho mais curto e livre até uma rua
+export function frontOf(b,maxDist=10){
+  const bx0=Math.round(b.x0/T),by0=Math.round(b.y0/T),bx1=Math.round(b.x1/T),by1=Math.round(b.y1/T);
+  const sides=[ // [início do lado fora do prédio, passo pra fora, ao longo]
+    {cells:[],out:[0,1]},{cells:[],out:[0,-1]},{cells:[],out:[-1,0]},{cells:[],out:[1,0]}];
+  for(let x=bx0;x<bx1;x++){sides[0].cells.push([x,by1]);sides[1].cells.push([x,by0-1]);}
+  for(let y=by0;y<by1;y++){sides[2].cells.push([bx0-1,y]);sides[3].cells.push([bx1,y]);}
+  let best=null;
+  for(const s of sides){
+    // prefere o meio do lado
+    const mid=(s.cells.length-1)/2;
+    const order=s.cells.map((c,i)=>[c,Math.abs(i-mid)]).sort((a,b)=>a[1]-b[1]);
+    for(const [[sx,sy],off] of order){
+      let x=sx,y=sy,d=0,path=[],ok=false;
+      while(d<maxDist){
+        const t=tileOf(x,y);
+        if(t===ROAD){ok=true;break;}
+        if(t===BUILD||t===WATER||t===POOL)break;
+        path.push([x,y]);x+=s.out[0];y+=s.out[1];d++;
+      }
+      if(!ok||!path.length)continue;
+      const score=d*10+off;
+      if(!best||score<best.score)best={score,dist:d,path,x:path[0][0],y:path[0][1],out:s.out};
+      break; // primeiro ponto livre desse lado já basta (o mais central)
+    }
+  }
+  return best;
+}
+function setDoor(b){
+  const f=frontOf(b,12);if(!f)return false;
+  // abre o caminho: grama, terra e árvore viram calçada
+  for(const [x,y] of f.path){const t=tileOf(x,y);
+    if(t===TREE){const i=trees.findIndex(tr=>Math.floor(tr.x/T)===x&&Math.floor(tr.y/T)===y);if(i>=0)trees.splice(i,1);}
+    if(t===GRASS||t===DIRT||t===TREE||t===SAND)setT(x,y,SIDE);}
+  b.door={x:(f.x+.5)*T,y:(f.y+.5)*T,out:f.out};
+  return true;
+}
 function assignCommerce(){
   const POI={farmacia:{roof:'#f2f2ee',wall:'#d9e8d9'},mercadinho:{roof:'#e8a33a',wall:'#f0d9a8'},padaria:{roof:'#b9824a',wall:'#efdcc0'},
     escola:{roof:'#3f6fb0',wall:'#e7e0c9'},lanchonete:{roof:'#c0392b',wall:'#f3d36b'}};
   const want={farmacia:5,mercadinho:6,padaria:4,escola:3,lanchonete:6};
-  const cand=buildings.filter(b=>b.kind==='b'&&['casa','casario','predio','casinha','torre'].includes(b.style)&&(b.x1-b.x0)>=4*T&&(b.y1-b.y0)>=4*T);
+  const cand=buildings.filter(b=>b.kind==='b'&&['casa','casario','predio','casinha','torre'].includes(b.style)&&(b.x1-b.x0)>=4*T&&(b.y1-b.y0)>=4*T&&(()=>{const f=frontOf(b,5);return f&&f.dist<=4;})());
   // embaralha de forma determinística
   for(let i=cand.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[cand[i],cand[j]]=[cand[j],cand[i]];}
   let ci=0;

@@ -5,6 +5,12 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.9.2 — 19/11/2026
+- Portas de todos os comércios e lugares agora ficam viradas pra rua, no lado do prédio mais perto da calçada
+- Comércio só é colocado em prédio que tem fachada pra rua (nada de entrada escondida entre dois prédios)
+- Se tiver grama, terra ou árvore entre a porta e a calçada, vira um caminho de calçada
+- Entrada mais fácil de achar: toldo listrado com a cor do lugar na fachada e ícone maior pulsando na porta
+
 ## 0.9.1 — 19/11/2026
 - **J a pé abre o menu de EMPREGOS**: explica onde começar cada um e marca no mapa o veículo ou lugar mais perto
 - Aviso com tecla J desenhada quando você está num veículo de trabalho

@@ -33,6 +33,7 @@ export const lojas=()=>buildings.filter(b=>b.kind==='mercadinho'||b.kind==='farm
 const walkable=(x,y)=>{const t=tileAt(x,y);return t===SIDE||t===GRASS||t===PARK||t===SAND;};
 // ponto de calçada na frente de um prédio (porta)
 export function doorOf(b){
+  if(b.door)return b.door;
   if(b._door)return b._door;
   const cx=(b.x0+b.x1)/2, cy=(b.y0+b.y1)/2;
   for(const [x,y] of [[cx,b.y1+18],[cx,b.y0-18],[b.x0-18,cy],[b.x1+18,cy],[cx,b.y1+50],[cx,b.y0-50]]){if(walkable(x,y)){b._door={x,y};return b._door;}}

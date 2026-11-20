@@ -264,8 +264,14 @@ export function render(){
   // portas dos prédios que dá pra entrar
   const nearB=(!player.car&&player.state==='play')?nearestDoor(40):null;
   for(const b of enterables()){const d=doorOf(b);if(d.x<vx0||d.x>vx1||d.y<vy0||d.y>vy1)continue;
-    const on=b===nearB;g.fillStyle=on?'rgba(255,233,160,0.55)':'rgba(255,233,160,0.22)';g.beginPath();g.arc(d.x,d.y,on?17:14,0,Math.PI*2);g.fill();
-    drawIcon(g,KIND_ICON[b.kind],d.x,d.y,on?18:14);}
+    const on=b===nearB, ic=ICONS[KIND_ICON[b.kind]];
+    // toldo colorido na fachada + tapete na calçada: dá pra achar a entrada de longe
+    if(d.out){const ox=d.out[0],oy=d.out[1],ex=d.x-ox*T*0.5,ey=d.y-oy*T*0.5,w=T*1.6,th=10;
+      g.fillStyle='rgba(0,0,0,0.3)';if(ox===0)g.fillRect(ex-w/2+3,ey-th/2+3,w,th);else g.fillRect(ex-th/2+3,ey-w/2+3,th,w);
+      for(let k=0;k<4;k++){g.fillStyle=k%2?'#ffffff':ic.bg;if(ox===0)g.fillRect(ex-w/2+k*w/4,ey-th/2,w/4,th);else g.fillRect(ex-th/2,ey-w/2+k*w/4,th,w/4);}}
+    const pulse=on?0:Math.sin(S.gameTime*3+b.x0)*2;
+    g.fillStyle=on?'rgba(255,233,160,0.6)':'rgba(255,233,160,0.3)';g.beginPath();g.arc(d.x,d.y,(on?20:17)+pulse,0,Math.PI*2);g.fill();
+    drawIcon(g,KIND_ICON[b.kind],d.x,d.y,on?22:18);}
   if(nearB){const d=doorOf(nearB);const name=ICONS[KIND_ICON[nearB.kind]].name.split(' (')[0].split(' ·')[0];g.font='bold 13px "Courier New",monospace';drawKeycap(g,'F',d.x-(g.measureText('Entrar: '+name).width+30)/2,d.y-30,'Entrar: '+name,13);}
   // marcador do alvo
   const tgt=S.mission?S.mission.def.target(S.mission):(S.job?S.job.target:(tutorialTarget()||S.waypoint));
