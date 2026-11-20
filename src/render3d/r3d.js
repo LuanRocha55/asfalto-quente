@@ -317,6 +317,14 @@ function warmUp(){
     for(const m of [brakeOn,brakeOff,headMat,wreckMat,beamMat,mats.detail,...sirR,...sirB,mat('#888')]){const x=new THREE.Mesh(boxG,m);x.castShadow=true;g.add(x);}
     g.position.set(cam.x*U,0,cam.y*U);scene.add(g);renderer.compile(scene,camera);scene.remove(g);}catch(e){}
 }
+// dados pro painel de diagnóstico (F3)
+let gpuName=null;
+export function gfxInfo(){
+  if(!renderer)return null;
+  if(gpuName===null){try{const gl=renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');gpuName=e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);}catch(err){gpuName='?';}}
+  const sz=new THREE.Vector2();renderer.getDrawingBufferSize(sz);
+  return {gpu:gpuName,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,w:sz.x,h:sz.y,dpr:renderer.getPixelRatio(),shadows:renderer.shadowMap.enabled,quality,chunks:Object.keys(ground).length};
+}
 // ---------- quadro ----------
 // Qualidade: 2 = alta, 1 = média, 0 = leve.
 export const QNAMES=['leve','média','alta'];

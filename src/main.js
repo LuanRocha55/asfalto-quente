@@ -10,7 +10,7 @@ import { drawTitle } from './render/hud.js';
 import { drawBigMap, drawMenu } from './render/overlays.js';
 import { updateInterior } from './game/interior.js';
 import { renderInterior } from './render/interiorDraw.js';
-import { init3D, set3D, render3D, R, applyQuality, getQuality, QNAMES } from './render3d/r3d.js';
+import { init3D, set3D, render3D, R, applyQuality, getQuality, QNAMES, gfxInfo } from './render3d/r3d.js';
 import { signalState } from './world/districts.js';
 import { msg } from './game/world.js';
 import { S, player, cam, keys } from './core/state.js';
@@ -31,6 +31,25 @@ window.addEventListener('keydown',e=>{if(e.code!=='KeyG'||!S.started||S.menu)ret
   else{set3D(false);val='2d';txt='Gráficos: clássico (2D)';}
   try{localStorage.setItem('aq_gfx',val);}catch(err){}msg(txt+'  (G troca)',2.5);});
 let last=performance.now();
+// painel de diagnóstico (F3): quadros por segundo, onde o tempo vai e qual placa de vídeo o navegador está usando
+const perf={on:false,fps:0,up:0,rd:0,frames:0,acc:0,shown:{}};
+window.addEventListener('keydown',e=>{if(e.code==='F3'){e.preventDefault();perf.on=!perf.on;}});
+function drawPerf(){
+  const info=R.on&&!S.interior?gfxInfo():null, g=ctx;
+  const lines=[perf.shown.fps+' FPS  ('+(1000/Math.max(1,perf.shown.fps)).toFixed(1)+' ms por quadro)',
+    'lógica do jogo: '+perf.shown.up+' ms   ·   desenho (CPU): '+perf.shown.rd+' ms'];
+  if(info){lines.push('placa de vídeo: '+info.gpu.replace(/^ANGLE \(|\)$/g,'').slice(0,70),
+    'tela 3D: '+info.w+'x'+info.h+' (escala '+info.dpr.toFixed(2)+')  ·  qualidade '+QNAMES[info.quality]+'  ·  sombras '+(info.shadows?'sim':'não'),
+    'chamadas de desenho: '+info.calls+'  ·  triângulos: '+Math.round(info.tris/1000)+' mil  ·  pedaços de chão: '+info.chunks);
+    if(/intel|uhd|iris|microsoft basic|swiftshader|llvmpipe/i.test(info.gpu))lines.push('! O navegador está usando a placa integrada/software, não a dedicada.');
+    const cpu=perf.shown.up+perf.shown.rd, ms=1000/Math.max(1,perf.shown.fps);
+    if(ms>20)lines.push(cpu<ms*0.5?'-> o gargalo é a placa de vídeo (a CPU fica esperando)':'-> o gargalo é o processador');}
+  else lines.push('(modo clássico ou interior: só 2D)');
+  g.setTransform(DPR,0,0,DPR,0,0);g.font='bold 12px "Courier New",monospace';g.textAlign='left';
+  const w=Math.max(...lines.map(l=>g.measureText(l).width))+20, x=CW-w-14, y=200;
+  g.fillStyle='rgba(0,0,0,0.75)';g.fillRect(x,y,w,lines.length*17+14);
+  lines.forEach((l,i)=>{g.fillStyle=l[0]==='!'?'#ff7070':l[0]==='-'?'#ffd34a':i===0?'#7dff8a':'#e8e8e8';g.fillText(l,x+10,y+20+i*17);});
+}
 // remove qualquer coisa que tenha virado NaN/Infinity e destrava o estado
 function sanitize(hard){
   const ok=v=>typeof v==='number'&&isFinite(v);
@@ -47,13 +66,18 @@ function frame(now){
   let dt=Math.min(0.05,(now-last)/1000);last=now;
   requestAnimationFrame(frame); // agenda antes: um erro nunca mais congela o jogo
   try{
+    let _t=performance.now();
     if(S.started&&!S.paused&&!S.menu&&!S.mapOpen){let rem=dt;while(rem>0){const s=Math.min(1/60,rem);if(S.interior)updateInterior(s);else update(s);rem-=s;}}
 
     else if(!S.started){S.gameTime+=dt;cam.x+=Math.cos(S.gameTime*0.1)*40*dt;cam.y+=Math.sin(S.gameTime*0.13)*40*dt;}
     sanitize();
+    const _t2=performance.now();perf.up+=_t2-_t;
     const use3D=R.on&&!S.interior;
     document.getElementById('gl').style.visibility=use3D?'visible':'hidden';
     if(S.interior)renderInterior();else if(use3D)render3D(signalState);else render();
+    perf.rd+=performance.now()-_t2;perf.frames++;perf.acc+=now-(perf.lastNow||now);perf.lastNow=now;
+    if(perf.acc>=500){perf.shown={fps:Math.round(perf.frames*1000/perf.acc),up:(perf.up/perf.frames).toFixed(1),rd:(perf.rd/perf.frames).toFixed(1)};perf.frames=0;perf.acc=0;perf.up=0;perf.rd=0;}
+    if(perf.on&&perf.shown.fps!==undefined)drawPerf();
     if(S.mapOpen&&!S.interior)drawBigMap();
     if(S.menu)drawMenu();
     if(!S.started||S.paused)drawTitle();

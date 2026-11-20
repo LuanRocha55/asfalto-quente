@@ -34,6 +34,7 @@ No VS Code, a extensão **Live Server** também resolve.
 | N | liga/desliga o som |
 | P / Esc | pausa |
 | G | troca os gráficos: 3D alta → 3D média → 3D leve → clássico |
+| F3 | painel de desempenho (FPS, placa de vídeo usada, onde o tempo vai) |
 | Mouse | mira |
 | Clique esquerdo | atirar / soco (no carro, atira na direção da mira) |
 | Clique direito | entrar, sair ou roubar carro |

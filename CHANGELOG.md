@@ -5,6 +5,9 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.1.2 — 20/11/2026
+- **F3 abre um painel de desempenho**: FPS, tempo da lógica e do desenho, resolução real do 3D, chamadas de desenho e **qual placa de vídeo o navegador está usando** (avisa se for a integrada) e se o gargalo é a placa ou o processador
+
 ## 1.1.1 — 20/11/2026
 **Fim das piscadas dirigindo no 3D** (o mesmo esquema dos jogos de mundo aberto: streaming + LOD)
 - O chão é carregado aos poucos (no máximo 3 pedaços por quadro), primeiro o que está na tela e depois pra onde o carro está indo
