@@ -5,6 +5,14 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.7.0 — 20/11/2026
+**Carros com modelos 3D**
+- Os carros agora usam modelos 3D do **Car Kit do Kenney** (licença CC0): Jegue, Brisa GT, Táxi, Caminhonete, Guincho, Sedã Executivo, Utilitário, Caminhão Baú, Viatura, Van da SWAT, Sedã do FBI e Jipe do Exército
+- Cada carro continua com a cor dele (a lataria do modelo é repintada) e as rodas giram
+- Busão, Motoca, Bugue e Blindado seguem com o visual antigo, porque o kit não tem esses veículos
+- Na qualidade gráfica **leve** (tecla G), os carros voltam pro visual antigo, que pesa menos
+- Se os modelos demorarem ou não carregarem, o jogo usa os carros antigos
+
 ## 1.6.0 — 20/11/2026
 **Maresia 97: nome novo e visual caprichado**
 - O jogo agora se chama **Maresia 97** (tela de título, aba do navegador e documentação). Os saves continuam valendo

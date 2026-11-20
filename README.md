@@ -4,7 +4,7 @@ Jogo de mundo aberto visto de cima, feito em JavaScript com gráficos 3D (Three.
 
 **Jogar no navegador:** https://luanrocha55.github.io/maresia-97/
 
-Versão atual: **1.6.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **1.7.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
 **Documentação completa:** [docs/](docs/README.md) — [guia do jogador](docs/guia-do-jogador.md), [referência de números](docs/referencia.md), [guia do desenvolvedor](docs/guia-do-desenvolvedor.md) e [roadmap](docs/roadmap.md).
 
@@ -48,6 +48,11 @@ No VS Code, a extensão **Live Server** também resolve.
 ## Estrutura e arquitetura
 
 A árvore de arquivos, o loop principal, o estado compartilhado (`S` em `src/core/state.js`) e como cada sistema funciona estão no [guia do desenvolvedor](docs/guia-do-desenvolvedor.md).
+
+## Créditos
+
+- Modelos 3D dos carros: [Car Kit](https://kenney.nl/assets/car-kit) do **Kenney** (www.kenney.nl), licença CC0.
+- [Three.js](https://threejs.org) (licença MIT).
 
 ## Próximas versões
 

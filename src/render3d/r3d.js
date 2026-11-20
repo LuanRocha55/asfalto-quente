@@ -18,6 +18,7 @@ const buildingsList=()=>buildingsList_;
 import { S, player, cam, keys, view } from '../core/state.js';
 import { checkpoints } from '../game/blitz.js';
 import { pf } from '../render/style97.js';
+import { loadCarModels, carModel, repaint } from './models.js';
 
 export const R={ok:false,on:false,retro:false};
 // Filtro 97 agora é opcional (desligado por padrão): chave nova pra quem já tinha ligado na 1.5.0
@@ -73,6 +74,7 @@ export function init3D(){
     const og=new THREE.PlaneGeometry(64,64);og.rotateX(-Math.PI/2);
     overlayMesh=new THREE.Mesh(og,new THREE.MeshLambertMaterial({map:overlayTex,transparent:true,depthWrite:false}));overlayMesh.renderOrder=1;overlayMesh.receiveShadow=true;scene.add(overlayMesh);
     initPeople();initParticles();
+    loadCarModels().then(ok=>{if(ok)rebuildCars();});
     R.ok=true;DBG.renderer=renderer;DBG.scene=scene;
     applyQuality(quality);
     view3d();warmUp();
@@ -277,20 +279,27 @@ function carParts(c){
     head=mergeBoxes([['#fff',0.04,0.1,0.18,L/2+0.01,0.18+h*0.6,-Wd*0.32],['#fff',0.04,0.1,0.18,L/2+0.01,0.18+h*0.6,Wd*0.32]]);
     if(c.type==='viatura')siren=[[0.18,0.1,Wd*0.4,-L*0.05,0.18+h+0.34,-Wd*0.22],[0.18,0.1,Wd*0.4,-L*0.05,0.18+h+0.34,Wd*0.22]];
   }
-  return carGeo[key]={detail:D.length?mergeBoxes(D):null,body,cabin,brake,head,siren,L,Wd};
+  return carGeo[key]={detail:D.length?mergeBoxes(D):null,body,cabin,brake,head,siren,L,Wd,h};
 }
 function part(g,col,dims,opt){const m=new THREE.Mesh(boxG,mat(col,opt));m.scale.set(dims[0],dims[1],dims[2]);m.position.set(dims[3],dims[4],dims[5]);g.add(m);return m;}
 function makeCar(c){
   const g=new THREE.Group(), P=carParts(c);
   g.userData.col=c.color;
+  // modelo 3D (Kenney) quando tem e já carregou; senão, o carro de caixas
+  const M=useModels()?carModel(c.type,c.color,P.L):null;
+  let ly=0; // quanto subir/descer faróis e lanternas pra encaixar no modelo
+  if(M){g.add(M.root);g.userData.model=M;ly=M.top*0.42-(0.18+P.h*0.65);}
+  else{
   const body=part(g,c.color,P.body);body.castShadow=true;g.userData.body=body;
   // cabine da cor do carro (a viatura tem a cabine branca fixa)
   if(P.cabin){const cb=part(g,P.cabin[6]||c.color,P.cabin);cb.castShadow=true;if(!P.cabin[6])g.userData.cabin=cb;}
   if(P.detail){const d=new THREE.Mesh(P.detail,mats.detail);d.castShadow=true;g.add(d);}
-  if(P.brake){const b=new THREE.Mesh(P.brake,brakeOff);g.add(b);g.userData.brake=b;
+  }
+  if(P.brake){const b=new THREE.Mesh(P.brake,brakeOff);b.position.y=ly;g.add(b);g.userData.brake=b;
     const tg=new THREE.Mesh(tailG,tailMat);tg.position.set(-P.L/2-0.5,0.04,0);tg.scale.set(1.3,1,P.Wd*1.6);tg.renderOrder=2;g.add(tg);g.userData.tail=tg;}
-  if(P.head){g.add(new THREE.Mesh(P.head,headMat));}
-  if(P.siren){g.userData.sirenR=part(g,'#7a1010',P.siren[0]);g.userData.sirenB=part(g,'#0e1f66',P.siren[1]);}
+  if(P.head){const hm=new THREE.Mesh(P.head,headMat);hm.position.y=ly;g.add(hm);}
+  if(P.siren){g.userData.sirenR=part(g,'#7a1010',P.siren[0]);g.userData.sirenB=part(g,'#0e1f66',P.siren[1]);
+    if(M){g.userData.sirenR.position.y=g.userData.sirenB.position.y=M.top+0.05;}}
   if(c.type!=='moto'){const beam=new THREE.Mesh(beamG,beamMat);beam.position.set(P.L/2+2.4,0.04,0);beam.renderOrder=2;g.add(beam);g.userData.beam=beam;}
   scene.add(g);return g;
 }
@@ -305,6 +314,10 @@ const tailMatBrake=new THREE.MeshBasicMaterial({map:radialTex('255,40,30'),trans
 const brakeOn=new THREE.MeshBasicMaterial({color:'#ff2a2a'}), brakeOff=new THREE.MeshLambertMaterial({color:'#5a0a0a'}), headMat=new THREE.MeshBasicMaterial({color:'#fffbe6'});
 const sirR=[new THREE.MeshBasicMaterial({color:'#ff2020'}),new THREE.MeshLambertMaterial({color:'#5a1010'})], sirB=[new THREE.MeshBasicMaterial({color:'#3060ff'}),new THREE.MeshLambertMaterial({color:'#101a50'})];
 const wreckMat=new THREE.MeshLambertMaterial({color:'#2b2724'});
+// modelos 3D só nas qualidades média e alta (na leve, os carros de caixa pesam menos)
+const useModels=()=>quality>0;
+// refaz todos os carros (quando os modelos terminam de carregar ou a qualidade muda)
+function rebuildCars(){for(const g of carMeshes.values())scene.remove(g);carMeshes.clear();}
 function syncCars(night){
   const seen=new Set();
   beamMat.opacity=0.55*night;tailMat.opacity=0.35*night;tailMatBrake.opacity=0.25+0.55*night;
@@ -312,9 +325,16 @@ function syncCars(night){
     let g=carMeshes.get(c);if(!g){g=makeCar(c);carMeshes.set(c,g);}
     seen.add(c);
     g.position.set(c.x*U,0,c.y*U);g.rotation.y=-c.a;
+    const M=g.userData.model;
+    if(M){ // carro com modelo: rodas giram, carcaça queimada vira cinza escuro
+      if(c.wreck){if(!g.userData.burnt){g.userData.burnt=true;M.root.traverse(o=>{if(o.isMesh)o.material=wreckMat;});}}
+      else{if(g.userData.col!==c.color){repaint(M,c.color);g.userData.col=c.color;}
+        const spin=(c.fwdSpeed?c.fwdSpeed():0)*U/60/M.radius;for(const w of M.wheels)w.rotation.x+=spin;}
+    }else{
     const b=g.userData.body,cb=g.userData.cabin;
     if(c.wreck){if(b.material!==wreckMat){b.material=wreckMat;if(cb)cb.material=wreckMat;}}
     else if(g.userData.col!==c.color||b.material===wreckMat){b.material=mat(c.color);if(cb)cb.material=mat(c.color);g.userData.col=c.color;}
+    }
     if(g.userData.brake)g.userData.brake.material=c.brakeLight&&!c.wreck?brakeOn:brakeOff;
     if(g.userData.tail){const on=!c.wreck&&!!c.driver;g.userData.tail.visible=on&&(night>0.05||c.brakeLight);g.userData.tail.material=c.brakeLight?tailMatBrake:tailMat;}
     if(g.userData.sirenR){const on=heatStars()>0&&(c.ai==='police'||c.ai==='block'),f=Math.floor(S.gameTime*8)%2;g.userData.sirenR.material=on&&f?sirR[0]:sirR[1];g.userData.sirenB.material=on&&!f?sirB[0]:sirB[1];}
@@ -540,6 +560,7 @@ export const QNAMES=['leve','média','alta'];
 let frameN=0,camZ=1,lastT=performance.now(),slow=0,quality=2,sizeKey='',autoOK=true;
 export function getQuality(){return quality;}
 export function applyQuality(q,manual){
+  if((q>0)!==(quality>0))rebuildCars();
   quality=q;if(manual)autoOK=false;if(!renderer)return;
   const dpr=window.devicePixelRatio||1;
   renderer.setPixelRatio(q===2?Math.min(2,dpr):q===1?Math.min(1,dpr):Math.min(0.75,dpr));
