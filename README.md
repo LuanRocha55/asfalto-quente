@@ -2,7 +2,9 @@
 
 Jogo de mundo aberto visto de cima, feito em JavaScript com gráficos 3D (Three.js) e um modo clássico em Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
-Versão atual: **1.0.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **1.4.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+
+**Documentação completa:** [docs/](docs/README.md) — [guia do jogador](docs/guia-do-jogador.md), [referência de números](docs/referencia.md), [guia do desenvolvedor](docs/guia-do-desenvolvedor.md) e [roadmap](docs/roadmap.md).
 
 ## Como rodar
 
@@ -40,63 +42,10 @@ No VS Code, a extensão **Live Server** também resolve.
 | Clique direito | entrar, sair ou roubar carro |
 | Roda do mouse | trocar de arma |
 
-## Estrutura
+## Estrutura e arquitetura
 
-```
-index.html              página (canvas 3D + canvas 2D por cima pro HUD)
-vendor/three/           Three.js (licença MIT)
-src/
-  main.js               loop principal (com recuperação de erros)
-  core/
-    canvas.js           canvas e redimensionamento
-    version.js          número da versão do jogo
-    state.js            estado mutável compartilhado (S, player, cam, keys)
-    utils.js            aleatório, matemática, cores
-    input.js            teclado e mouse
-  world/
-    map.js              malha de ruas e geração da cidade (prédios, praia, porto, lugares)
-    zoning.js           em que bairro fica cada parte do mapa
-    chunks.js           cache do chão em blocos e minimapa
-    time.js             relógio e ciclo de dia e noite
-    districts.js        bairros, avenidas, nomes de rua e semáforos
-  entities/
-    vehicles.js         tipos de veículo e física dos carros
-    peds.js             pedestres
-  ai/
-    traffic.js          trânsito seguindo faixas e cruzamentos
-    police.js           perseguição com campo de fluxo (BFS)
-  game/
-    world.js            procurado, mensagens, spawn
-    player.js           ações do jogador, morte e prisão
-    effects.js          explosões, marcas de pneu, atropelamentos
-    weapons.js          armas, tiros, loja e inimigos atirando
-    jobs.js             empregos, carreira e veículos de trabalho
-    stadium.js          Arena Maresia: dia de jogo, gols e aposta
-    blitz.js            bairros fechados (Operação Maré Alta), metas e blitz
-    interiors.js        portas e menus dos comércios
-    interior.js         cenas internas onde dá pra andar (plantas em texto)
-    tutorial.js         começo guiado e dicas de primeira vez
-    save.js             salvar e carregar o jogo
-    missions.js         missões dos orelhões
-    update.js           atualização do mundo e colisões
-  render/
-    draw.js             mundo: carros, pessoas, prédios em perspectiva
-    hud.js              interface, minimapa e tela de título
-    lighting.js         escuridão da noite e pontos de luz
-    icons.js            ícones do minimapa, do mapa e da legenda
-    overlays.js         mapa em tela cheia e menus
-    interiorDraw.js     desenho dos interiores
-  render3d/
-    build.js            cidade 3D estática (prédios, árvores, postes, estádio...)
-    interior3d.js       interiores em 3D (montados a partir das plantas em texto)
-    r3d.js              câmera, luz do dia, carros, pessoas, efeitos e HUD por cima
-  audio/
-    audio.js            motor, sirene e efeitos sintetizados
-```
+A árvore de arquivos, o loop principal, o estado compartilhado (`S` em `src/core/state.js`) e como cada sistema funciona estão no [guia do desenvolvedor](docs/guia-do-desenvolvedor.md).
 
-Todo estado que muda durante o jogo (listas de carros, pedestres, missão atual, pausa etc.) fica no objeto `S` em `src/core/state.js`, pra qualquer módulo poder ler e alterar sem variáveis globais soltas.
+## Próximas versões
 
-## Ideias pra próximas versões
-
-- Rádio com trilhas geradas por código
-- Mais missões, com historinha encadeada
+As ideias e o que está em aberto ficam no [roadmap](docs/roadmap.md).
