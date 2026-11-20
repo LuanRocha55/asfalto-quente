@@ -33,6 +33,29 @@ class Geo{
 }
 const C=hex=>new THREE.Color(hex);
 
+// ---------- setores: a cidade é cortada em blocos de 32x32 tiles pra GPU só desenhar o que está à vista ----------
+const SEC=32;
+const sk=(x,z)=>Math.floor(x/SEC)+','+Math.floor(z/SEC);
+class SGeo{ // vários Geo, um por setor
+  constructor(){this.m=new Map();}
+  at(x,z){const k=sk(x,z);let g=this.m.get(k);if(!g){g=new Geo();this.m.set(k,g);}return g;}
+  meshes(mat){const out=[];for(const g of this.m.values())if(g.p.length)out.push(g.mesh(mat));return out;}
+}
+// InstancedMesh dividido por setor, com índice global
+class SInst{
+  constructor(geo,mat,pts){
+    this.map=[];const buckets=new Map();
+    pts.forEach((p,i)=>{const k=sk(p[0],p[1]);let a=buckets.get(k);if(!a){a=[];buckets.set(k,a);}this.map[i]=[k,a.length];a.push(i);});
+    this.meshes=new Map();
+    for(const [k,a] of buckets)this.meshes.set(k,new THREE.InstancedMesh(geo,mat,a.length));
+  }
+  setMatrixAt(i,M){const [k,j]=this.map[i];this.meshes.get(k).setMatrixAt(j,M);}
+  setColorAt(i,c){const [k,j]=this.map[i];this.meshes.get(k).setColorAt(j,c);}
+  colorsDirty(){for(const m of this.meshes.values())if(m.instanceColor)m.instanceColor.needsUpdate=true;}
+  add(scene,cast=false){for(const m of this.meshes.values()){m.computeBoundingSphere();m.castShadow=cast;scene.add(m);}return this;}
+  get list(){return [...this.meshes.values()];}
+}
+
 // telhado de duas águas (casas)
 function gable(G,x0,z0,x1,z1,y,h,roof){
   const col=C(roof), along=(x1-x0)>=(z1-z0);
@@ -81,11 +104,12 @@ function roofTexture(b){
 }
 
 export function buildCity(scene,mats){
-  const G=new Geo(), Gw=new Geo(), Gl=new Geo();
+  const SG=new SGeo(), SGw=new SGeo(), SGl=new SGeo();
   const special3d=[];
   for(const b of buildings){
     if(b.kind==='estadio'){special3d.push(buildStadium(b,mats));continue;}
     const x0=b.x0*U,z0=b.y0*U,x1=b.x1*U,z1=b.y1*U,H=bh(b);
+    const cx=(x0+x1)/2,cz=(z0+z1)/2, G=SG.at(cx,cz), Gw=SGw.at(cx,cz), Gl=SGl.at(cx,cz);
     if(b.kind==='canopy'){ // cobertura do posto: pilares + laje fina
       for(const [px,pz] of [[x0+0.3,z0+0.3],[x1-0.5,z0+0.3],[x0+0.3,z1-0.5],[x1-0.5,z1-0.5]])G.box(px,pz,px+0.2,pz+0.2,0,H,'#9e9e9e','#9e9e9e');
       G.box(x0,z0,x1,z1,H,H+0.25,'#f2f2ee','#c9342a',false);continue;}
@@ -105,53 +129,57 @@ export function buildCity(scene,mats){
     }
   }
   // bombas de gasolina, pontos de ônibus, orelhões
-  for(const p of pumps){const x=p.x*U,z=p.y*U;G.box(x-0.2,z-0.3,x+0.2,z+0.3,0,0.9,'#c9342a','#c9342a');}
-  for(const s of BUS_STOPS){const x=(s.x+s.side.x*s.off)*U,z=(s.y+s.side.y*s.off)*U;const horiz=s.side.x===0;
+  let G;
+  for(const p of pumps){const x=p.x*U,z=p.y*U;G=SG.at(x,z);G.box(x-0.2,z-0.3,x+0.2,z+0.3,0,0.9,'#c9342a','#c9342a');}
+  for(const s of BUS_STOPS){const x=(s.x+s.side.x*s.off)*U,z=(s.y+s.side.y*s.off)*U;const horiz=s.side.x===0;G=SG.at(x,z);
     const w=horiz?1.4:0.4,d=horiz?0.4:1.4;G.box(x-w,z-d,x+w,z+d,1.5,1.62,'#1565c0','#1565c0');
     for(const [px,pz] of [[x-w,z-d],[x+w-0.1,z+d-0.1]])G.box(px,pz,px+0.1,pz+0.1,0,1.5,'#cfd8dc','#cfd8dc');}
-  for(const ph of phones){const x=ph.x*U,z=ph.y*U;G.box(x-0.05,z-0.05,x+0.05,z+0.05,0,1.3,'#555','#555');G.box(x-0.35,z-0.35,x+0.35,z+0.35,1.3,1.75,'#f2a900','#f2a900');}
+  for(const ph of phones){const x=ph.x*U,z=ph.y*U;G=SG.at(x,z);G.box(x-0.05,z-0.05,x+0.05,z+0.05,0,1.3,'#555','#555');G.box(x-0.35,z-0.35,x+0.35,z+0.35,1.3,1.75,'#f2a900','#f2a900');}
   // guindastes do porto
-  for(const d of decor)if(d.type==='guindaste'){const x=d.x*U,z=d.y*U;G.box(x-1.2,z-0.8,x+1.2,z+0.8,0,6,'#f9a825','#f9a825');G.box(x-0.3,z-0.3,x+0.3,z+5,6,6.6,'#f9a825','#f9a825');}
+  for(const d of decor)if(d.type==='guindaste'){const x=d.x*U,z=d.y*U;G=SG.at(x,z);G.box(x-1.2,z-0.8,x+1.2,z+0.8,0,6,'#f9a825','#f9a825');G.box(x-0.3,z-0.3,x+0.3,z+5,6,6.6,'#f9a825','#f9a825');}
 
-  const city=G.mesh(mats.city);city.castShadow=true;city.receiveShadow=true;scene.add(city);
-  const win=Gw.mesh(mats.glass);scene.add(win);
-  const lit=Gl.mesh(mats.lit);lit.renderOrder=1;scene.add(lit);
+  const city=SG.meshes(mats.city);for(const m of city){m.castShadow=true;m.receiveShadow=true;scene.add(m);}
+  const win=SGw.meshes(mats.glass);for(const m of win)scene.add(m);
+  const lit=SGl.meshes(mats.lit);for(const m of lit){m.renderOrder=1;scene.add(m);}
 
   // árvores e coqueiros (instanciadas)
   const normal=trees.filter(t=>!t.palm), palms=trees.filter(t=>t.palm);
   const trunkG=new THREE.CylinderGeometry(0.1,0.14,1,6);trunkG.translate(0,0.5,0);
   const crownG=new THREE.IcosahedronGeometry(1,0);
-  const trunks=new THREE.InstancedMesh(trunkG,mats.trunk,trees.length);
-  const crowns=new THREE.InstancedMesh(crownG,mats.leaf,normal.length);
+  const pt=t=>[t.x*U,t.y*U];
+  const trunks=new SInst(trunkG,mats.trunk,[...normal.map(pt),...palms.map(pt)]);
+  const crowns=new SInst(crownG,mats.leaf,normal.map(pt));
   const frondG=new THREE.BoxGeometry(1.5,0.05,0.32);frondG.translate(0.75,0,0);
-  const fronds=new THREE.InstancedMesh(frondG,mats.leaf,palms.length*7);
+  const fronds=new SInst(frondG,mats.leaf,palms.flatMap(t=>Array(7).fill(pt(t))));
   const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),S3=new THREE.Vector3(),P=new THREE.Vector3(),E=new THREE.Euler();
   let ti=0;
   normal.forEach((t,i)=>{const s=t.r/16;M.compose(P.set(t.x*U,0,t.y*U),Q.identity(),S3.set(1,1.6*s,1));trunks.setMatrixAt(ti++,M);
     M.compose(P.set(t.x*U,1.6*s+0.55*s,t.y*U),Q.setFromEuler(E.set(0,t.x,0)),S3.set(0.85*s,0.75*s,0.85*s));crowns.setMatrixAt(i,M);crowns.setColorAt(i,C(t.c));});
   palms.forEach((t,i)=>{M.compose(P.set(t.x*U,0,t.y*U),Q.setFromEuler(E.set(0.08,t.r,0.05)),S3.set(0.8,3.2,0.8));trunks.setMatrixAt(ti++,M);
     for(let k=0;k<7;k++){M.compose(P.set(t.x*U+0.1,3.15,t.y*U),Q.setFromEuler(E.set(0,t.r+k*Math.PI*2/7,-0.35-(k%2)*0.15,'YXZ')),S3.set(1,1,1));fronds.setMatrixAt(i*7+k,M);fronds.setColorAt(i*7+k,C(k%2?'#3f8f3a':'#2f7a33'));}});
-  for(const m of [trunks,crowns,fronds]){m.castShadow=true;m.receiveShadow=false;scene.add(m);}
+  for(const m of [trunks,crowns,fronds])m.add(scene,true);
 
   // postes
   const poleG=new THREE.CylinderGeometry(0.05,0.07,2.6,5);poleG.translate(0,1.3,0);
   const headG=new THREE.BoxGeometry(0.5,0.12,0.25);
-  const poles=new THREE.InstancedMesh(poleG,mats.pole,lamps.length), heads=new THREE.InstancedMesh(headG,mats.lampHead,lamps.length);
+  const lp=lamps.map(l=>[l.x*U,l.y*U]);
+  const poles=new SInst(poleG,mats.pole,lp), heads=new SInst(headG,mats.lampHead,lp);
   lamps.forEach((l,i)=>{M.compose(P.set(l.x*U,0,l.y*U),Q.identity(),S3.set(1,1,1));poles.setMatrixAt(i,M);M.compose(P.set(l.x*U,2.6,l.y*U),Q.identity(),S3.set(1,1,1));heads.setMatrixAt(i,M);});
-  scene.add(poles);scene.add(heads);
+  poles.add(scene);heads.add(scene);
   // poça de luz no chão em volta dos postes (só de noite)
   const poolG=new THREE.PlaneGeometry(1,1);poolG.rotateX(-Math.PI/2);
-  const pools=new THREE.InstancedMesh(poolG,mats.lightPool,lamps.length);
+  const pools=new SInst(poolG,mats.lightPool,lp);
   lamps.forEach((l,i)=>{M.compose(P.set(l.x*U,0.03,l.y*U),Q.identity(),S3.set(8,1,8));pools.setMatrixAt(i,M);});
-  pools.renderOrder=2;scene.add(pools);
+  pools.add(scene);for(const m of pools.list)m.renderOrder=2;
 
   // guarda-sóis da praia
   const umb=decor.filter(d=>d.type==='guarda-sol');
-  const umbTop=new THREE.InstancedMesh(new THREE.ConeGeometry(0.75,0.35,8),mats.umbrella,umb.length);
-  const umbPole=new THREE.InstancedMesh(poleG,mats.pole,umb.length);
+  const up=umb.map(d=>[d.x*U,d.y*U]);
+  const umbTop=new SInst(new THREE.ConeGeometry(0.75,0.35,8),mats.umbrella,up);
+  const umbPole=new SInst(poleG,mats.pole,up);
   umb.forEach((d,i)=>{M.compose(P.set(d.x*U,1.25,d.y*U),Q.identity(),S3.set(1,1,1));umbTop.setMatrixAt(i,M);umbTop.setColorAt(i,C(d.c));
     M.compose(P.set(d.x*U,0,d.y*U),Q.identity(),S3.set(0.6,0.5,0.6));umbPole.setMatrixAt(i,M);});
-  for(const m of [umbTop,umbPole]){m.castShadow=true;scene.add(m);}
+  umbTop.add(scene,true);umbPole.add(scene);
 
   // semáforos: poste + caixa, e 3 luzes instanciadas (a cor muda a cada quadro)
   const heads3=[];
@@ -163,15 +191,16 @@ export function buildCity(scene,mats){
     heads3.push({x:ox-hv-8,y:oy-hh-8,axis:'v',face:[0,1],i,j});
     heads3.push({x:ox+hv+8,y:oy+hh+8,axis:'v',face:[0,-1],i,j});
   }
-  const tlPole=new THREE.InstancedMesh(poleG,mats.pole,heads3.length);
-  const tlBox=new THREE.InstancedMesh(new THREE.BoxGeometry(0.3,0.9,0.3),mats.dark,heads3.length);
-  const bulbG=new THREE.SphereGeometry(0.1,6,4);
-  const bulbs=['r','y','g'].map(()=>new THREE.InstancedMesh(bulbG,mats.bulb,heads3.length));
+  const hp=heads3.map(h=>[h.x*U,h.y*U]);
+  const tlPole=new SInst(poleG,mats.pole,hp);
+  const tlBox=new SInst(new THREE.BoxGeometry(0.3,0.9,0.3),mats.dark,hp);
+  const bulbG=new THREE.SphereGeometry(0.1,5,3);
+  const bulbs=['r','y','g'].map(()=>new SInst(bulbG,mats.bulb,hp));
   heads3.forEach((h,k)=>{const x=h.x*U,z=h.y*U;
     M.compose(P.set(x,0,z),Q.identity(),S3.set(1,1.1,1));tlPole.setMatrixAt(k,M);
     M.compose(P.set(x,3.1,z),Q.identity(),S3.set(1,1,1));tlBox.setMatrixAt(k,M);
     bulbs.forEach((bm,c)=>{M.compose(P.set(x+h.face[0]*0.16,3.38-c*0.28,z+h.face[1]*0.16),Q.identity(),S3.set(1,1,1));bm.setMatrixAt(k,M);bm.setColorAt(k,C('#222'));});});
-  for(const m of [tlPole,tlBox,...bulbs])scene.add(m);
+  for(const m of [tlPole,tlBox,...bulbs])m.add(scene);
 
   return {city,win,lit,pools,heads,heads3,bulbs,special3d};
 }
@@ -211,6 +240,8 @@ function buildStadium(b,mats){
   crowd.userData.seats=seats;
   const lightBoxes=new THREE.Group();
   for(const [px,pz] of [[x0-0.5,z0-0.5],[x1+0.3,z0-0.5],[x0-0.5,z1+0.3],[x1+0.3,z1+0.3]]){const m=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.6,0.4),mats.lampHead);m.position.set(px+0.1,H+5.2,pz+0.1);lightBoxes.add(m);}
-  const fieldLight=new THREE.PointLight('#fff8e0',0,60,1.4);fieldLight.position.set((ix0+ix1)/2,H+8,(iz0+iz1)/2);
+  // brilho dos refletores no gramado (um plano aditivo: bem mais leve que uma luz de verdade)
+  const fg=new THREE.PlaneGeometry(ix1-ix0+4,iz1-iz0+4);fg.rotateX(-Math.PI/2);
+  const fieldLight=new THREE.Mesh(fg,mats.fieldGlow);fieldLight.position.set((ix0+ix1)/2,0.05,(iz0+iz1)/2);fieldLight.renderOrder=2;
   return {mesh,crowd,lightBoxes,fieldLight,b};
 }

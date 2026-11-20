@@ -5,6 +5,15 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.1.0 — 20/11/2026
+**Desempenho do 3D**
+- A cidade agora é dividida em blocos: a placa de vídeo só desenha o que está perto da câmera (antes desenhava o mapa todo a cada quadro, duas vezes por causa das sombras). Cerca de 3x menos triângulos e metade das chamadas de desenho por quadro
+- Pessoas e partículas desenhadas todas de uma vez; carros com bem menos peças
+- O canvas 3D só é redimensionado quando a janela muda (antes era a cada quadro, o que recriava os buffers da placa)
+- Sombras mais leves e o brilho dos refletores do estádio deixou de ser uma luz de verdade (pesava na cidade inteira)
+- **Três níveis de qualidade**: G passa por 3D alta → 3D média → 3D leve → clássico. A média usa resolução normal e sombras menores; a leve renderiza em resolução reduzida e sem sombras
+- Se o jogo rodar abaixo de ~35 quadros por segundo por alguns segundos, a qualidade baixa sozinha (e fica salva)
+
 ## 1.0.0 — 19/11/2026
 **Gráficos em 3D** (Three.js; a lógica do jogo continua a mesma)
 - Câmera inclinada acima do jogador, que afasta com a velocidade

@@ -10,7 +10,7 @@ import { drawTitle } from './render/hud.js';
 import { drawBigMap, drawMenu } from './render/overlays.js';
 import { updateInterior } from './game/interior.js';
 import { renderInterior } from './render/interiorDraw.js';
-import { init3D, set3D, render3D, R } from './render3d/r3d.js';
+import { init3D, set3D, render3D, R, applyQuality, getQuality, QNAMES } from './render3d/r3d.js';
 import { signalState } from './world/districts.js';
 import { msg } from './game/world.js';
 import { S, player, cam, keys } from './core/state.js';
@@ -18,11 +18,18 @@ import { resetWorld } from './game/world.js';
 import './core/input.js';
 
 resetWorld();
-// gráficos: 3D por padrão; G alterna com o clássico (fica salvo no navegador)
+// gráficos: 3D por padrão. G passa por: 3D alta → 3D média → 3D leve → clássico (fica salvo no navegador)
 let pref='3d';try{pref=localStorage.getItem('aq_gfx')||'3d';}catch(e){}
-init3D();set3D(pref==='3d');
-window.addEventListener('keydown',e=>{if(e.code==='KeyG'&&S.started&&!S.menu){const on=!R.on;if(on&&!R.ok){msg('Este navegador não tem suporte a 3D (WebGL).',3);return;}
-  set3D(on);try{localStorage.setItem('aq_gfx',on?'3d':'2d');}catch(err){}msg(on?'Gráficos: 3D':'Gráficos: clássico (2D)',2);}});
+init3D();
+const prefQ=pref==='3d'?2:pref.startsWith('3d')?(+pref[2]||0):2;
+applyQuality(prefQ);set3D(pref.startsWith('3d'));
+window.addEventListener('keydown',e=>{if(e.code!=='KeyG'||!S.started||S.menu)return;
+  if(!R.ok){msg('Este navegador não tem suporte a 3D (WebGL).',3);return;}
+  let txt,val;
+  if(!R.on){set3D(true);applyQuality(2,true);val='3d2';txt='Gráficos: 3D · qualidade alta';}
+  else if(getQuality()>0){const q=getQuality()-1;applyQuality(q,true);val='3d'+q;txt='Gráficos: 3D · qualidade '+QNAMES[q];}
+  else{set3D(false);val='2d';txt='Gráficos: clássico (2D)';}
+  try{localStorage.setItem('aq_gfx',val);}catch(err){}msg(txt+'  (G troca)',2.5);});
 let last=performance.now();
 // remove qualquer coisa que tenha virado NaN/Infinity e destrava o estado
 function sanitize(hard){
