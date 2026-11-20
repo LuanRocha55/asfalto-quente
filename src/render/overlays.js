@@ -86,7 +86,7 @@ export function drawMenu(){
     const col=dis?'rgba(255,255,255,0.35)':'#ffffff';
     if(it){
       txt(g,(i+1)+'. '+it.label,x+26,ry+24,14,col);
-      txt(g,dis?(whyOf(it)||'—'):priceLabel(it),x+w-28,ry+24,14,dis?'rgba(255,255,255,0.35)':'#7dff6b','right');
+      txt(g,dis?(whyOf(it)||'—'):(it.tag||priceLabel(it)),x+w-28,ry+24,14,dis?'rgba(255,255,255,0.35)':'#7dff6b','right');
     } else txt(g,'Sair',x+26,ry+24,14,'#ffb0a0');
   }
   txt(g,'W/S ou mouse escolhe · ENTER ou clique compra · 1-9 atalho · ESC sai',CW/2,y+h-14,12,'rgba(255,255,255,0.6)','center');

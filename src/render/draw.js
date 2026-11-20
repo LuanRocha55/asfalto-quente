@@ -277,7 +277,7 @@ export function render(){
     if(p.state==='wait'){const yy=p.y-16+Math.sin(S.gameTime*6)*2;g.fillStyle='#ffe14a';g.beginPath();g.moveTo(p.x,yy+6);g.lineTo(p.x-5,yy-2);g.lineTo(p.x+5,yy-2);g.fill();}}
   // jogador a pé
   if(!player.car&&player.state==='play'){if(!(player.inv>0&&Math.floor(S.gameTime*10)%2))drawPerson(g,player.x,player.y,player.a,'#ff7a1a','#c68642','#111',player.anim/10,(keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight']),1.15);
-    const nc=nearestCar(26);if(nc&&!nearB){g.font='bold 12px "Courier New",monospace';const t=(nc.driver==='ai'?'Roubar ':'Entrar: ')+nc.t.name;drawKeycap(g,'F',nc.x-(g.measureText(t).width+28)/2,nc.y-nc.t.wid-14,t,12);}}
+    const nc=nearestCar(26);if(nc&&(!nearB||Math.hypot(nc.x-player.x,nc.y-player.y)-nc.t.wid/2<Math.hypot(doorOf(nearB).x-player.x,doorOf(nearB).y-player.y))){g.font='bold 12px "Courier New",monospace';const t=(nc.driver==='ai'?'Roubar ':'Entrar: ')+nc.t.name;drawKeycap(g,'F',nc.x-(g.measureText(t).width+28)/2,nc.y-nc.t.wid-14,t,12);}}
   // carros
   for(const c of S.cars){if(c.x<vx0-60||c.x>vx1+60||c.y<vy0-60||c.y>vy1+60)continue;drawCar(g,c);
     if(S.mission&&c.mission===S.mission&&!c.wreck&&c.maxHp){const f=clamp(c.health/c.maxHp,0,1);g.fillStyle='rgba(0,0,0,0.6)';g.fillRect(c.x-21,c.y-44,42,7);g.fillStyle=f>0.4?'#4cff6a':'#ff5030';g.fillRect(c.x-20,c.y-43,40*f,5);}

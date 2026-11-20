@@ -2,7 +2,7 @@
 
 Jogo top-down de mundo aberto feito em JavaScript puro com Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
-Versão atual: **0.9.0** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **0.9.1** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
 ## Como rodar
 
@@ -27,7 +27,7 @@ No VS Code, a extensão **Live Server** também resolve.
 | F ou Enter | entrar, sair ou roubar carro |
 | Shift | correr a pé |
 | H | buzina |
-| J | começar/encerrar turno de emprego |
+| J | no veículo de trabalho: começar/encerrar turno · a pé: menu de empregos |
 | M ou Tab | mapa em tela cheia (clique marca destino) |
 | F na porta | entrar e andar dentro dos comércios |
 | T | pular o tutorial |

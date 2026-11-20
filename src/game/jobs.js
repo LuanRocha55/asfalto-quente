@@ -59,7 +59,7 @@ const spots=[];
 export function setupJobSpots(){
   spots.length=0;
   // motocas só em algumas lanchonetes (no máximo 6, espalhadas)
-  lanchonetes().filter((b,i,arr)=>i%Math.max(1,Math.ceil(arr.length/6))===0).forEach(b=>{const d=doorOf(b);b.hasMoto=true;spots.push({type:'moto',x:d.x+20,y:d.y,a:0});});
+  lanchonetes().filter((b,i,arr)=>i%Math.max(1,Math.ceil(arr.length/6))===0).forEach(b=>{const d=doorOf(b);b.hasMoto=true;spots.push({type:'moto',x:d.x+56,y:d.y,a:0});});
   for(const k of ['posto','posto2']){const z=special[k];if(z)spots.push({type:'guincho',x:(z.x0+z.x1)/2,y:z.y1-24,a:0});}
   if(special.estac3)spots.push({type:'busao',x:special.estac3.x,y:special.estac3.y,a:0,terminal:true});
   if(special.estac)spots.push({type:'taxi',x:special.estac.x,y:special.estac.y,a:0,ponto:true});
@@ -90,7 +90,7 @@ export function toggleJob(){
   }
   // a pé: vigilante na porta de mercadinho ou farmácia
   const loja=lojas().find(b=>{const d=doorOf(b);return hyp(d.x-player.x,d.y-player.y)<60;});
-  if(!loja){msg('A pé, o emprego é de vigilante: vai pra porta de um mercadinho ou farmácia (V no mapa).',3);return;}
+  if(!loja){openJobMenu();return;}
   if(darkness()<0.5){msg('Vigilante só trabalha de noite (das 20h às 5h).',2.5);return;}
   startJob('vigilante',null,loja);
 }
@@ -273,13 +273,39 @@ export function updateJobs(dt){
   else if(j.type==='guincho')updTow(j,dt);
   else if(j.type==='vigilante')updGuard(j,dt);
 }
+// ---- menu de empregos (J a pé): explica cada um e marca no mapa onde começar ----
+const JOB_INFO={
+  taxi:{short:'qualquer táxi na rua',how:'Qualquer táxi serve. Entra e aperta J.',pay:'por corrida'},
+  motoboy:{short:'Motoca na lanchonete',how:'Pega uma Motoca parada numa lanchonete e aperta J.',pay:'por entrega'},
+  onibus:{short:'busão no Terminal',how:'Pega o busão no Terminal e aperta J.',pay:'por passageiro'},
+  guincho:{short:'guincho no posto',how:'Pega o guincho num posto e aperta J.',pay:'por reboque'},
+  vigilante:{short:'loja, só de noite',how:'De noite, na porta de mercadinho ou farmácia, aperta J.',pay:'por assaltante'},
+};
+function whereJob(type){
+  const near=list=>{let b=null,bd=1e9;for(const p of list){if(!p)continue;const d=hyp(p.x-player.x,p.y-player.y);if(d<bd){bd=d;b=p;}}return b;};
+  if(type==='taxi')return near([...S.cars.filter(c=>c.type==='taxi'&&!c.wreck),...spots.filter(s=>s.type==='taxi')]);
+  if(type==='motoboy')return near(spots.filter(s=>s.type==='moto').map(s=>s.car||s));
+  if(type==='onibus')return near(spots.filter(s=>s.type==='busao').map(s=>s.car||s));
+  if(type==='guincho')return near(spots.filter(s=>s.type==='guincho').map(s=>s.car||s));
+  return near(lojas().map(doorOf));
+}
+export function openJobMenu(){
+  const items=Object.keys(JOBS).map(k=>({
+    label:JOBS[k].title.charAt(0)+JOBS[k].title.slice(1).toLowerCase()+' (nív. '+levelOf(k)+') · '+JOB_INFO[k].short,
+    price:0,tag:'marcar',
+    run:()=>{const p=whereJob(k);S.menu=null;if(!p){msg('Não achei nenhum agora. Tenta de novo daqui a pouco.',2.5);return;}
+      S.waypoint={x:p.x,y:p.y};msg('Marquei no mapa: '+JOB_INFO[k].how,4);},
+  }));
+  S.menu={title:'EMPREGOS',sub:'Escolhe um e eu marco no mapa onde começar',kind:'emprego',items,sel:0,rects:[]};
+}
+
 // dica de emprego quando o jogador está num veículo de trabalho (ou na porta de uma loja à noite)
 export function jobHint(){
   if(S.job||S.mission||player.state!=='play')return '';
   const c=player.car;
   if(c){const type=Object.keys(JOBS).find(k=>JOBS[k].vehicle&&JOBS[k].vehicle.includes(c.type));
-    return type?'J: começar turno de '+JOBS[type].title.toLowerCase()+' (nível '+levelOf(type)+')':'';}
+    return type?'Começar turno de '+JOBS[type].title.toLowerCase()+' (nível '+levelOf(type)+')':'';}
   const loja=lojas().find(b=>{const d=doorOf(b);return hyp(d.x-player.x,d.y-player.y)<60;});
-  if(loja)return darkness()>=0.5?'J: começar turno de vigilante noturno (nível '+levelOf('vigilante')+')':'Vigilante: volta aqui de noite (20h às 5h)';
+  if(loja)return darkness()>=0.5?'Começar turno de vigilante noturno (nível '+levelOf('vigilante')+')':'Vigilante: volta aqui de noite (20h às 5h)';
   return '';
 }

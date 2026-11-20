@@ -58,7 +58,8 @@ export function updateTutorial(dt){
       tut.step++;tut.acc=0;tut.flash=1;sfxTone(660,0.08,0.08,'square');sfxTone(990,0.12,0.08,'square',0.08);
       if(tut.step>=STEPS.length){tut.active=false;store.set(DONE_KEY,'1');
         big('A CIDADE É TUA','Atende o orelhão pra começar a missão','#7dff6b',3);
-        setTimeout(()=>hintOnce('lojas','Dá pra entrar nos comércios','Nas portas com ícone no chão, aperta F. Comida recupera vida.',['F']),4000);}
+        setTimeout(()=>hintOnce('lojas','Dá pra entrar nos comércios','Nas portas com ícone no chão, aperta F. Comida recupera vida.',['F']),4000);
+        setTimeout(()=>hintOnce('empregos','Quer grana sem missão?','Aperta J pra ver os empregos. Eu marco no mapa onde começar.',['J']),16000);}
     }
     return;
   }
@@ -70,6 +71,7 @@ export function updateTutorial(dt){
   if(player.car&&Object.values(JOBS).some(j=>j.vehicle&&j.vehicle.includes(player.car.type)))hintOnce('emprego','Esse veículo tem emprego','Aperta J pra começar um turno e ganhar dinheiro.',['J']);
   if(player.car&&player.car.health<player.car.t.hp*0.4)hintOnce('conserto','Carro soltando fumaça','Passa por baixo da cobertura de um posto (ícone de bomba) pra consertar.',[]);
   if(darkness()>0.6)hintOnce('noite','Anoiteceu','De noite rola o emprego de vigilante: porta de mercadinho ou farmácia, aperta J.',['J']);
+  if(S.playTime>40)hintOnce('empregos','Quer grana sem missão?','Aperta J pra ver os empregos. Eu marco no mapa onde começar.',['J']);
   if(player.money>=400)hintOnce('grana','Já dá pra gastar','Arma no Armas do Tonhão, colete na farmácia, curso na escola.',[]);
   if(S.job)hintOnce('turno','Turno começou','Segue a seta. Sair do veículo encerra o turno.',[]);
 }

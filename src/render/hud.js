@@ -108,8 +108,8 @@ export function drawHUD(g,tgt){
     txt(j.text,CW/2,56,14,'#ffffff','center');
     if(j.time!==undefined){const t=Math.max(0,Math.ceil(j.time));txt(Math.floor(t/60)+':'+String(t%60).padStart(2,'0'),CW/2,82,20,t<10?'#ff5050':'#ffffff','center');}
     txt('J encerra o turno',CW/2,j.time!==undefined?100:74,10,'rgba(255,255,255,0.5)','center');}
-  else if(S.phoneCd<=0&&player.state==='play'&&!tut.active){txt('Procura um orelhão tocando pra pegar missão  ·  ou arruma um emprego (J)',CW/2,34,14,'#ffe9a0','center');}
-  {const h=jobHint();if(h)txt(h,CW/2,CH-80,15,'#7fd8ff','center');}
+  else if(S.phoneCd<=0&&player.state==='play'&&!tut.active){txt('Procura um orelhão tocando pra pegar missão  ·  ou aperta J pra ver os empregos',CW/2,34,14,'#ffe9a0','center');}
+  {const h=jobHint();if(h){g.font='bold 15px "Courier New",monospace';const w=g.measureText(h).width+36;drawKeycap(g,'J',CW/2-w/2,CH-86,h,15);}}
   if(player.bustT>0.15)txt('PARADO AÍ!',CW/2,CH/2-80,28,'#5aa0ff','center');
   // mensagens
   let my=CH-40;for(let i=S.messages.length-1;i>=0;i--){const m=S.messages[i];g.globalAlpha=clamp(m.life,0,1);txt(m.t,CW/2,my,16,'#ffffff','center');my-=24;}g.globalAlpha=1;

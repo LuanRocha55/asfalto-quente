@@ -2,7 +2,8 @@
 import { cv } from './canvas.js';
 import { AU, initAudio, sfxHorn } from '../audio/audio.js';
 import { msg } from '../game/world.js';
-import { enterExit, punch } from '../game/player.js';
+import { enterExit, punch, nearestCar } from '../game/player.js';
+import { doorOf } from '../game/jobs.js';
 import { S, keys, player, mouse } from './state.js';
 import { cycleWeapon, selectWeapon } from '../game/weapons.js';
 import { toggleJob } from '../game/jobs.js';
@@ -20,7 +21,14 @@ function startGame(fresh){
 // F / Enter / clique direito: porta do prédio tem prioridade sobre carro quando está mais perto
 function interact(){
   if(S.interior){interactInterior();return;}
-  if(!player.car&&player.state==='play'){const b=nearestDoor(40);if(b){enterInterior(b);return;}}
+  if(!player.car&&player.state==='play'){
+    const b=nearestDoor(40);
+    if(b){ // porta só ganha se estiver mais perto que o carro
+      const d=doorOf(b), c=nearestCar(26);
+      const dd=Math.hypot(d.x-player.x,d.y-player.y), dc=c?Math.hypot(c.x-player.x,c.y-player.y)-c.t.wid/2:1e9;
+      if(dd<=dc){enterInterior(b);return;}
+    }
+  }
   enterExit();
 }
 const toggleMap=()=>{S.mapOpen=!S.mapOpen;if(S.mapOpen)S.mapOpenedOnce=true;};

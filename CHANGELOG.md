@@ -5,6 +5,13 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 0.9.1 — 19/11/2026
+- **J a pé abre o menu de EMPREGOS**: explica onde começar cada um e marca no mapa o veículo ou lugar mais perto
+- Aviso com tecla J desenhada quando você está num veículo de trabalho
+- Dica de primeira vez avisando que existe o menu de empregos
+- Corrigido: perto de uma porta, o F entrava no comércio mesmo com o carro mais perto; agora ganha o que estiver mais perto
+- Motocas das lanchonetes ficam um pouco mais longe da porta
+
 ## 0.9.0 — 19/11/2026
 **Interiores onde dá pra andar**
 - F (ou clique direito) na porta entra no lugar: o jogo troca pra uma cena interna vista de cima
