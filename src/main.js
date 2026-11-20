@@ -40,9 +40,9 @@ window.addEventListener('keydown',e=>{if(e.code!=='F3')return;e.preventDefault()
 function drawFpsCounter(){
   const fps=perf.shown.fps, mode=R.on&&!S.interior?'3D '+QNAMES[getQuality()]:'2D clássico';
   const t=(fps===undefined?'--':fps)+' FPS · '+mode, g=ctx;
-  g.setTransform(DPR,0,0,DPR,0,0);g.font='bold 12px "Courier New",monospace';g.textAlign='center';
-  const w=g.measureText(t).width+16;g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(CW/2-w/2,6,w,20);
-  g.fillStyle=fps===undefined?'#cfcfcf':fps>=50?'#7dff6b':fps>=35?'#ffe14a':'#ff6b6b';g.fillText(t,CW/2,20);
+  g.setTransform(DPR,0,0,DPR,0,0);g.font='bold 11px "Courier New",monospace';g.textAlign='center';
+  const w=g.measureText(t).width+14;g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(CW/2-w/2,2,w,16); // fica acima da linha de dicas (y=34)
+  g.fillStyle=fps===undefined?'#cfcfcf':fps>=50?'#7dff6b':fps>=35?'#ffe14a':'#ff6b6b';g.fillText(t,CW/2,14);
 }
 function drawPerf(){
   const info=R.on&&!S.interior?gfxInfo():null, g=ctx;

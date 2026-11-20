@@ -5,6 +5,9 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.1.4 — 20/11/2026
+- Contador de FPS um pouco menor e mais alto, pra não encostar na linha de dicas/missão
+
 ## 1.1.3 — 20/11/2026
 - **Contador de FPS e qualidade no topo da tela** (ex.: `58 FPS · 3D alta`), verde/amarelo/vermelho conforme o desempenho
 - **F3 agora tem três estados**: contador pequeno → painel de desempenho completo → desligado (a escolha fica salva no navegador)
