@@ -6,7 +6,7 @@ export const S={
   flowT:0, spawnT:0, zoneCd:0,
   mission:null, missionIdx:0, phoneCd:0,
   best:0, NEXT_ID:1, errCount:0, lastErr:'',
-  tod:16.5, tracers:[], shopCd:0,
+  tod:16.5, day:0, lastTod:null, match:null, tracers:[], shopCd:0,
   job:null, floaters:[],
   interior:null, toasts:[], mapOpenedOnce:false,
   menu:null, mapOpen:false, hitStop:0, hurtT:0, mapRect:null, waypoint:null, playTime:0, saveFlash:0,

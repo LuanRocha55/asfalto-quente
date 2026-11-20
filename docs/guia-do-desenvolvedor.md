@@ -117,7 +117,7 @@ Tudo que muda durante o jogo fica em objetos exportados por `src/core/state.js`,
 
 | Objeto | O que guarda |
 |---|---|
-| `S` | listas do mundo (`cars`, `peds`, `parts`, `skids`, `decals`, `tracers`), mensagens (`messages`, `bigMsg`, `toasts`, `floaters`), `mission`, `missionIdx`, `job`, `interior`, `menu`, `mapOpen`, `waypoint`, hora do dia `tod`, `gameTime`, `playTime`, `paused`, `started`, bairros liberados `unlocked`, recorde `best` |
+| `S` | listas do mundo (`cars`, `peds`, `parts`, `skids`, `decals`, `tracers`), mensagens (`messages`, `bigMsg`, `toasts`, `floaters`), `mission`, `missionIdx`, `job`, `interior`, `menu`, `mapOpen`, `waypoint`, hora do dia `tod`, dia do calendário `day` (com `lastTod`), partida do dia `match`, `gameTime`, `playTime`, `paused`, `started`, bairros liberados `unlocked`, recorde `best` |
 | `player` | posição, ângulo, `health`, `armor`, `money`, `heat`, `car`, `weapon`, `ammo`, `skills`, `state` (`play`, `wasted`, `busted`) |
 | `cam` | posição e zoom da câmera 2D |
 | `keys`, `mouse` | teclas pressionadas (`keys['KeyW']`) e mouse |
@@ -194,7 +194,7 @@ Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra con
 
 ### Save (`game/save.js`)
 
-`saveGame()` grava um JSON em `localStorage['aq_save']` com a versão, dinheiro, vida, colete, armas, cursos, `missionIdx`, hora, `playTime`, `unlocked`, posição e o carro atual. `loadGame()` roda depois de `resetWorld()` e trata saves antigos:
+`saveGame()` grava um JSON em `localStorage['aq_save']` com a versão, dinheiro, vida, colete, armas, cursos, `missionIdx`, hora, dia do calendário (`day`), `playTime`, `unlocked`, posição e o carro atual. `loadGame()` roda depois de `resetWorld()` e trata saves antigos:
 
 - sem `unlocked` (antes da 1.4.0): zera o dinheiro e volta pra só Centro e Jardim (`S.migratedDistricts` mostra o aviso);
 - de antes da cidade nova (0.8.0), ou posição dentro de parede ou de área fechada: começa no hospital.
@@ -205,7 +205,7 @@ Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra con
 
 ### Estádio (`game/stadium.js`)
 
-`matchOn()` é verdadeiro das 15h30 às 18h. O dia do jogo é calculado de `S.gameTime`, e o adversário roda pela lista `AWAY`. `match()` guarda o placar, a aposta e se já assistiu.
+`matchOn()` é verdadeiro das 15h30 às 18h. O dia vem de `S.day`, que sobe 1 sempre que `S.tod` fica menor que no passo anterior (passou da meia-noite, andando, dormindo ou dentro de um interior). O adversário roda pela lista `AWAY`. `match()` guarda o placar, a aposta e se já assistiu.
 
 ### Áudio (`audio/audio.js`)
 

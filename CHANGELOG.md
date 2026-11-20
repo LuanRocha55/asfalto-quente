@@ -6,9 +6,10 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
 ## 1.5.1 — 20/11/2026
-**Correções nos empregos de guincho e vigilante**
+**Correções no guincho, no vigilante e nos jogos da Arena**
 - **Guincho** não trava mais o jogo quando o posto e a Oficina do Zé estão fechados pela operação: o turno nem começa, ou termina com aviso se fecharem no meio do serviço
 - **Vigilante** não começa mais turno entre 5h e 7h, e o bônus do amanhecer só sai pra quem fez pelo menos 2 horas de turno
+- **Arena** tem jogo todo dia de novo: o dia agora vira à meia-noite do relógio do jogo (também dormindo) e fica no save. Antes, depois de dormir ou carregar o jogo, alguns dias ficavam sem partida e sem aposta
 
 ## 1.5.0 — 20/11/2026
 **Visual 97: interface nova e cidade com cara de jogo de 1997**
