@@ -1,6 +1,6 @@
 # Guia do desenvolvedor
 
-Como o código do Asfalto Quente é organizado, como os sistemas conversam entre si e como mexer neles sem quebrar nada.
+Como o código do Maresia 97 é organizado, como os sistemas conversam entre si e como mexer neles sem quebrar nada.
 
 - [Visão geral](#visão-geral)
 - [Rodar o jogo](#rodar-o-jogo)
@@ -217,9 +217,11 @@ Carros seguem a malha: escolhem faixa, trocam de faixa pra ultrapassar e pra con
 
 - `init3D()` cria o renderizador com `powerPreference: 'high-performance'`. Sem WebGL, `R.ok` fica falso e o jogo usa o 2D.
 - `buildCity()` monta a cidade estática uma vez, **dividida em blocos**, e a placa só desenha os blocos perto da câmera.
-- **Chão com streaming e LOD:** o chão é desenhado em canvas por blocos de 16 × 16 tiles (`world/chunks.js`) e vira textura. No máximo 3 blocos por quadro, primeiro os visíveis e depois na direção do movimento. Por baixo, o mapa inteiro em baixa resolução (`makeLowres`) cobre o que ainda não carregou.
-- **Objetos dinâmicos:** carros reaproveitam malhas por tipo. Pessoas e partículas são desenhadas em lote (instancing).
-- **Sol e céu:** o sol cruza o céu com sombra que acompanha a câmera. A cor do céu e da neblina muda com `darkness()` e `golden()`.
+- **Chão com streaming e LOD:** o chão é desenhado em canvas por blocos de 16 × 16 tiles (`world/chunks.js`) e vira textura. No máximo 3 blocos por quadro, primeiro os visíveis e depois na direção do movimento. Por baixo, o mapa inteiro em baixa resolução (`makeLowres`) cobre o que ainda não carregou. No 3D os tiles de água ficam transparentes (`getChunk3D`, `makeLowres(true)` e `alphaTest`), e o 2D clássico continua usando `getChunk` com a água pintada.
+- **Mar** (`makeSea`): plano com ondas facetadas no shader. `shoreField()` (em `chunks.js`) calcula a distância de cada tile de água até a terra, e o shader usa isso pra clarear a água rasa e desenhar a espuma batendo na beira. `uGlow` dá um brilho próprio pra água não ficar preta com o sol baixo.
+- **Objetos dinâmicos:** carros reaproveitam malhas por tipo (`carParts`: rodas cilíndricas com calota, para-choques, vidros em volta da cabine, retrovisores). Carroceria e cabine usam a cor do carro; a viatura tem cabine branca fixa. À noite, as lanternas fazem um brilho vermelho no chão (mais forte freando). Pessoas e partículas são desenhadas em lote (instancing).
+- **Prédios** (`build.js`): paredes com degradê (mais escuras embaixo), rodapé escuro, moldura no topo dos prédios de telhado plano, toldo listrado na frente das lojas (`AWNING`), antena de TV em parte das casas e aquecedor solar, caixa d'água e ar-condicionado nos telhados. Árvores têm duas copas e os coqueiros têm cocos.
+- **Sol e céu:** o sol cruza o céu com sombra que acompanha a câmera; de noite ele vira a lua (luz fraca e azulada, mais alta). As cores saem da tabela `SKY_KEYS` (céu/neblina, sol, luz ambiente, mar e água rasa por hora: madrugada, amanhecer rosado, dia, fim de tarde dourado, pôr do sol, crepúsculo roxo e noite), misturadas entre uma hora e outra por `skyAt()`.
 - **Qualidade** (`applyQuality`): 2 = alta (densidade até 2, sombra 2048), 1 = média (densidade até 1, sombra 1024 atualizada quadro sim, quadro não), 0 = leve (densidade 0,75, sem sombra). `adapt()` baixa a qualidade sozinho se mais de ~100 quadros acima de 28 ms se acumularem (abaixo de ~35 FPS por uns 3 s), até o jogador escolher com G.
 - `warmUp()` compila os materiais na placa ao iniciar e ao trocar sombra, pra não engasgar na primeira explosão.
 - `gfxInfo()` alimenta o painel F3.

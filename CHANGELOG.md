@@ -5,6 +5,15 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.6.0 — 20/11/2026
+**Maresia 97: nome novo e visual caprichado**
+- O jogo agora se chama **Maresia 97** (tela de título, aba do navegador e documentação). Os saves continuam valendo
+- **Mar de verdade dentro do mapa**: a água da praia e do porto agora tem ondas, fica turquesa no raso e faz espuma batendo na areia
+- **Luz por hora do dia**: amanhecer rosado, meio-dia claro, fim de tarde dourado com sombras compridas, pôr do sol laranja, crepúsculo roxo e noite com luar azulado (dá pra enxergar a cidade). Luz dos postes alaranjada, sem estourar
+- **Carros mais bonitos**: rodas redondas com calota, para-choques, vidros em volta da cabine, retrovisores, cabine da cor do carro, caçamba nas caminhonetes e braço no guincho. De noite, as lanternas brilham vermelho no chão (mais forte freando)
+- **Cidade com mais detalhe**: paredes com sombra perto do chão, rodapé, moldura no topo dos prédios, toldo listrado nas lojas, antena de TV nas casas, aquecedor solar e casa de máquinas nos telhados, árvores mais cheias e coqueiros com coco
+- **Batidas soltam faíscas e poeira**
+
 ## 1.5.2 — 20/11/2026
 **Correções nos empregos, na Arena e na missão Acerto de Contas**
 - **Guincho** não trava mais o jogo quando o posto e a Oficina do Zé estão fechados pela operação: o turno nem começa, ou termina com aviso se fecharem no meio do serviço

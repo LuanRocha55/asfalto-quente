@@ -17,13 +17,15 @@ const TYPE_N={beco:1,rua:2,ave:3};
   for(let i=0;i<NV;i++)for(let j=0;j<NH-1;j++)if(segV[i][j]){const L=VL[i];mark(Math.round(L.c-L.w/2),Math.round(HL[j].c),L.w,Math.round(HL[j+1].c-HL[j].c),TYPE_N[L.type]);}
 })();
 
-export function renderChunk(cx,cy){
+// seeThrough: no 3D a água fica transparente (o mar 3D com ondas aparece por baixo)
+export function renderChunk(cx,cy,seeThrough){
   const c=document.createElement('canvas');c.width=CPX;c.height=CPX;const g=c.getContext('2d');
   const r=mulberry(cx*7919+cy*104729);
   for(let ty=0;ty<CHUNK;ty++)for(let tx=0;tx<CHUNK;tx++){
     const X=cx*CHUNK+tx, Y=cy*CHUNK+ty; if(X>=W||Y>=H)continue;
     const t=map[Y*W+X]; const px=tx*T, py=ty*T;
     const D=DISTRICTS[districtOfTile(X,Y)];
+    if(t===WATER&&seeThrough)continue;
     g.fillStyle=TILE_COL[t]; g.fillRect(px,py,T,T);
     if(t===WATER){g.fillStyle='rgba(255,255,255,0.06)';for(let i=0;i<3;i++)g.fillRect(px+r()*28,py+r()*30,6,1);}
     else if(t===SAND){g.fillStyle='rgba(150,120,60,0.18)';for(let i=0;i<5;i++)g.fillRect(px+r()*30,py+r()*30,2,2);}
@@ -151,15 +153,26 @@ export function tileOf(x,y){if(x<0||y<0||x>=W||y>=H)return WATER;return map[y*W+
 export function getChunk(cx,cy){const k=cx+','+cy;let c=chunkCache.get(k);
   if(!c){c=renderChunk(cx,cy);chunkCache.set(k,c);if(chunkCache.size>80){const f=chunkCache.keys().next().value;chunkCache.delete(f);}}
   else{chunkCache.delete(k);chunkCache.set(k,c);} return c;}
+// versão do 3D (água transparente); o 3D guarda a textura, então não precisa de cache aqui
+export const getChunk3D=(cx,cy)=>renderChunk(cx,cy,true);
+// distância de cada tile de água até a terra (0 = beira, 255 = 8+ tiles): água rasa e espuma no mar 3D
+export function shoreField(){
+  const D=8,dist=new Uint8Array(W*H).fill(D),q=[];
+  for(let i=0;i<W*H;i++)if(map[i]!==WATER){dist[i]=0;q.push(i);}
+  for(let h=0;h<q.length;h++){const i=q[h],x=i%W,y=(i/W)|0,nd=dist[i]+1;if(nd>=D)continue;
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=W||yy>=H)continue;const j=yy*W+xx;if(dist[j]>nd){dist[j]=nd;q.push(j);}}}
+  const out=new Uint8Array(W*H*4);for(let i=0;i<W*H;i++){const v=Math.round(dist[i]/D*255);out[i*4]=v;out[i*4+1]=v;out[i*4+2]=v;out[i*4+3]=255;}
+  return out;
+}
 
 // chão em baixa resolução do mapa inteiro (4 px por tile): fica por baixo no 3D enquanto o pedaço detalhado não carrega
-export function makeLowres(){
+export function makeLowres(seeThrough){
   const K=4,c=document.createElement('canvas');c.width=W*K;c.height=H*K;const g=c.getContext('2d');const img=g.createImageData(W*K,H*K);
   const rgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
   const pal={};for(const k in TILE_COL)pal[k]=rgb(TILE_COL[k]);const ave=rgb('#2f3036'),beco=rgb('#5d5852'),sand=pal[SAND];
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x,t=map[i];
     let col=pal[t];if(t===ROAD)col=RT[i]===3?ave:RT[i]===1?beco:col;else if(t===TREE&&(tileOf(x-1,y)===SAND||tileOf(x+1,y)===SAND))col=sand;
-    for(let dy=0;dy<K;dy++)for(let dx=0;dx<K;dx++){const o=((y*K+dy)*W*K+x*K+dx)*4;img.data[o]=col[0];img.data[o+1]=col[1];img.data[o+2]=col[2];img.data[o+3]=255;}}
+    for(let dy=0;dy<K;dy++)for(let dx=0;dx<K;dx++){const o=((y*K+dy)*W*K+x*K+dx)*4;img.data[o]=col[0];img.data[o+1]=col[1];img.data[o+2]=col[2];img.data[o+3]=seeThrough&&t===WATER?0:255;}}
   g.putImageData(img,0,0);return c;
 }
 

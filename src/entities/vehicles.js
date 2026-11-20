@@ -3,7 +3,7 @@ import { rand, pick, clamp, lerp, hyp } from '../core/utils.js';
 import { SAND, GRASS, tileAt, solidAt } from '../world/map.js';
 import { sfxNoise } from '../audio/audio.js';
 import { addHeat, onScreen } from '../game/world.js';
-import { addSkid } from '../game/effects.js';
+import { addSkid, crashSparks } from '../game/effects.js';
 import { S, player } from '../core/state.js';
 
 export const CT={
@@ -82,6 +82,8 @@ export class Car{
     if(this.hits(this.x,this.y,this.a))this.unstick();
     if(impact>90){this.damage((impact-90)*0.09,this.driver==='player'?'self':null);
       if(onScreen(this.x,this.y))sfxNoise(0.25,clamp(impact/600,0.05,0.5),900);
+      {const sd=-Math.sign(this.fwdSpeed()||-1),k=this.t.len*0.45*sd; // a velocidade já voltou: o lado batido é o oposto
+        crashSparks(this.x+Math.cos(this.a)*k,this.y+Math.sin(this.a)*k,impact);}
       if(this.driver==='player'){S.shake=Math.min(12,impact/40);if(impact>220)S.hitStop=Math.max(S.hitStop||0,0.06);}}
   }
   unstick(){for(let r=4;r<60;r+=4)for(let k=0;k<8;k++){const ang=k*Math.PI/4;const x=this.x+Math.cos(ang)*r,y=this.y+Math.sin(ang)*r;if(!this.hits(x,y,this.a)){this.x=x;this.y=y;return;}}}

@@ -238,9 +238,9 @@ export function drawTitle(){
   const lx=Math.round(CW*0.07);
   // logo
   const ls=Math.round(118*s);
-  impact(g,'ASFALTO',lx,bar+ls*1.05,ls,null,'left',HEAT_GRAD);
-  impact(g,'QUENTE',lx+ls*0.12,bar+ls*1.95,ls,null,'left',HEAT_GRAD);
-  g.save();g.font=pf(20*s);const sub='VILA MARESIA  ·  ',yr='1997';
+  impact(g,'MARESIA',lx,bar+ls*1.05,ls,null,'left',HEAT_GRAD);
+  impact(g,'97',lx+ls*0.12,bar+ls*1.95,ls,C97.sodio,'left');
+  g.save();g.font=pf(20*s);const sub='SOL, SAL E SIRENE  ·  ',yr='1997';
   let sx=lx+ls*0.1;const sy=bar+ls*2.35;
   for(const ch of sub){ptxt(g,ch,sx,sy,20*s,C97.cal);g.font=pf(20*s);sx+=g.measureText(ch).width+6*s;}
   for(const ch of yr){ptxt(g,ch,sx,sy,20*s,C97.sodio);g.font=pf(20*s);sx+=g.measureText(ch).width+6*s;}
