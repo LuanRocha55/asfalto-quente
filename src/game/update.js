@@ -9,7 +9,7 @@ import { heatStars, addHeat, msg, big, onScreen, spawnTraffic, spawnPed, policeU
 import { recoverCar, updateTraffic } from '../ai/traffic.js';
 import { updatePolice, updatePoliceBrain, updateCopPed, intel, playerSeenRecently, los } from '../ai/police.js';
 import { fire, WEAPONS } from './weapons.js';
-import { explode, killPed, hurtPlayer } from './effects.js';
+import { explode, killPed, hurtPlayer, crashSparks } from './effects.js';
 import { wasted, busted, respawn } from './player.js';
 import { startMission, finishMission, failMission, inZone } from './missions.js';
 import { S, player, cam, keys, mouse, mouseWorld } from '../core/state.js';
@@ -199,6 +199,7 @@ export function collideCars(){
               if(src&&a!==player.car)a.damage(pd,'player');else a.damage(dmg*(b.t.mass/ma),null);
               if(src&&b!==player.car)b.damage(pd,'player');else b.damage(dmg*(a.t.mass/mb),null);
               if(onScreen(a.x,a.y))sfxNoise(0.3,clamp(imp/500,0.08,0.6),800);
+              crashSparks((a.x+b.x)/2,(a.y+b.y)/2,imp);
               if(src){S.shake=Math.max(S.shake,Math.min(10,imp/50));if(imp>180)S.hitStop=Math.max(S.hitStop||0,0.06);
                 const other=a===player.car?b:a;if(other.ai==='police'&&other.hitCd<=0){addHeat(30);other.hitCd=1.5;}}
             }}

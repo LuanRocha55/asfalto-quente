@@ -13,6 +13,13 @@ export function addSkid(c,sand){const cs=Math.cos(c.a),sn=Math.sin(c.a),b=-c.t.l
   if(S.skids.length>700)S.skids.splice(0,S.skids.length-700);
   if(Math.random()<0.3)S.parts.push({x:c.x-cs*c.t.len/2,y:c.y-sn*c.t.len/2,vx:rand(-20,20),vy:rand(-20,20),life:0.6,max:0.6,size:rand(5,9),col:sand?'rgba(220,200,140,':'rgba(200,200,200,',smoke:true});
 }
+// faíscas e um pouco de poeira na batida (mais forte = mais faísca)
+export function crashSparks(x,y,imp){
+  if(!onScreen(x,y,60))return;
+  const n=Math.min(18,Math.floor(imp/40));
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=rand(80,240);S.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(0.15,0.4),max:0.4,size:rand(2,4),col:pick(['rgba(255,236,150,','rgba(255,190,80,','rgba(255,255,220,']),fire:true});}
+  for(let i=0;i<Math.min(4,n/3);i++)S.parts.push({x:x+rand(-6,6),y:y+rand(-6,6),vx:rand(-20,20),vy:rand(-20,20),life:0.8,max:0.8,size:rand(6,10),col:'rgba(150,145,140,',smoke:true});
+}
 export function explode(x,y,src){
   S.shake=Math.max(S.shake,onScreen(x,y)?16:0);
   if(onScreen(x,y,300))sfxNoise(1.2,0.7,500);
