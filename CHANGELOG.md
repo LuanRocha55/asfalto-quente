@@ -5,7 +5,7 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
-## 1.5.1 — 20/11/2026
+## 1.5.2 — 20/11/2026
 **Correções nos empregos, na Arena e na missão Acerto de Contas**
 - **Guincho** não trava mais o jogo quando o posto e a Oficina do Zé estão fechados pela operação: o turno nem começa, ou termina com aviso se fecharem no meio do serviço
 - **Vigilante** não começa mais turno entre 5h e 7h, e o bônus do amanhecer só sai pra quem fez pelo menos 2 horas de turno
@@ -14,6 +14,12 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **Motoboy**: subir numa Motoca da rua e apertar J com todas as lanchonetes fechadas não abre mais um turno que acaba na hora; aparece o aviso de que estão fechadas pela operação, e a dica do J já avisa antes
 - **Bloqueios da polícia** nunca passam de 4 carros ao mesmo tempo (antes podiam chegar a 6)
 - Documentação: ordem do F3 corrigida (o primeiro toque abre o painel completo)
+
+## 1.5.1 — 20/11/2026
+**Ajustes depois do teste da 1.5.0**
+- **Filtro 97 desligado por padrão** (a cidade fica nítida). Continua opcional na tecla V ou no menu Gráficos
+- **Avisos grandes menores**: viraram uma faixa compacta no alto da tela, sem tremer nem tapar a rua; nome do bairro e "PARADO AÍ!" também diminuíram
+- **Mapa mostra claramente onde pode entrar**: bairro fechado fica vermelho listrado com linha forte na divisa, triângulo vermelho em cada posto de blitz e legenda "Pode entrar / Fechado (blitz)"
 
 ## 1.5.0 — 20/11/2026
 **Visual 97: interface nova e cidade com cara de jogo de 1997**

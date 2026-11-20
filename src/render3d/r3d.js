@@ -19,8 +19,9 @@ import { S, player, cam, keys, view } from '../core/state.js';
 import { checkpoints } from '../game/blitz.js';
 import { pf } from '../render/style97.js';
 
-export const R={ok:false,on:false,retro:true};
-try{R.retro=localStorage.getItem('aq_retro')!=='0';}catch(e){}
+export const R={ok:false,on:false,retro:false};
+// Filtro 97 agora é opcional (desligado por padrão): chave nova pra quem já tinha ligado na 1.5.0
+try{R.retro=localStorage.getItem('aq_retro2')==='1';}catch(e){}
 export const DBG={};
 export const getRenderer=()=>renderer;
 let renderer,scene,camera,sun,hemi,ground={},mats,city,overlay,overlayTex,overlayMesh,water,neon;
@@ -164,7 +165,7 @@ function retroPass(){
   renderer.setRenderTarget(rt);renderer.render(scene,camera);renderer.setRenderTarget(null);
   renderer.render(post.scene,post.cam);
 }
-export function toggleRetro(){R.retro=!R.retro;try{localStorage.setItem('aq_retro',R.retro?'1':'0');}catch(e){}}
+export function toggleRetro(){R.retro=!R.retro;try{localStorage.setItem('aq_retro2',R.retro?'1':'0');}catch(e){}}
 // G passa por: 3D alta → 3D média → 3D leve → clássico (fica salvo no navegador). Devolve o texto pra mostrar.
 export function gfxLabel(){return R.on?'3D '+QNAMES[quality].toUpperCase():'CLÁSSICO 2D';}
 export function cycleGfx(){

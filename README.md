@@ -2,7 +2,7 @@
 
 Jogo de mundo aberto visto de cima, feito em JavaScript com gráficos 3D (Three.js) e um modo clássico em Canvas 2D. A cidade é fictícia, o visual é desenhado por código e o som é gerado com Web Audio. Não tem nenhuma dependência nem etapa de build.
 
-Versão atual: **1.5.1** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
+Versão atual: **1.5.2** — veja o histórico em [CHANGELOG.md](CHANGELOG.md).
 
 **Documentação completa:** [docs/](docs/README.md) — [guia do jogador](docs/guia-do-jogador.md), [referência de números](docs/referencia.md), [guia do desenvolvedor](docs/guia-do-desenvolvedor.md) e [roadmap](docs/roadmap.md).
 
