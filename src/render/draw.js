@@ -75,6 +75,10 @@ export function drawCar(g,c){
     g.fillStyle='#5f8fa0';g.fillRect(-hl+L*0.16,-hw+3,L*0.09,Wd-6); // vidro traseiro
     if(c.type==='taxi'){g.fillStyle='#e53935';g.fillRect(-hl+L*0.4,-3,6,6);g.fillStyle='#1e88e5';g.fillRect(-hl+3,-hw+1,L-6,2);g.fillRect(-hl+3,hw-3,L-6,2);}
     if(c.type==='brisa'){g.fillStyle='rgba(0,0,0,0.6)';g.fillRect(-hl+L*0.25,-1.5,L*0.38,3);g.fillStyle='#111';g.fillRect(-hl,-hw+2,3,Wd-4);}
+    if(c.type==='swat'){g.fillStyle='#2a2e36';g.fillRect(-hl+L*0.15,-hw+3,L*0.6,Wd-6);g.fillStyle='#fff';g.font='bold 7px monospace';g.textAlign='center';g.fillText('SWAT',-hl+L*0.45,3);}
+    if(c.type==='exercito'||c.type==='blindado'){g.fillStyle='rgba(0,0,0,0.25)';for(let k=0;k<4;k++)g.fillRect(-hl+4+k*L/4.5,-hw+3+(k%2)*5,6,4);
+      if(c.type==='blindado'){g.fillStyle='#2e3313';g.beginPath();g.arc(0,0,Wd*0.32,0,Math.PI*2);g.fill();g.fillRect(0,-2,L*0.45,4);}}
+    if(c.type==='swat'||c.type==='fbi'){const on=Math.floor(S.gameTime*8)%2===0&&heatStars()>0&&c.ai;g.fillStyle=on?'#ff2a2a':'#5a1010';g.fillRect(hl-L*0.3,-hw+3,3,4);g.fillStyle=on?'#3a6bff':'#101a50';g.fillRect(hl-L*0.3,hw-7,3,4);}
     if(c.type==='viatura'){g.fillStyle='#f4f4f4';g.fillRect(-hl+L*0.25,-hw+3,L*0.38,Wd-6);g.fillStyle='#f4f4f4';g.fillRect(hl-L*0.24,-hw+1,L*0.2,Wd-2);g.fillRect(-hl+1,-hw+1,L*0.14,Wd-2);
       const on=Math.floor(S.gameTime*8)%2===0&&heatStars()>0;g.fillStyle=on?'#ff2a2a':'#7a1010';g.fillRect(-hl+L*0.42,-hw+3,5,(Wd-6)/2);g.fillStyle=on?'#3a6bff':'#0e1f66';g.fillRect(-hl+L*0.42,0,5,(Wd-6)/2);
       if(on){g.fillStyle='rgba(255,40,40,0.18)';g.beginPath();g.arc(0,0,38,0,Math.PI*2);g.fill();}}

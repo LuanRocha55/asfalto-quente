@@ -27,7 +27,7 @@ export function los(ax,ay,bx,by){const d=hyp(bx-ax,by-ay),n=Math.ceil(d/14);for(
 // ---- o que a polícia sabe ----
 export const intel={seenT:99,lastX:0,lastY:0,searchX:0,searchY:0,searchT:0};
 const tgtObj=()=>player.car||player;
-export function reportPlayer(){const t=tgtObj();intel.seenT=0;intel.lastX=t.x;intel.lastY=t.y;}
+export function reportPlayer(){const t=tgtObj();intel.seenT=0;intel.lastX=t.x;intel.lastY=t.y;intel.lastCar=player.car||null;}
 export const playerSeenRecently=()=>intel.seenT<2.5;
 
 let flowT=0,flowBT=0;
@@ -60,6 +60,9 @@ function followField(field,c){
   return{x:(i%W+.5)*T,y:(((i/W)|0)+.5)*T};
 }
 
+// quem desce de cada veículo quando você está a pé
+const FOOT={viatura:{unit:'policia',n:2,shirt:'#1f3a6b',hair:'#111',spd:110,hp:1},swat:{unit:'swat',n:3,shirt:'#15171c',hair:'#15171c',spd:105,hp:3},
+  fbi:{unit:'fbi',n:2,shirt:'#2b2f38',hair:'#111',spd:125,hp:2},exercito:{unit:'exercito',n:3,shirt:'#4b5320',hair:'#3d4419',spd:115,hp:4},blindado:{unit:'exercito',n:4,shirt:'#4b5320',hair:'#3d4419',spd:115,hp:4}};
 export function updatePolice(c,dt){
   if(c.ai==='block'){c.physics(0,0,true,dt);return;}
   const t=tgtObj(); const d=hyp(t.x-c.x,t.y-c.y);
@@ -79,18 +82,19 @@ export function updatePolice(c,dt){
   } else { // perdeu de vista: vasculha a área
     tx=intel.searchX;ty=intel.searchY;
   }
-  let desired=seen?200+stars*45:150;
+  let desired=seen?200+stars*45+(c.type==='fbi'?90:0):150;
   if(d<90&&player.car&&player.car.speed<60)desired=60;
   if(!player.car&&d<160)desired=Math.min(desired,Math.max(0,(d-70)*1.5));
   driveTo(c,tx,ty,desired,dt,true);
   // a pé: viatura para e desce policial
   if(!player.car&&player.state==='play'&&d<190&&c.speed<40&&!c.dropped&&stars>=1){
     c.dropped=true;
-    const n=S.peds.filter(p=>p.cop&&p.state!=='dead').length;
-    for(let k=0;k<(stars>=3?2:1)&&n+k<5;k++){
+    const n=S.peds.filter(p=>p.cop&&p.state!=='dead').length, cap=stars>=4?9:5;
+    const U=FOOT[c.type]||FOOT.viatura;
+    for(let k=0;k<(stars>=3?U.n:1)&&n+k<cap;k++){
       const ox=c.x-Math.sin(c.a)*(18+k*12),oy=c.y+Math.cos(c.a)*(18+k*12);
       if(solidAt(ox,oy))continue;
-      const p=new Ped(ox,oy);p.cop=true;p.state='cop';p.shirt='#1f3a6b';p.hair='#111';p.spd=110;p.shootCd=rand(1.2,2);S.peds.push(p);
+      const p=new Ped(ox,oy);p.cop=true;p.state='cop';p.unit=U.unit;p.shirt=U.shirt;p.hair=U.hair;p.spd=U.spd;p.hp=U.hp;p.shootCd=rand(1.2,2);S.peds.push(p);
     }
   }
 }
@@ -113,12 +117,15 @@ function updateRoadblocks(dt,stars){
   if(!best||bd>400)return;
   if(hyp(best.x-player.x,best.y-player.y)<600)return;
   const half=best.L.w*T/2, n=best.L.type==='ave'?3:2;
+  // 4+ estrelas: van da SWAT no meio; 6: blindado do exército
+  const mid=stars>=6?'blindado':stars>=4?'swat':'viatura', side=stars>=6?'exercito':'viatura';
   for(let k=0;k<n;k++){
     const off=-half+(k+0.5)*(2*half/n);
     const x=best.horiz?best.x:best.x+off, y=best.horiz?best.y+off:best.y;
-    const car=new Car('viatura',x,y,best.horiz?Math.PI/2:0,'#20242c');car.driver='ai';car.ai='block';S.cars.push(car);
+    const type=k===Math.floor(n/2)?mid:side;
+    const car=new Car(type,x,y,best.horiz?Math.PI/2:0);car.driver='ai';car.ai='block';S.cars.push(car);
   }
-  msg('Bloqueio policial à frente!',2.5);
+  msg(stars>=6?'Bloqueio do exército à frente!':'Bloqueio policial à frente!',2.5);
 }
 
 // ---- policiais a pé ----

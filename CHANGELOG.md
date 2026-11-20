@@ -5,6 +5,20 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.3.0 — 20/11/2026
+**Procurado que escala (agora até 6 estrelas)**
+- 1–3 estrelas: viaturas, bloqueios e policiais a pé (como antes)
+- 4 estrelas: **SWAT** — van blindada que aguenta muito mais batida e desce 3 agentes com submetralhadora e colete
+- 5 estrelas: **FBI** — sedãs pretos mais rápidos que quase tudo, que preferem te cortar pela frente
+- 6 estrelas: **Exército** — jipes, **blindado** (quase indestrutível) e soldados com colete; o bloqueio vira blindado no meio da rua
+- Policiais com colete (SWAT, FBI, exército) aguentam vários tiros
+- Aviso grande na tela quando entra cada força nova
+
+**Formas de esfriar**
+- **Se esconder**: parado (ou bem devagar) num beco ou num estacionamento, fora de vista, as estrelas caem 3x mais rápido
+- **Trocar de carro sem ninguém ver**: a polícia perde a placa e cai 1 estrela
+- **Pintura Express** continua apagando tudo, mas agora custa $500 por estrela
+
 ## 1.2.0 — 20/11/2026
 **Interiores em 3D**
 - Mercadinho, farmácia, padaria, loja do posto, lanchonete, hospital, delegacia, loja de armas, escola e sua casa agora são salas em 3D, montadas a partir da mesma planta em texto

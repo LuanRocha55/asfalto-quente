@@ -43,7 +43,9 @@ function castBullet(x,y,a,w,fromPlayer,shooterCar){
     let hit=false;
     for(const p of peds){
       if(Math.abs(p.x-ex)<7&&Math.abs(p.y-ey)<7){
-        killPed(p,fromPlayer); if(fromPlayer&&p.mission&&p.mission.onPedHit)p.mission.onPedHit(p);
+        // colete (SWAT, exército...): aguenta alguns tiros
+        if(p.hp>1&&w.dmg<60){p.hp--;spark(ex,ey,'#ffcf6a');}
+        else{killPed(p,fromPlayer); if(fromPlayer&&p.mission&&p.mission.onPedHit)p.mission.onPedHit(p);}
         hit=true; break;
       }
     }

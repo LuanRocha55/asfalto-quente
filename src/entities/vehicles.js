@@ -19,6 +19,11 @@ export const CT={
   suv:{name:'Utilitário',len:44,wid:22,maxSpd:320,accel:260,brake:500,grip:7.8,turn:2.4,hp:160,mass:1.6,val:800,colors:['#ffffff','#1c2833','#566573','#7b241c','#1d3557']},
   caminhao:{name:'Caminhão Baú',len:72,wid:24,maxSpd:210,accel:120,brake:320,grip:7,turn:1.8,hp:300,mass:3.5,val:900,colors:['#e0e0e0','#f5b041','#5dade2']},
   viatura:{name:'Viatura',len:40,wid:19,maxSpd:390,accel:330,brake:560,grip:8.6,turn:2.9,hp:150,mass:1.3,val:1200,colors:['#20242c']},
+  // forças que entram com o procurado alto
+  swat:{name:'Van da SWAT',len:54,wid:24,maxSpd:330,accel:250,brake:480,grip:8,turn:2.2,hp:340,mass:2.6,val:1800,colors:['#15171c']},
+  fbi:{name:'Sedã do FBI',len:44,wid:20,maxSpd:450,accel:380,brake:600,grip:9,turn:2.8,hp:170,mass:1.4,val:2000,colors:['#0b0b0d']},
+  exercito:{name:'Jipe do Exército',len:42,wid:22,maxSpd:360,accel:320,brake:520,grip:8.4,turn:2.7,hp:260,mass:2,val:1500,colors:['#4b5320'],sand:true},
+  blindado:{name:'Blindado',len:66,wid:30,maxSpd:250,accel:150,brake:380,grip:8,turn:1.7,hp:1000,mass:6,val:4000,colors:['#3d4419']},
 };
 export const TRAFFIC_MIX=['jegue','jegue','jegue','jegue','taxi','taxi','camin','camin','brisa','bugue','busao','moto'];
 

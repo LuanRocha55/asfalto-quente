@@ -9,8 +9,21 @@ import { CT, TRAFFIC_MIX, Car } from '../entities/vehicles.js';
 import { Ped } from '../entities/peds.js';
 import { S, player, cam } from '../core/state.js';
 
-export function heatStars(){return clamp(Math.floor((player.heat+50)/100),0,5);}
-export function addHeat(v){reportPlayer();const before=heatStars();player.heat=clamp(player.heat+v,0,560);if(heatStars()>before&&before===0)msg('A polícia tá de olho em tu!');}
+export function heatStars(){return clamp(Math.floor((player.heat+50)/100),0,6);}
+export function addHeat(v){reportPlayer();const before=heatStars();player.heat=clamp(player.heat+v,0,660);const now=heatStars();
+  if(now>before){if(before===0)msg('A polícia tá de olho em tu!');
+    else if(now===4)big('SWAT NA RUA','Van blindada e equipe armada','#ff5050',2.4);
+    else if(now===5)big('O FBI ENTROU NO CASO','Sedãs pretos mais rápidos que tu','#ff5050',2.4);
+    else if(now===6)big('CHAMARAM O EXÉRCITO','Jipes, blindado e soldados','#ff3030',2.6);}}
+// quem a polícia manda, conforme as estrelas
+export function policeUnit(stars){
+  const r=Math.random();
+  if(stars>=6)return r<0.4?'exercito':r<0.55?'blindado':r<0.8?'fbi':'swat';
+  if(stars>=5)return r<0.5?'fbi':r<0.75?'swat':'viatura';
+  if(stars>=4)return r<0.4?'swat':'viatura';
+  return 'viatura';
+}
+export const UNIT_COLOR={viatura:'#20242c',swat:'#15171c',fbi:'#0b0b0d',exercito:'#4b5320',blindado:'#3d4419'};
 export function msg(t,dur){S.messages.push({t,life:dur||3.5});if(S.messages.length>4)S.messages.shift();}
 export function big(t,sub,col,dur){S.bigMsg={t,sub,col:col||'#ffd84a',life:dur||3,max:dur||3};}
 export function onScreen(x,y,m){m=m||80;const hw=CW/2/cam.zoom+m, hh=CH/2/cam.zoom+m;return Math.abs(x-cam.x)<hw&&Math.abs(y-cam.y)<hh;}

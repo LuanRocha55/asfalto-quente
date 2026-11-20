@@ -81,7 +81,7 @@ export function drawHUD(g,tgt){
   // dinheiro e estrelas
   txt(fmtMoney(player.money),CW-20,42,30,'#7dff6b','right');
   const st=heatStars();
-  for(let i=0;i<5;i++){const x=CW-28-i*30,y=72;const on=i<st;const blink=on&&st>0&&Math.floor(S.gameTime*4)%2===0;
+  for(let i=0;i<6;i++){const x=CW-28-i*28,y=72;const on=i<st;const blink=on&&st>0&&Math.floor(S.gameTime*4)%2===0;
     drawStar(g,x,y,12,on?(blink?'#ffffff':'#ffd84a'):'rgba(255,255,255,0.15)');}
   txt('Recorde: '+fmtMoney(S.best),CW-20,108,12,'#cfcfcf','right');
   txt((darkness()>0.5?'☾ ':'☀ ')+clockText(),CW-20,132,16,'#ffe9a0','right');

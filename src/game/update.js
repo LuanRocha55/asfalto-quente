@@ -1,10 +1,11 @@
 // Loop de atualização do mundo, colisões e pedestres
 import { CH } from '../core/canvas.js';
 import { rand, randi, pick, clamp, lerp, hyp, fmtMoney } from '../core/utils.js';
-import { DX, DY, zones, phones, hospitalSpot, policeSpot, solidAt } from '../world/map.js';
+import { DX, DY, zones, phones, hospitalSpot, policeSpot, solidAt, tileAt, PARK } from '../world/map.js';
+import { roadAt } from '../world/districts.js';
 import { AU, sfxNoise, sfxTone } from '../audio/audio.js';
 import { pedWalkable } from '../entities/peds.js';
-import { heatStars, addHeat, msg, big, onScreen, spawnTraffic, spawnPed } from './world.js';
+import { heatStars, addHeat, msg, big, onScreen, spawnTraffic, spawnPed, policeUnit, UNIT_COLOR } from './world.js';
 import { recoverCar, updateTraffic } from '../ai/traffic.js';
 import { updatePolice, updatePoliceBrain, updateCopPed, intel, playerSeenRecently, los } from '../ai/police.js';
 import { fire, WEAPONS } from './weapons.js';
@@ -19,6 +20,15 @@ import { autosave } from './save.js';
 import { updateTutorial } from './tutorial.js';
 import { updateStadium } from './stadium.js';
 
+// tropas a pé: arma, alcance e ritmo de tiro
+const COP_UNITS={policia:{gun:'pistola',range:280,spread:0.12,cd:[1.2,2.2]},swat:{gun:'smg',range:320,spread:0.1,cd:[0.5,0.9]},
+  fbi:{gun:'pistola',range:340,spread:0.07,cd:[0.8,1.3]},exercito:{gun:'smg',range:380,spread:0.08,cd:[0.35,0.7]}};
+// esconderijo: parado (ou devagar) num beco ou num estacionamento
+function isHideout(){
+  const t=player.car||player;if(player.car&&player.car.speed>25)return false;
+  const tile=tileAt(t.x,t.y);if(tile===PARK)return true;
+  const r=roadAt(t.x,t.y);return !!(r&&r.L.type==='beco');
+}
 export function update(dt){
   S.gameTime+=dt;
   if(player.punchCd>0)player.punchCd-=dt; if(player.inv>0)player.inv-=dt; if(S.phoneCd>0)S.phoneCd-=dt; if(S.zoneCd>0)S.zoneCd-=dt;
@@ -71,8 +81,16 @@ export function update(dt){
   // procurado / polícia
   const stars=heatStars();
   updatePoliceBrain(dt);
-  // estrelas só caem quando ninguém te vê há um tempo
-  if(player.heat>0&&intel.seenT>4)player.heat=Math.max(0,player.heat-9*dt);
+  // estrelas só caem quando ninguém te vê há um tempo; escondido (parado num beco ou estacionamento) cai 3x mais rápido
+  const hidden=stars>0&&intel.seenT>4&&isHideout();
+  if(hidden&&!S.hideMsg){S.hideMsg=true;msg('Escondido... a polícia tá perdendo teu rastro',2.5);}if(!hidden)S.hideMsg=false;
+  if(player.heat>0&&intel.seenT>4)player.heat=Math.max(0,player.heat-9*(hidden?3:1)*dt);
+  // trocou de carro sem ninguém ver: a polícia procura o carro antigo
+  if(player.car!==S.prevCar){
+    if(player.car&&stars>0&&intel.seenT>2&&intel.lastCar&&player.car!==intel.lastCar&&!player.car.swapped){
+      player.car.swapped=true;player.heat=Math.max(0,player.heat-100);intel.lastCar=player.car;
+      msg('Trocou de carro sem ninguém ver: a polícia perdeu a placa (-1 estrela)',3);}
+    S.prevCar=player.car;}
   if(stars===0)for(const c of S.cars){if(c.ai==='police'){c.ai='traffic';recoverCar(c);}else if(c.ai==='block')c.remove=true;}
   // preso?
   if(player.state==='play'&&stars>0){
@@ -95,23 +113,25 @@ export function update(dt){
     const traffic=S.cars.filter(c=>c.ai==='traffic').length;
     for(let i=0;i<4&&traffic+i<60;i++)spawnTraffic(800,1700,false);
     const np=S.peds.length;for(let i=0;i<3&&np+i<60;i++)spawnPed(500,1100,false);
-    const want=[0,2,3,5,7,9][stars];
+    const want=[0,2,3,5,7,9,11][stars];
     const cops=S.cars.filter(c=>c.ai==='police').length;
     if(cops<want){
       // viatura nova aparece na frente de quem está fugindo de carro (e perto de onde te viram)
       const pc=player.car, fast=pc&&pc.speed>100&&playerSeenRecently();
       const pred=fast?(x,y)=>((x-pc.x)*pc.vx+(y-pc.y)*pc.vy)>0:null;
-      const c=spawnTraffic(650,1100,false,'viatura','police',pred)||spawnTraffic(650,1100,false,'viatura','police');if(c){c.color='#20242c';c.role=Math.random()<0.4?'intercept':'chase';}}
+      const u=policeUnit(stars);
+      const c=spawnTraffic(650,1100,false,u,'police',pred)||spawnTraffic(650,1100,false,u,'police');if(c){c.color=UNIT_COLOR[u];c.role=Math.random()<(u==='fbi'?0.6:0.4)?'intercept':'chase';}}
   }
 
   // zonas
   if(player.car&&player.state==='play'&&S.zoneCd<=0){
     for(const z of zones){if(!inZone(player.car,z))continue;
       if(z.type==='pintura'){
-        if(player.heat>0){if(player.money>=500){player.money-=500;player.heat=0;player.car.color=pick(['#e91e63','#00bcd4','#cddc39','#ff9800','#9c27b0','#ffffff']);
+        const cost=500*Math.max(1,stars);
+        if(player.heat>0){if(player.money>=cost){player.money-=cost;player.heat=0;player.car.color=pick(['#e91e63','#00bcd4','#cddc39','#ff9800','#9c27b0','#ffffff']);
             for(const c of S.cars)if(c.ai==='police'){c.ai='traffic';recoverCar(c);}
             big('PINTURA NOVA','A polícia perdeu teu rastro','#3cff9a',2.2);sfxTone(700,0.2,0.1);}
-          else msg('Pintura custa $500. Tu tá liso!');S.zoneCd=3;}
+          else msg('Com '+stars+' estrela'+(stars>1?'s':'')+' a pintura custa $'+cost+'. Tu tá liso!');S.zoneCd=3;}
       } else if(z.type==='posto'){
         const c=player.car;
         if(c.health<c.t.hp-0.5||c.burnT>0){
@@ -197,7 +217,8 @@ export function updatePeds(dt){
     if(p.cop&&p.state==='cop'){ // policial a pé: corre atrás e atira
       const l=updateCopPed(p,dt);
       if(p.state==='cop'&&heatStars()>=2){p.shootCd-=dt;
-        if(p.shootCd<=0&&l<280&&player.state==='play'&&los(p.x,p.y,player.x,player.y)){fire(p.x,p.y,p.a+rand(-0.12,0.12),WEAPONS.pistola,false,null);p.shootCd=rand(1.2,2.2);}}
+        const U=COP_UNITS[p.unit]||COP_UNITS.policia;
+        if(p.shootCd<=0&&l<U.range&&player.state==='play'&&los(p.x,p.y,player.x,player.y)){fire(p.x,p.y,p.a+rand(-U.spread,U.spread),WEAPONS[U.gun],false,null);p.shootCd=rand(U.cd[0],U.cd[1]);}}
       continue;}
     // fugir de carro rápido perto
     if(p.state==='walk'){const pc=player.car;if(pc&&pc.speed>150&&hyp(pc.x-p.x,pc.y-p.y)<90&&Math.random()<0.1){p.state='flee';p.flee={x:pc.x,y:pc.y};p.t=2.5;}}
