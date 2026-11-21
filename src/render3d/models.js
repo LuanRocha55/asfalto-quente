@@ -66,7 +66,7 @@ export async function loadCarModels() {
       const map = body && body.material && body.material.map;
       if (!palette && map && map.image) {
         palette = pixelsOf(map.image);
-        baseMat = new THREE.MeshLambertMaterial({ map });
+        baseMat = new THREE.MeshLambertMaterial({ map }); baseMat.userData.pbr = { r: 0.4, m: 0.2 }; // pneus, vidros, viatura
       }
       if (!body || !palette) continue;
       const box = new THREE.Box3().setFromObject(scene);
@@ -94,7 +94,8 @@ function paintMat(name, hex) {
   const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; c.getContext('2d').putImageData(img, 0, 0);
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
   tex.magFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.minFilter = THREE.LinearFilter;
-  const m = new THREE.MeshLambertMaterial({ map: tex }); paintCache.set(key, m); return m;
+  const m = new THREE.MeshLambertMaterial({ map: tex }); m.userData.pbr = { car: true }; // lataria com verniz no modo realista
+  paintCache.set(key, m); return m;
 }
 
 // monta um carro com modelo: devolve null se esse tipo não tem modelo (aí usa as caixas)
