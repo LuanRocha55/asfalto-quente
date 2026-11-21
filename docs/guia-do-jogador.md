@@ -60,7 +60,7 @@ Depois do tutorial aparecem dicas só na primeira vez que algo acontece (primeir
 |---|---|
 | M ou Tab | mapa em tela cheia (clique marca destino, clique direito apaga) |
 | P ou Esc | pausa com menu (Esc ou P volta) |
-| G | gráficos: 3D alta → 3D média → 3D leve → clássico (2D) |
+| G | gráficos: 3D realista → 3D alta → 3D média → 3D leve → clássico (2D) |
 | V | liga/desliga o Filtro 97 (só no 3D) |
 | F3 | contador de FPS → painel de desempenho completo → desligado |
 | N | liga/desliga o som |
@@ -347,6 +347,7 @@ Você volta com vida cheia, sem estrelas e com 2 segundos de invencibilidade.
 
 | Modo | O que muda |
 |---|---|
+| 3D realista | como a alta, mais reflexos (carros, vidros, mar), o céu iluminando a cidade, sombras suaves e brilho nas luzes à noite. Precisa de placa de vídeo melhor |
 | 3D alta | resolução cheia (até 2x em telas de alta densidade), sombras grandes todo quadro |
 | 3D média | resolução normal, sombras menores atualizadas quadro sim, quadro não |
 | 3D leve | resolução reduzida, sem sombras |

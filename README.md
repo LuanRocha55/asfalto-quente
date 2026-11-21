@@ -37,7 +37,7 @@ No VS Code, a extensão **Live Server** também resolve.
 | T | pular o tutorial |
 | N | liga/desliga o som |
 | P / Esc | pausa |
-| G | troca os gráficos: 3D alta → 3D média → 3D leve → clássico |
+| G | troca os gráficos: 3D realista → 3D alta → 3D média → 3D leve → clássico |
 | V | liga/desliga o Filtro 97 (visual de placa de vídeo de 1997, só no 3D) |
 | F3 | desempenho: contador de FPS e qualidade → painel completo (FPS, placa de vídeo usada, onde o tempo vai) → desligado |
 | Mouse | mira |
@@ -51,7 +51,7 @@ A árvore de arquivos, o loop principal, o estado compartilhado (`S` em `src/cor
 
 ## Créditos
 
-- Modelos 3D dos carros: [Car Kit](https://kenney.nl/assets/car-kit) do **Kenney** (www.kenney.nl), licença CC0.
+- Modelos 3D: [Car Kit](https://kenney.nl/assets/car-kit), [City Kit Roads](https://kenney.nl/assets/city-kit-roads), [City Kit Suburban](https://kenney.nl/assets/city-kit-suburban), [Nature Kit](https://kenney.nl/assets/nature-kit) e [Mini Characters](https://kenney.nl/assets/mini-characters) do **Kenney** (www.kenney.nl), licença CC0.
 - [Three.js](https://threejs.org) (licença MIT).
 
 ## Próximas versões

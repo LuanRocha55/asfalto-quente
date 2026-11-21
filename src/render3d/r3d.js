@@ -19,6 +19,8 @@ import { S, player, cam, keys, view } from '../core/state.js';
 import { checkpoints } from '../game/blitz.js';
 import { pf } from '../render/style97.js';
 import { loadCarModels, carModel, repaint } from './models.js';
+import { loadMapProps, coneMesh, loadCharacters, charsReady, makeCharacter } from './props.js';
+import { swapScene, updateEnv, renderReal } from './realista.js';
 
 export const R={ok:false,on:false,retro:false};
 // Filtro 97 agora é opcional (desligado por padrão): chave nova pra quem já tinha ligado na 1.5.0
@@ -59,6 +61,10 @@ export function init3D(){
       fieldGlow:new THREE.MeshBasicMaterial({map:radialTex('255,250,225'),transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}),
       detail:new THREE.MeshLambertMaterial({vertexColors:true}),
     };
+    // rugosidade/metal de cada material no modo realista (realista.js); o resto fica fosco
+    const tag=(m,p)=>{m.userData.pbr=p;};
+    tag(mats.glass,{r:0.08,m:0.6});tag(mats.pole,{r:0.45,m:0.7});tag(mats.lampHead,{r:0.4,m:0.3});
+    tag(mats.trunk,{r:0.95});tag(mats.dark,{r:0.6});tag(mats.detail,{r:0.5,m:0.2});tag(mats.city,{r:0.9});
     city=buildCity(scene,mats);
     for(const s of city.special3d){scene.add(s.mesh);scene.add(s.crowd);scene.add(s.lightBoxes);scene.add(s.fieldLight);}
     // mar em volta
@@ -67,14 +73,17 @@ export function init3D(){
     // LOD do chão: o mapa todo em baixa resolução, por baixo dos pedaços detalhados (nunca aparece buraco)
     const lt=new THREE.CanvasTexture(makeLowres(true));lt.colorSpace=THREE.SRGBColorSpace;lt.anisotropy=renderer.capabilities.getMaxAnisotropy();
     const lg=new THREE.PlaneGeometry(W,H);lg.rotateX(-Math.PI/2);
-    const low=new THREE.Mesh(lg,new THREE.MeshLambertMaterial({map:lt,alphaTest:0.5}));low.position.set(W/2,-0.03,H/2);low.receiveShadow=true;scene.add(low);
+    const low=new THREE.Mesh(lg,new THREE.MeshLambertMaterial({map:lt,alphaTest:0.5}));low.material.userData.pbr={r:0.95};low.position.set(W/2,-0.03,H/2);low.receiveShadow=true;scene.add(low);
     // camada do chão com detalhes dinâmicos (marcas de pneu, zonas, portas, alvo...)
     overlay=document.createElement('canvas');overlay.width=1024;overlay.height=1024;
     overlayTex=new THREE.CanvasTexture(overlay);overlayTex.colorSpace=THREE.SRGBColorSpace;
     const og=new THREE.PlaneGeometry(64,64);og.rotateX(-Math.PI/2);
-    overlayMesh=new THREE.Mesh(og,new THREE.MeshLambertMaterial({map:overlayTex,transparent:true,depthWrite:false}));overlayMesh.renderOrder=1;overlayMesh.receiveShadow=true;scene.add(overlayMesh);
+    overlayMesh=new THREE.Mesh(og,new THREE.MeshLambertMaterial({map:overlayTex,transparent:true,depthWrite:false}));overlayMesh.material.userData.pbr={r:0.95};overlayMesh.renderOrder=1;overlayMesh.receiveShadow=true;scene.add(overlayMesh);
     initPeople();initParticles();
     loadCarModels().then(ok=>{if(ok)rebuildCars();});
+    // árvores, postes, casas e cones (props.js): troca as peças feitas por código quando chegam
+    loadMapProps(scene).then(r=>{mapProps=r;applyProps();for(const g of cpMeshes.values())scene.remove(g);cpMeshes.clear();}).catch(e=>console.warn('Modelos do mapa:',e));
+    loadCharacters().catch(e=>console.warn('Personagens:',e));
     R.ok=true;DBG.renderer=renderer;DBG.scene=scene;
     applyQuality(quality);
     view3d();warmUp();
@@ -89,7 +98,7 @@ function radialTex(rgb){const c=document.createElement('canvas');c.width=c.heigh
 function makeSea(){
   const g=new THREE.PlaneGeometry(W*3,H*3,200,200);g.rotateX(-Math.PI/2);
   const m=new THREE.MeshPhongMaterial({color:'#2683ad',specular:'#404040',shininess:70,flatShading:true});
-  const mesh=new THREE.Mesh(g,m);mesh.position.set(W/2,-0.16,H/2);
+  m.userData.pbr={r:0.06,m:0};const mesh=new THREE.Mesh(g,m);mesh.position.set(W/2,-0.16,H/2);mesh.userData.mat=m; // mat: o Phong original (o realista troca o da malha)
   const shore=new THREE.DataTexture(shoreField(),W,H);shore.magFilter=THREE.LinearFilter;shore.minFilter=THREE.LinearFilter;shore.needsUpdate=true;
   const u={uTime:{value:0},uShore:{value:shore},uSize:{value:new THREE.Vector2(W,H)},uShallow:{value:new THREE.Color('#3fc1c9')},uGlow:{value:0.3}};
   mesh.userData.u=u;
@@ -152,12 +161,12 @@ function updateNeon(dk){
     let on=dk>0.35?1:0;
     if(on&&(n.k==='farmacia'||n.k==='lanchonete')){const t=S.gameTime*(n.k==='farmacia'?1.6:0.7);on=(Math.floor(t)%5===4&&Math.floor(t*8)%2)?0.35:1;}
     const lvl=on?1:0.55+0.25*(1-dk);n.mat.color.setScalar(on?1.25*on:lvl);
-    n.glow.opacity=on&&quality===2?0.32*on*clamp((dk-0.35)*3,0,1):0;
+    n.glow.opacity=on&&quality>=2?0.32*on*clamp((dk-0.35)*3,0,1):0;
   }
 }
 // ---------- Filtro 97: desenha a cidade numa resolução baixa e estica sem borrar, com pontilhado e menos cores ----------
 let rt=null,post=null;
-const RETRO_LINES=[240,300,360];
+const RETRO_LINES=[240,300,360,360];
 function retroPass(){
   const h=RETRO_LINES[quality],w=Math.round(h*CW/Math.max(1,CH));
   if(!rt){
@@ -181,12 +190,12 @@ function retroPass(){
   renderer.render(post.scene,post.cam);
 }
 export function toggleRetro(){R.retro=!R.retro;try{localStorage.setItem('aq_retro2',R.retro?'1':'0');}catch(e){}}
-// G passa por: 3D alta → 3D média → 3D leve → clássico (fica salvo no navegador). Devolve o texto pra mostrar.
+// G passa por: 3D realista → 3D alta → 3D média → 3D leve → clássico (fica salvo no navegador). Devolve o texto pra mostrar.
 export function gfxLabel(){return R.on?'3D '+QNAMES[quality].toUpperCase():'CLÁSSICO 2D';}
 export function cycleGfx(){
   if(!R.ok)return 'Este navegador não tem suporte a 3D (WebGL).';
   let txt,val;
-  if(!R.on){set3D(true);applyQuality(2,true);val='3d2';txt='Gráficos: 3D · qualidade alta';}
+  if(!R.on){set3D(true);applyQuality(3,true);val='3d3';txt='Gráficos: 3D · realista';}
   else if(quality>0){const q=quality-1;applyQuality(q,true);val='3d'+q;txt='Gráficos: 3D · qualidade '+QNAMES[q];}
   else{set3D(false);val='2d';txt='Gráficos: clássico (2D)';}
   try{localStorage.setItem('aq_gfx',val);}catch(err){}
@@ -222,7 +231,7 @@ function updateGround(x0,x1,z0,z1,ahead){
   for(const m of missing){if(budget--<=0)break;
     const tex=new THREE.CanvasTexture(getChunk3D(m.x,m.z));tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
     const geo=new THREE.PlaneGeometry(CHUNK,CHUNK);geo.rotateX(-Math.PI/2);
-    const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:tex,alphaTest:0.5}));mesh.position.set(m.x*CHUNK+CHUNK/2,0,m.z*CHUNK+CHUNK/2);mesh.receiveShadow=true;scene.add(mesh);
+    const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:tex,alphaTest:0.5}));mesh.material.userData.pbr={r:0.95};mesh.position.set(m.x*CHUNK+CHUNK/2,0,m.z*CHUNK+CHUNK/2);mesh.receiveShadow=true;scene.add(mesh);
     ground[m.k]={m:mesh,t:0};}
   for(const k of Object.keys(ground)){if(want.has(k)){ground[k].t=0;continue;}ground[k].t++;
     if(ground[k].t>300){const g=ground[k];scene.remove(g.m);g.m.geometry.dispose();g.m.material.map.dispose();g.m.material.dispose();delete ground[k];}}
@@ -311,11 +320,17 @@ const beamMat=new THREE.MeshBasicMaterial({map:(()=>{const c=document.createElem
 const tailG=(()=>{const g=new THREE.PlaneGeometry(1,1);g.rotateX(-Math.PI/2);return g;})();
 const tailMat=new THREE.MeshBasicMaterial({map:radialTex('255,40,30'),transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
 const tailMatBrake=new THREE.MeshBasicMaterial({map:radialTex('255,40,30'),transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
-const brakeOn=new THREE.MeshBasicMaterial({color:'#ff2a2a'}), brakeOff=new THREE.MeshLambertMaterial({color:'#5a0a0a'}), headMat=new THREE.MeshBasicMaterial({color:'#fffbe6'});
+const brakeOn=new THREE.MeshBasicMaterial({color:'#ff2a2a'}), brakeOff=new THREE.MeshLambertMaterial({color:'#5a0a0a',userData:{pbr:{r:0.3}}}), headMat=new THREE.MeshBasicMaterial({color:'#fffbe6'});
 const sirR=[new THREE.MeshBasicMaterial({color:'#ff2020'}),new THREE.MeshLambertMaterial({color:'#5a1010'})], sirB=[new THREE.MeshBasicMaterial({color:'#3060ff'}),new THREE.MeshLambertMaterial({color:'#101a50'})];
-const wreckMat=new THREE.MeshLambertMaterial({color:'#2b2724'});
-// modelos 3D só nas qualidades média e alta (na leve, os carros de caixa pesam menos)
+const wreckMat=new THREE.MeshLambertMaterial({color:'#2b2724',userData:{pbr:{r:1}}});
+// modelos 3D só nas qualidades média e alta (na leve, as peças feitas por código pesam menos)
 const useModels=()=>quality>0;
+let mapProps=null;
+function applyProps(){
+  if(!mapProps)return;const on=useModels();
+  for(const m of mapProps.meshes)m.visible=on;
+  for(const k of ['trees','lamps','houses'])if(mapProps.done[k])for(const m of city.swap[k])m.visible=!on;
+}
 // refaz todos os carros (quando os modelos terminam de carregar ou a qualidade muda)
 function rebuildCars(){for(const g of carMeshes.values())scene.remove(g);carMeshes.clear();}
 function syncCars(night){
@@ -359,7 +374,10 @@ function makeCheckpoint(cp){
   const g=new THREE.Group(), hw=cp.L.w*T/2*U;
   g.position.set(cp.x*U,0,cp.y*U);g.rotation.y=-Math.atan2(cp.dy,cp.dx);
   // cones afunilando (do lado de fora)
-  for(let k=0;k<5;k++){const s=(-110+k*22)*U,l=hw-(8+k*6)*U;for(const sg of[-1,1]){const c=new THREE.Mesh(coneG,mat('#ff6d00'));c.position.set(s,0,sg*l);c.castShadow=true;g.add(c);const b=new THREE.Mesh(coneBandG,mat('#f5f5f5'));b.position.copy(c.position);g.add(b);}}
+  for(let k=0;k<5;k++){const s=(-110+k*22)*U,l=hw-(8+k*6)*U;for(const sg of[-1,1]){
+    const cm=useModels()?coneMesh():null; // cone de verdade (Kenney) quando carregou
+    if(cm){cm.position.set(s,0,sg*l);g.add(cm);continue;}
+    const c=new THREE.Mesh(coneG,mat('#ff6d00'));c.position.set(s,0,sg*l);c.castShadow=true;g.add(c);const b=new THREE.Mesh(coneBandG,mat('#f5f5f5'));b.position.copy(c.position);g.add(b);}}
   // cancela: pilar + braço listrado que gira pra cima quando quebrada
   const post=new THREE.Mesh(boxG,mat('#424242'));post.scale.set(0.25,0.9,0.25);post.position.set(0,0.45,-hw-0.35);post.castShadow=true;g.add(post);
   const arm=new THREE.Group();arm.position.set(0,0.85,-hw-0.35);g.add(arm);
@@ -406,17 +424,39 @@ function putPerson(n,x,y,a,anim,moving,down,scale,shirt,skin,hair){
   PI_.body.setMatrixAt(n,_M.multiplyMatrices(_B,L_BODY));PI_.head.setMatrixAt(n,_M.multiplyMatrices(_B,L_HEAD));PI_.hair.setMatrixAt(n,_M.multiplyMatrices(_B,L_HAIR));
   PI_.body.setColorAt(n,hexCol(shirt||'#888'));PI_.head.setColorAt(n,hexCol(skin||'#c68642'));PI_.hair.setColorAt(n,hexCol(hair||'#222'));
 }
+// Bonecos animados (Mini Characters): o jogador e os PED_MODELS pedestres mais perto da câmera.
+// Os outros continuam com o boneco simples instanciado (bem mais leve).
+const PED_MODELS=20,HUMAN_H=1.11; // altura do boneco simples na escala 1
+let playerChar=null;const pedChars=new Map(),charPool=[];let charSeq=0;
+function getChar(){const c=charPool.pop()||makeCharacter(charSeq++,HUMAN_H*PED_SCALE);scene.add(c.root);return c;}
+function releaseChar(p){const c=pedChars.get(p);if(!c)return;scene.remove(c.root);charPool.push(c);pedChars.delete(p);}
+function placeChar(c,x,y,a,anim,dt){c.root.position.set(x*U,0,y*U);c.root.rotation.y=Math.PI/2-a;c.play(anim);c.mixer.update(dt);}
+let lastPeopleT=performance.now();
 function syncPeople(){
-  let n=0;
+  let n=0;const now=performance.now(),dt=Math.min(0.1,(now-lastPeopleT)/1000);lastPeopleT=now;
+  const animated=useModels()&&charsReady();
   const vis=!player.car&&player.state==='play'&&!(player.inv>0&&Math.floor(S.gameTime*10)%2);
-  if(vis){const mv=keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'];
-    putPerson(n++,player.x,player.y,player.a,player.anim/10,mv,false,PLAYER_SCALE,'#ff7a1a','#c68642','#111');}
+  const mv=keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'];
+  if(animated){
+    if(!playerChar){playerChar=makeCharacter(0,HUMAN_H*PLAYER_SCALE);scene.add(playerChar.root);}
+    const dead=player.state==='wasted';playerChar.root.visible=(vis||dead)&&!player.car;
+    if(playerChar.root.visible){
+      const anim=dead?'die':player.punchCd>0.15&&player.weapon==='punho'?'attack-melee-right':mv?(keys['ShiftLeft']||keys['ShiftRight']?'sprint':'walk'):player.weapon!=='punho'?'holding-right':'idle';
+      placeChar(playerChar,player.x,player.y,player.a,anim,dt);}
+  }else if(vis)putPerson(n++,player.x,player.y,player.a,player.anim/10,mv,false,PLAYER_SCALE,'#ff7a1a','#c68642','#111');
   // só quem está perto da câmera (o resto não aparece mesmo)
-  const r2=(46*T)*(46*T);
+  const r2=(46*T)*(46*T),near=[];
   for(const p of S.peds){
-    if(n>=MAXP)break;
     if(p.state==='dead'||p.state==='gone'||p.state==='dead2')continue;
-    const dx=p.x-cam.x,dy=p.y-cam.y;if(dx*dx+dy*dy>r2)continue;
+    const dx=p.x-cam.x,dy=p.y-cam.y,d2=dx*dx+dy*dy;if(d2>r2)continue;near.push([d2,p]);}
+  const withModel=new Set();
+  if(animated){near.sort((a,b)=>a[0]-b[0]);for(let k=0;k<Math.min(PED_MODELS,near.length);k++)withModel.add(near[k][1]);}
+  for(const p of [...pedChars.keys()])if(!withModel.has(p))releaseChar(p);
+  for(const [,p] of near){
+    if(withModel.has(p)){let c=pedChars.get(p);if(!c){c=getChar();pedChars.set(p,c);}
+      const run=p.state==='flee'||p.state==='robber'||p.state==='cop'||p.fan&&matchOn();
+      placeChar(c,p.x,p.y,p.a,p.state==='down'?'die':p.state==='wait'?'idle':run?'sprint':'walk',dt);continue;}
+    if(n>=MAXP)continue;
     putPerson(n++,p.x,p.y,p.a,p.anim,p.state!=='wait',p.state==='down',PED_SCALE,p.shirt,p.skin,p.hair);
   }
   for(const m of Object.values(PI_)){m.count=n;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;}
@@ -515,9 +555,9 @@ function updateSky(cx,cz){
   hemi.intensity=k.hi;hemi.color.copy(k.hs);hemi.groundColor.copy(k.hg);
   mats.lit.opacity=clamp((dk-0.25)*1.6,0,1);
   // mar: cor e brilho do sol/lua mudam com a hora; ondas andam
-  water.material.color.copy(k.sea);
+  const wm=water.userData.mat;wm.color.copy(k.sea);
   if(water.userData.u){water.userData.u.uShallow.value.copy(k.sh);water.userData.u.uGlow.value=0.32-0.2*dk;}
-  water.material.specular.setScalar(0.22*(1-dk)+0.1);
+  wm.specular.setScalar(0.22*(1-dk)+0.1);
   if(water.userData.u)water.userData.u.uTime.value=S.gameTime;
   updateNeon(dk);
   mats.lightPool.opacity=(R.retro?0.22:0.34)*dk;
@@ -558,16 +598,21 @@ export function gfxInfo(){
   return {gpu:gpuName,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,w:sz.x,h:sz.y,dpr:renderer.getPixelRatio(),shadows:renderer.shadowMap.enabled,quality,chunks:Object.keys(ground).length};
 }
 // ---------- quadro ----------
-// Qualidade: 2 = alta, 1 = média, 0 = leve.
-export const QNAMES=['leve','média','alta'];
+// Qualidade: 3 = realista (realista.js), 2 = alta, 1 = média, 0 = leve.
+export const QNAMES=['leve','média','alta','realista'];
 let frameN=0,camZ=1,lastT=performance.now(),slow=0,quality=2,sizeKey='',autoOK=true;
 export function getQuality(){return quality;}
 export function applyQuality(q,manual){
-  if((q>0)!==(quality>0))rebuildCars();
-  quality=q;if(manual)autoOK=false;if(!renderer)return;
+  const flip=(q>0)!==(quality>0);
+  quality=q;
+  if(flip){rebuildCars();applyProps();for(const p of pedChars.keys())releaseChar(p);if(playerChar){scene.remove(playerChar.root);playerChar=null;}}if(manual)autoOK=false;if(!renderer)return;
   const dpr=window.devicePixelRatio||1;
-  renderer.setPixelRatio(q===2?Math.min(2,dpr):q===1?Math.min(1,dpr):Math.min(0.75,dpr));
-  const sh=q>0, ms=q===2?2048:1024;
+  renderer.setPixelRatio(q>=2?Math.min(2,dpr):q===1?Math.min(1,dpr):Math.min(0.75,dpr));
+  const sh=q>0, ms=q>=2?2048:1024;
+  // realista: sombras de borda suave; saindo dele, os materiais Lambert voltam
+  const st=q===3?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;
+  if(renderer.shadowMap.type!==st){renderer.shadowMap.type=st;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true);});}
+  if(q!==3){swapScene(scene,false);scene.environment=null;}
   if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
   if(renderer.shadowMap.enabled!==sh){renderer.shadowMap.enabled=sh;sun.castShadow=sh;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true);});[brakeOn,brakeOff,headMat,wreckMat,beamMat,...sirR,...sirB].forEach(m=>m.needsUpdate=true);if(R.ok)warmUp();}
   sizeKey='';
@@ -588,7 +633,7 @@ export function render3D(signalState){
   const sk=CW+'x'+CH+'@'+renderer.getPixelRatio();
   if(sk!==sizeKey){sizeKey=sk;renderer.setSize(CW,CH,false);camera.aspect=CW/CH;camera.updateProjectionMatrix();}
   // sombras: todo quadro na alta, quadro sim quadro não na média
-  if(renderer.shadowMap.enabled&&(quality===2||frameN%2===0))renderer.shadowMap.needsUpdate=true;
+  if(renderer.shadowMap.enabled&&(quality>=2||frameN%2===0))renderer.shadowMap.needsUpdate=true;
   // câmera inclinada acima do jogador (afasta com a velocidade)
   const zn=cam.zoom/clamp(CH/820,0.7,1.6);camZ=lerp(camZ,zn,0.1);
   const dist=24/clamp(camZ,0.5,1.3);
@@ -617,7 +662,12 @@ export function render3D(signalState){
     overlayTex.needsUpdate=true;
   }
   syncCars(night);syncCheckpoints();syncPeople();syncParticles();syncTracers();
-  if(R.retro)retroPass();else renderer.render(scene,camera);
+  if(quality===3){ // realista: materiais com reflexo e o céu como luz ambiente (a luz de cima/baixo fica só de apoio)
+    // o céu ilumina ~π vezes mais que a HemisphereLight na mesma cor: 0,32 deixa a sombra do sol com o contraste certo.
+    // De noite o céu é quase preto: sobe o ambiente (luar) e as poças de luz dos postes ficam mais discretas (o bloom já realça)
+    swapScene(scene,true);updateEnv(renderer,scene,skyNow,sun);
+    hemi.intensity*=lerp(0.15,0.55,night);scene.environmentIntensity=lerp(0.32,1.2,night);mats.lightPool.opacity*=0.4;}
+  if(R.retro)retroPass();else if(quality===3)renderReal(renderer,scene,camera,night);else renderer.render(scene,camera);
   // HUD e avisos por cima, em 2D
   const g=ctx;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,CW*DPR,CH*DPR);g.setTransform(DPR,0,0,DPR,0,0);
   drawPrompts(g);

@@ -5,6 +5,14 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.9.0 — 21/11/2026
+**Mais modelos 3D e gráficos realistas**
+- **Árvores, coqueiros, postes e casas com modelos 3D** do Kenney (Nature Kit, City Kit Roads e City Kit Suburban, licença CC0). As casas do Jardim e as mansões do Alto da Maresia ficam de frente pra rua, e os postes viram o braço pra rua mais perto
+- **Pessoas animadas**: o jogador e os 20 pedestres mais perto da câmera usam os Mini Characters do Kenney, que andam, correm, socam, seguram arma e caem. Os mais longe continuam com o boneco simples (mais leve)
+- Cones de verdade na blitz
+- **Gráficos "3D realista"** (novo nível no menu Gráficos e na tecla G): lataria com verniz, vidros e mar refletindo o céu, o céu de cada hora iluminando a cidade, sombras de borda suave, tone mapping de cinema e brilho (bloom) em néon, faróis e janelas à noite. Precisa de uma placa de vídeo melhor; se o jogo ficar lento, volta sozinho pro 3D alta
+- Os modelos aparecem nas qualidades média, alta e realista; na leve a cidade continua com as peças feitas por código
+
 ## 1.8.0 — 20/11/2026
 **Cidade maior e gente do tamanho certo**
 - **A cidade cresceu**: de 262 pra 376 tiles de lado (uns 2× de área). Os quarteirões têm o mesmo tamanho, mas cada bairro ganhou mais ruas. Centro e Jardim, que já vêm abertos, ficaram com mais que o dobro de espaço pras missões

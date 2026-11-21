@@ -130,13 +130,17 @@ function roofTexture(b){
   const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=4;return tx;
 }
 
+// casas que podem virar modelo 3D (casas do Jardim com lote quase quadrado e mansões):
+// a geometria delas fica separada pra poder esconder quando os modelos chegarem
+export const houseSwap=b=>b.kind==='b'&&(b.style==='mansao'||(b.style==='casa'&&Math.max(b.x1-b.x0,b.y1-b.y0)/Math.min(b.x1-b.x0,b.y1-b.y0)<=2.2));
 export function buildCity(scene,mats){
   const SG=new SGeo(), SGw=new SGeo(), SGl=new SGeo();
+  const HG=new SGeo(), HGw=new SGeo(), HGl=new SGeo(); // casas trocáveis
   const special3d=[];
   for(const b of buildings){
     if(b.kind==='estadio'){special3d.push(buildStadium(b,mats));continue;}
     const x0=b.x0*U,z0=b.y0*U,x1=b.x1*U,z1=b.y1*U,H=bh(b);
-    const cx=(x0+x1)/2,cz=(z0+z1)/2, G=SG.at(cx,cz), Gw=SGw.at(cx,cz), Gl=SGl.at(cx,cz);
+    const sw=houseSwap(b),cx=(x0+x1)/2,cz=(z0+z1)/2, G=(sw?HG:SG).at(cx,cz), Gw=(sw?HGw:SGw).at(cx,cz), Gl=(sw?HGl:SGl).at(cx,cz);
     if(b.kind==='canopy'){ // cobertura do posto: pilares + laje fina
       for(const [px,pz] of [[x0+0.3,z0+0.3],[x1-0.5,z0+0.3],[x0+0.3,z1-0.5],[x1-0.5,z1-0.5]])G.box(px,pz,px+0.2,pz+0.2,0,H,'#9e9e9e','#9e9e9e');
       G.box(x0,z0,x1,z1,H,H+0.25,'#f2f2ee','#c9342a',false);continue;}
@@ -183,6 +187,8 @@ export function buildCity(scene,mats){
   const city=SG.meshes(mats.city);for(const m of city){m.castShadow=true;m.receiveShadow=true;scene.add(m);}
   const win=SGw.meshes(mats.glass);for(const m of win)scene.add(m);
   const lit=SGl.meshes(mats.lit);for(const m of lit){m.renderOrder=1;scene.add(m);}
+  const houses=[...HG.meshes(mats.city),...HGw.meshes(mats.glass),...HGl.meshes(mats.lit)];
+  for(const m of houses){if(m.material===mats.city){m.castShadow=true;m.receiveShadow=true;}if(m.material===mats.lit)m.renderOrder=1;scene.add(m);}
 
   // árvores e coqueiros (instanciadas)
   const normal=trees.filter(t=>!t.palm), palms=trees.filter(t=>t.palm);
@@ -207,6 +213,7 @@ export function buildCity(scene,mats){
     for(let k=0;k<3;k++){const a=t.r+k*2.1;M.compose(P.set(t.x*U+0.1+Math.cos(a)*0.13,3.0,t.y*U+Math.sin(a)*0.13),Q.identity(),S3.set(1,1,1));nuts.setMatrixAt(i*3+k,M);}});
   for(const m of [trunks,crowns,crowns2,fronds])m.add(scene,true);
   nuts.add(scene);
+  const treeMeshes=[trunks,crowns,crowns2,fronds,nuts].flatMap(m=>m.list);
 
   // postes
   const poleG=new THREE.CylinderGeometry(0.05,0.07,2.6,5);poleG.translate(0,1.3,0);
@@ -251,7 +258,9 @@ export function buildCity(scene,mats){
     bulbs.forEach((bm,c)=>{M.compose(P.set(x+h.face[0]*0.16,3.38-c*0.28,z+h.face[1]*0.16),Q.identity(),S3.set(1,1,1));bm.setMatrixAt(k,M);bm.setColorAt(k,C('#222'));});});
   for(const m of [tlPole,tlBox,...bulbs])m.add(scene);
 
-  return {city,win,lit,pools,heads,heads3,bulbs,special3d};
+  return {city,win,lit,pools,heads,heads3,bulbs,special3d,
+    // o que os modelos 3D (props.js) substituem quando carregam
+    swap:{houses,trees:treeMeshes,lamps:[...poles.list,...heads.list]}};
 }
 
 // ---------- estádio ----------
