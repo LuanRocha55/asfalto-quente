@@ -5,6 +5,13 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.10.1 — 21/11/2026
+**3D realista mais leve**
+- O reflexo do céu era refeito quase todo quadro (a cor do céu muda um pouquinho conforme a hora anda) e recompilava shaders. Agora é refeito no máximo a cada 1,5 s, sem alocar nada de novo. Os quadros mais lentos caíram de ~28 ms pra ~21 ms, igual ao 3D alta
+- Corrigido um vazamento de memória no realista: os pedaços de chão que ficavam longe deixavam a cópia do material pra trás
+- Em telas de alta densidade o realista desenha até 1,5x (antes 2x)
+- Novo [documento de design](docs/design.md) com a direção das próximas versões (história em capítulos e investigação)
+
 ## 1.10.0 — 21/11/2026
 **Texturas de verdade e mapa mais fácil de ler**
 - **3D realista com texturas fotográficas** (Poly Haven, licença CC0): asfalto com grão e rachaduras, paralelepípedo com pedras em relevo, areia, grama, terra, placas de concreto nas calçadas e reboco nas paredes. As faixas, as cores de cada bairro e as marcas de pneu continuam as mesmas; a foto entra por cima como grão e relevo, que pega a luz do sol

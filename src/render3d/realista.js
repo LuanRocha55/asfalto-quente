@@ -32,6 +32,11 @@ function toPBR(src) {
   if (p.tex) { m.onBeforeCompile = TEX_SHADER[p.tex]; m.customProgramCacheKey = () => 'tex-' + p.tex; }
   else if (Object.prototype.hasOwnProperty.call(src, 'onBeforeCompile')) { m.onBeforeCompile = src.onBeforeCompile; m.customProgramCacheKey = () => 'pbr-' + src.uuid; }
   m.userData.src = src; conv.set(src, m); live.add(m);
+  // os pedaços do chão são jogados fora quando ficam longe. Quem chama dispose() pode pegar o original ou a
+  // cópia (a malha está com a cópia no realista): os dois vão embora juntos, senão acumulam pra sempre
+  let gone = false;
+  const drop = () => { if (gone) return; gone = true; live.delete(m); conv.delete(src); m.dispose(); src.dispose(); };
+  src.addEventListener('dispose', drop); m.addEventListener('dispose', drop);
   return m;
 }
 const back = m => (m && m.userData && m.userData.src) || m;
@@ -149,21 +154,36 @@ function makeEnvScene() {
   envScene = new THREE.Scene(); envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), mat));
 }
 const _c = new THREE.Color();
-// sky = cores da hora (bg, chão), sun = DirectionalLight. Refaz só quando a luz muda de verdade.
+// sky = cores da hora (bg, chão), sun = DirectionalLight.
+// O céu muda um tiquinho quase todo quadro (a hora anda): refazer o mapa sempre custava ~4 ms por quadro.
+// Agora refaz no máximo a cada ENV_MS, desenhando num cubo fixo e filtrando sempre no mesmo alvo
+// (nada é alocado nem compilado de novo depois da primeira vez).
+const ENV_MS = 1500;
+let cubeRT = null, cubeCam = null, lastEnvT = -1e9;
 export function updateEnv(renderer, scene, sky, sun) {
-  if (!pmrem) { pmrem = new THREE.PMREMGenerator(renderer); makeEnvScene(); }
+  if (!pmrem) {
+    pmrem = new THREE.PMREMGenerator(renderer); makeEnvScene();
+    cubeRT = new THREE.WebGLCubeRenderTarget(64, { type: THREE.HalfFloatType });
+    cubeCam = new THREE.CubeCamera(0.1, 100, cubeRT);
+  }
+  if (envRT) scene.environment = envRT.texture;
+  const now = performance.now();
+  if (envRT && now - lastEnvT < ENV_MS) return;
   const dir = _v.copy(sun.position).sub(sun.target.position).normalize();
   const key = sky.bg.getHexString() + sun.color.getHexString() + sun.intensity.toFixed(2) + dir.x.toFixed(2) + dir.y.toFixed(2);
-  if (key === lastKey && envRT) { scene.environment = envRT.texture; return; }
-  lastKey = key;
+  if (key === lastKey && envRT) return;
+  lastKey = key; lastEnvT = now;
   envU.hor.value.copy(sky.bg).lerp(_c.setRGB(1, 1, 1), 0.18);
   envU.top.value.copy(sky.bg).multiplyScalar(0.55);
   envU.bot.value.copy(sky.hg).multiplyScalar(0.45);
   envU.sunDir.value.copy(dir);
   envU.sunCol.value.copy(sun.color).multiplyScalar(sun.intensity);
-  const rt = pmrem.fromScene(envScene, 0, 0.1, 100);
-  if (envRT) envRT.dispose();
-  envRT = rt; scene.environment = rt.texture;
+  // desenhar qualquer cena zera o "atualizar sombras" deste quadro: guarda e devolve
+  const sh = renderer.shadowMap.needsUpdate;
+  cubeCam.update(renderer, envScene);
+  envRT = pmrem.fromCubemap(cubeRT.texture, envRT);
+  renderer.shadowMap.needsUpdate = sh;
+  scene.environment = envRT.texture;
 }
 const _v = new THREE.Vector3();
 
@@ -199,3 +219,4 @@ export function renderReal(renderer, scene, camera, dk) {
   renderer.toneMapping = tm; renderer.toneMappingExposure = ex;
 }
 const _s = new THREE.Vector2();
+
