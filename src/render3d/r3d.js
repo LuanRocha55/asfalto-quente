@@ -3,7 +3,7 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { ctx, CW, CH, DPR } from '../core/canvas.js';
 import { clamp, lerp, hyp } from '../core/utils.js';
 import { T, W, H } from '../world/map.js';
-import { CHUNK, getChunk3D, makeLowres, shoreField } from '../world/chunks.js';
+import { CHUNK, getChunk3D, makeLowres, shoreField, surfaceMap } from '../world/chunks.js';
 import { darkness } from '../world/time.js';
 import { heatStars } from '../game/world.js';
 import { nearestCar } from '../game/player.js';
@@ -20,7 +20,7 @@ import { checkpoints } from '../game/blitz.js';
 import { pf } from '../render/style97.js';
 import { loadCarModels, carModel, repaint } from './models.js';
 import { loadMapProps, coneMesh, loadCharacters, charsReady, makeCharacter } from './props.js';
-import { swapScene, updateEnv, renderReal } from './realista.js';
+import { swapScene, updateEnv, renderReal, initTextures } from './realista.js';
 
 export const R={ok:false,on:false,retro:false};
 // Filtro 97 agora é opcional (desligado por padrão): chave nova pra quem já tinha ligado na 1.5.0
@@ -64,7 +64,8 @@ export function init3D(){
     // rugosidade/metal de cada material no modo realista (realista.js); o resto fica fosco
     const tag=(m,p)=>{m.userData.pbr=p;};
     tag(mats.glass,{r:0.08,m:0.6});tag(mats.pole,{r:0.45,m:0.7});tag(mats.lampHead,{r:0.4,m:0.3});
-    tag(mats.trunk,{r:0.95});tag(mats.dark,{r:0.6});tag(mats.detail,{r:0.5,m:0.2});tag(mats.city,{r:0.9});
+    tag(mats.trunk,{r:0.95});tag(mats.dark,{r:0.6});tag(mats.detail,{r:0.5,m:0.2});tag(mats.city,{r:0.9,tex:'parede'});
+    initTextures(surfaceMap(),W,H); // texturas fotográficas do realista (carregam em segundo plano)
     city=buildCity(scene,mats);
     for(const s of city.special3d){scene.add(s.mesh);scene.add(s.crowd);scene.add(s.lightBoxes);scene.add(s.fieldLight);}
     // mar em volta
@@ -73,7 +74,7 @@ export function init3D(){
     // LOD do chão: o mapa todo em baixa resolução, por baixo dos pedaços detalhados (nunca aparece buraco)
     const lt=new THREE.CanvasTexture(makeLowres(true));lt.colorSpace=THREE.SRGBColorSpace;lt.anisotropy=renderer.capabilities.getMaxAnisotropy();
     const lg=new THREE.PlaneGeometry(W,H);lg.rotateX(-Math.PI/2);
-    const low=new THREE.Mesh(lg,new THREE.MeshLambertMaterial({map:lt,alphaTest:0.5}));low.material.userData.pbr={r:0.95};low.position.set(W/2,-0.03,H/2);low.receiveShadow=true;scene.add(low);
+    const low=new THREE.Mesh(lg,new THREE.MeshLambertMaterial({map:lt,alphaTest:0.5}));low.material.userData.pbr={r:0.95,tex:'chao'};low.position.set(W/2,-0.03,H/2);low.receiveShadow=true;scene.add(low);
     // camada do chão com detalhes dinâmicos (marcas de pneu, zonas, portas, alvo...)
     overlay=document.createElement('canvas');overlay.width=1024;overlay.height=1024;
     overlayTex=new THREE.CanvasTexture(overlay);overlayTex.colorSpace=THREE.SRGBColorSpace;
@@ -231,7 +232,7 @@ function updateGround(x0,x1,z0,z1,ahead){
   for(const m of missing){if(budget--<=0)break;
     const tex=new THREE.CanvasTexture(getChunk3D(m.x,m.z));tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
     const geo=new THREE.PlaneGeometry(CHUNK,CHUNK);geo.rotateX(-Math.PI/2);
-    const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:tex,alphaTest:0.5}));mesh.material.userData.pbr={r:0.95};mesh.position.set(m.x*CHUNK+CHUNK/2,0,m.z*CHUNK+CHUNK/2);mesh.receiveShadow=true;scene.add(mesh);
+    const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:tex,alphaTest:0.5}));mesh.material.userData.pbr={r:0.95,tex:'chao'};mesh.position.set(m.x*CHUNK+CHUNK/2,0,m.z*CHUNK+CHUNK/2);mesh.receiveShadow=true;scene.add(mesh);
     ground[m.k]={m:mesh,t:0};}
   for(const k of Object.keys(ground)){if(want.has(k)){ground[k].t=0;continue;}ground[k].t++;
     if(ground[k].t>300){const g=ground[k];scene.remove(g.m);g.m.geometry.dispose();g.m.material.map.dispose();g.m.material.dispose();delete ground[k];}}

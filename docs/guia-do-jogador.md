@@ -85,7 +85,7 @@ Depois do tutorial aparecem dicas só na primeira vez que algo acontece (primeir
 - Quanto falta pro próximo bairro liberar.
 - No topo, o contador `58 FPS · 3D alta` (verde, amarelo ou vermelho conforme o desempenho).
 
-O **mapa em tela cheia** (M) mostra os bairros, a legenda dos ícones, a polícia, o objetivo e você. Clique num ponto pra marcar um destino rosa com seta; ele some quando você chega.
+O **mapa em tela cheia** (M) mostra os bairros, a legenda dos ícones, a polícia, o objetivo e você. No índice da direita, cada lugar tem o mesmo símbolo do mapa e a casa da grade onde fica o mais perto de você (ex.: E5). Clique num ponto pra marcar um destino rosa com seta; ele some quando você chega.
 
 ## A cidade e os bairros
 
@@ -347,7 +347,7 @@ Você volta com vida cheia, sem estrelas e com 2 segundos de invencibilidade.
 
 | Modo | O que muda |
 |---|---|
-| 3D realista | como a alta, mais reflexos (carros, vidros, mar), o céu iluminando a cidade, sombras suaves e brilho nas luzes à noite. Precisa de placa de vídeo melhor |
+| 3D realista | como a alta, mais texturas fotográficas no chão e nas paredes (asfalto rachado, paralelepípedo, areia, grama), reflexos (carros, vidros, mar), o céu iluminando a cidade, sombras suaves e brilho nas luzes à noite. Precisa de placa de vídeo melhor |
 | 3D alta | resolução cheia (até 2x em telas de alta densidade), sombras grandes todo quadro |
 | 3D média | resolução normal, sombras menores atualizadas quadro sim, quadro não |
 | 3D leve | resolução reduzida, sem sombras |

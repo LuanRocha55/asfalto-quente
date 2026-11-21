@@ -75,39 +75,55 @@ export function drawBigMap(){
     g.font=pf(fs);g.textAlign='center';g.lineWidth=4;g.strokeStyle='rgba(241,231,204,0.95)';g.lineJoin='round';g.strokeText(name,p[0],p[1]);g.fillStyle=C97.tinta;g.fillText(name,p[0],p[1]);
     if(!isOpenZone(k)){const mt=metaOf(k);const next=nd&&nd.z===k;stamp(g,p[0],p[1]+fs*1.9,next?'faltam '+fmtMoney(Math.max(0,mt-Math.floor(player.money))):'meta '+fmtMoney(mt),fs,((tx*7+ty*3)%17-8)*0.02);}}
   // blitz nas ruas que entram nos bairros fechados
-  for(const cp of checkpoints){const p=toS(cp.x,cp.y);const s=Math.max(5,isz*0.36);g.fillStyle=C97.carimbo;g.strokeStyle='#fff';g.lineWidth=1.5;
-    g.beginPath();g.moveTo(p[0],p[1]-s);g.lineTo(p[0]+s,p[1]+s*0.8);g.lineTo(p[0]-s,p[1]+s*0.8);g.closePath();g.fill();g.stroke();}
+  for(const cp of checkpoints){const p=toS(cp.x,cp.y);blitzMark(g,p[0],p[1],Math.max(5,isz*0.36));}
   // polícia
-  for(const c of S.cars){if(c.ai!=='police')continue;const p=toS(c.x,c.y);g.fillStyle=Math.floor(S.gameTime*6)%2?'#e0281e':'#2a52d8';g.fillRect(p[0]-4,p[1]-4,8,8);g.strokeStyle=C97.tinta;g.lineWidth=1;g.strokeRect(p[0]-4,p[1]-4,8,8);}
+  for(const c of S.cars){if(c.ai!=='police')continue;const p=toS(c.x,c.y);copMark(g,p[0],p[1]);}
   // alvo e marcador
   const tgt=S.mission?S.mission.def.target(S.mission):(S.job?S.job.target:null);
-  if(tgt){const p=toS(tgt.x,tgt.y);const r=9+Math.sin(S.gameTime*6)*3;g.strokeStyle=C97.carimbo;g.lineWidth=3;g.beginPath();g.arc(p[0],p[1],r,0,Math.PI*2);g.stroke();g.beginPath();g.arc(p[0],p[1],r+5,0,Math.PI*2);g.lineWidth=1.5;g.stroke();}
+  if(tgt){const p=toS(tgt.x,tgt.y);targetMark(g,p[0],p[1],9+Math.sin(S.gameTime*6)*3);}
   if(S.waypoint){const p=toS(S.waypoint.x,S.waypoint.y);drawIcon(g,'waypoint',p[0],p[1]-isz*0.4,isz*1.1);}
   // você: seta com círculo de caneta vermelha
-  {const p=toS(player.x,player.y);g.save();g.translate(p[0],p[1]);g.rotate(player.a);g.fillStyle='#ffffff';g.strokeStyle='#000';g.lineWidth=2;
-    g.beginPath();g.moveTo(11,0);g.lineTo(-7,-7);g.lineTo(-3,0);g.lineTo(-7,7);g.closePath();g.fill();g.stroke();g.restore();
-    g.strokeStyle=C97.carimbo;g.lineWidth=2.5;g.beginPath();g.ellipse(p[0],p[1],17+Math.sin(S.gameTime*5)*2,15,-0.3,0,Math.PI*2);g.stroke();}
-  // índice e legenda (coluna da direita)
+  {const p=toS(player.x,player.y);youMark(g,p[0],p[1],player.a,1,17+Math.sin(S.gameTime*5)*2);}
+  // índice e legenda (coluna da direita). Cada linha tem na frente o mesmo símbolo que aparece no mapa.
   const lx=ox+size+40,lw=px0+pw-lx-24;let ly=oy+4;
-  const rowF=Math.round(clamp(size/46,11,14)),step=Math.round(rowF*1.5);
-  const row=(left,right,hi)=>{g.font=pf(rowF);if(hi){g.fillStyle=C97.orelhao;g.fillRect(lx-4,ly-rowF*1.05,lw+8,step);}
-    ptxt(g,left,lx,ly,rowF,C97.tinta,'left',false);ptxt(g,right,lx+lw,ly,rowF,C97.tinta,'right',false);
-    g.font=pf(rowF);const a=lx+g.measureText(left).width+6,b=lx+lw-g.measureText(right).width-6;
+  const rowF=Math.round(clamp(size/46,11,14)),step=Math.round(rowF*1.6),gw=Math.round(rowF*1.9),ssz=Math.round(rowF*1.25);
+  const row=(left,right,hi,sym)=>{g.font=pf(rowF);if(hi){g.fillStyle=C97.orelhao;g.fillRect(lx-4,ly-rowF*1.1,lw+8,step);}
+    if(sym)sym(lx+gw/2-3,ly-rowF*0.38,ssz);
+    const tx=lx+gw;ptxt(g,left,tx,ly,rowF,C97.tinta,'left',false);ptxt(g,right,lx+lw,ly,rowF,C97.tinta,'right',false);
+    g.font=pf(rowF);const a=tx+g.measureText(left).width+6,b=lx+lw-g.measureText(right).width-6;
     g.fillStyle='rgba(42,34,22,0.5)';for(let x=a;x<b;x+=5)g.fillRect(x,ly-2,2,2);ly+=step;};
   const head=t=>{g.font=lf(Math.round(rowF*1.5));g.textAlign='left';g.fillStyle=C97.tinta;g.fillText(t,lx,ly+rowF*0.6);ly+=Math.round(rowF*2.3);};
+  const icon=k=>(x,y,s)=>drawIcon(g,k,x,y,s);
   head('ÍNDICE');
-  row('Você',cellOf(player.x,player.y),true);
+  row('Você',cellOf(player.x,player.y),true,(x,y,s)=>youMark(g,x,y,0,s/22,s*0.72));
   const order=['casa','hospital','farmacia','policia','pintura','armas','ze','posto','lanchonete','mercadinho','padaria','escola','estadio'];
-  for(const k of order){const n=nearestOf(k);if(!n)continue;row(ICONS[k].name.split(' (')[0].split(' ·')[0],cellOf(n.x,n.y));}
-  if(tgt)row('Objetivo',cellOf(tgt.x,tgt.y));
+  for(const k of order){const n=nearestOf(k);if(!n)continue;row(ICONS[k].name.split(' (')[0].split(' ·')[0],cellOf(n.x,n.y),false,icon(k));}
+  for(const k of ['terminal','taxi']){const n=nearestSpot(k);if(n)row(ICONS[k].name,cellOf(n.x,n.y),false,icon(k));}
+  if(tgt)row('Objetivo',cellOf(tgt.x,tgt.y),false,(x,y,s)=>targetMark(g,x,y,s*0.32));
   ly+=step*0.4;head('LEGENDA');
-  swatch(g,lx,ly,step,rowF,false);row('     Pode entrar','liberado');swatch(g,lx,ly,step,rowF,true);row('     Fechado (blitz)','não entra');
-  row('Triângulo vermelho','posto de blitz');row('Orelhão tocando','fone');row('Viatura','■ piscando');row('Objetivo','◎ vermelho');
+  row('Pode entrar','liberado',false,(x,y,s)=>swatch(g,x,y,s,false));
+  row('Fechado (blitz)','não entra',false,(x,y,s)=>swatch(g,x,y,s,true));
+  row('Posto de blitz','na rua',false,(x,y,s)=>blitzMark(g,x,y,s*0.4));
+  row('Orelhão','tocando = missão',false,icon('phone'));
+  row('Viatura','piscando',false,(x,y)=>copMark(g,x,y));
+  row('Objetivo','missão ou bico',false,(x,y,s)=>targetMark(g,x,y,s*0.32));
+  row('Seu marcador','clique no mapa',false,icon('waypoint'));
   ly+=step*0.4;
   row('Clique','marca destino');row('Clique direito','apaga');row('M ou Esc','fecha');
 }
-function swatch(g,x,y,step,fs,locked){const w=fs*1.6,h=fs*0.9,yy=y-fs*0.75;g.fillStyle=locked?'rgba(190,40,26,0.45)':'#fbf6e8';g.fillRect(x,yy,w,h);
-  if(locked){g.fillStyle='rgba(176,22,12,0.95)';g.fillRect(x,yy,w,2);g.fillRect(x,yy+h-2,w,2);g.fillRect(x,yy,2,h);g.fillRect(x+w-2,yy,2,h);}else{g.strokeStyle=C97.tinta;g.lineWidth=1;g.strokeRect(x+0.5,yy+0.5,w-1,h-1);}}
+// símbolos desenhados no mapa e repetidos no índice/legenda
+function youMark(g,x,y,a,k,r){g.save();g.translate(x,y);g.rotate(a);g.scale(k,k);g.fillStyle='#ffffff';g.strokeStyle='#000';g.lineWidth=2;
+  g.beginPath();g.moveTo(11,0);g.lineTo(-7,-7);g.lineTo(-3,0);g.lineTo(-7,7);g.closePath();g.fill();g.stroke();g.restore();
+  g.strokeStyle=C97.carimbo;g.lineWidth=k<1?1.8:2.5;g.beginPath();g.ellipse(x,y,r,r*0.88,-0.3,0,Math.PI*2);g.stroke();}
+function targetMark(g,x,y,r){g.strokeStyle=C97.carimbo;g.lineWidth=Math.max(1.5,r*0.3);g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.stroke();
+  g.beginPath();g.arc(x,y,r+r*0.55,0,Math.PI*2);g.lineWidth=Math.max(1,r*0.15);g.stroke();}
+function blitzMark(g,x,y,s){g.fillStyle=C97.carimbo;g.strokeStyle='#fff';g.lineWidth=1.5;
+  g.beginPath();g.moveTo(x,y-s);g.lineTo(x+s,y+s*0.8);g.lineTo(x-s,y+s*0.8);g.closePath();g.fill();g.stroke();}
+function copMark(g,x,y){g.fillStyle=Math.floor(S.gameTime*6)%2?'#e0281e':'#2a52d8';g.fillRect(x-4,y-4,8,8);g.strokeStyle=C97.tinta;g.lineWidth=1;g.strokeRect(x-4,y-4,8,8);}
+// ponto de ônibus/táxi mais perto do jogador
+function nearestSpot(k){let best=null,bd=1e18;for(const sp of jobSpots()){if(k==='terminal'?!sp.terminal:!sp.ponto)continue;const d=(sp.x-player.x)**2+(sp.y-player.y)**2;if(d<bd){bd=d;best=sp;}}return best;}
+function swatch(g,x,y,s,locked){const w=s*1.3,h=s*0.75,xx=x-w/2,yy=y-h/2;g.fillStyle=locked?'rgba(190,40,26,0.45)':'#fbf6e8';g.fillRect(xx,yy,w,h);
+  if(locked){g.fillStyle='rgba(176,22,12,0.95)';g.fillRect(xx,yy,w,2);g.fillRect(xx,yy+h-2,w,2);g.fillRect(xx,yy,2,h);g.fillRect(xx+w-2,yy,2,h);}else{g.strokeStyle=C97.tinta;g.lineWidth=1;g.strokeRect(xx+0.5,yy+0.5,w-1,h-1);}}
 function stamp(g,x,y,sub,fs,rot){
   g.save();g.translate(x,y);g.rotate(rot-0.12);g.globalAlpha=0.82;
   g.font=lf(Math.round(fs*1.5));g.textAlign='center';const w1=g.measureText('BLITZ').width;

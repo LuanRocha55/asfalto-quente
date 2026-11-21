@@ -165,6 +165,24 @@ export function shoreField(){
   return out;
 }
 
+// tipo de superfície de cada tile pro 3D realista (qual textura fotográfica entra por cima do desenho):
+// 0 asfalto, 1 calçada, 2 paralelepípedo, 3 areia, 4 grama, 5 terra, 255 nenhuma (água, piscina).
+// +8 = textura fraca (calçada com desenho próprio: ondas da orla, tijolo da Vila Velha)
+export function surfaceMap(){
+  const out=new Uint8Array(W*H).fill(255);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x,t=map[i],D=DISTRICTS[districtOfTile(x,y)];
+    let s=255;
+    if(t===ROAD)s=RT[i]===1||D.cobble?2:0;
+    else if(t===PARK)s=0;
+    else if(t===SIDE||t===BUILD)s=D.sideStyle==='ondas'||D.sideStyle==='tijolo'?9:1;
+    else if(t===SAND)s=3;
+    else if(t===GRASS)s=4;
+    else if(t===TREE)s=tileOf(x-1,y)===SAND||tileOf(x+1,y)===SAND||tileOf(x,y-1)===SAND||tileOf(x,y+1)===SAND?3:4;
+    else if(t===DIRT)s=5;
+    out[i]=s;}
+  return out;
+}
+
 // chão em baixa resolução do mapa inteiro (4 px por tile): fica por baixo no 3D enquanto o pedaço detalhado não carrega
 export function makeLowres(seeThrough){
   const K=4,c=document.createElement('canvas');c.width=W*K;c.height=H*K;const g=c.getContext('2d');const img=g.createImageData(W*K,H*K);

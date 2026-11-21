@@ -1,0 +1,13 @@
+Texturas de Poly Haven (https://polyhaven.com), licença CC0 (domínio público).
+https://polyhaven.com/license
+
+Reduzidas para 512 px e juntadas em dois atlas de 4 x 2 (chao_cor.jpg = cor, chao_normal.jpg = normal map no padrão OpenGL).
+Ordem das camadas (da esquerda pra direita, de cima pra baixo):
+ 0 asphalt_02            (asfalto)
+ 1 concrete_pavement     (calçada)
+ 2 cobblestone_floor_05  (paralelepípedo)
+ 3 coast_sand_04         (areia)
+ 4 leafy_grass           (grama)
+ 5 park_dirt             (terra)
+ 6 beige_wall_001        (reboco das paredes)
+ 7 asphalt_02            (reserva)
