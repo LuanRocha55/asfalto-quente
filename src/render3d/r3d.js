@@ -608,7 +608,8 @@ export function applyQuality(q,manual){
   quality=q;
   if(flip){rebuildCars();applyProps();for(const p of pedChars.keys())releaseChar(p);if(playerChar){scene.remove(playerChar.root);playerChar=null;}}if(manual)autoOK=false;if(!renderer)return;
   const dpr=window.devicePixelRatio||1;
-  renderer.setPixelRatio(q>=2?Math.min(2,dpr):q===1?Math.min(1,dpr):Math.min(0.75,dpr));
+  // realista: até 1,5x em tela de alta densidade (com antisserrilhado 4x e bloom, 2x pesa muito e quase não aparece)
+  renderer.setPixelRatio(q===3?Math.min(1.5,dpr):q===2?Math.min(2,dpr):q===1?Math.min(1,dpr):Math.min(0.75,dpr));
   const sh=q>0, ms=q>=2?2048:1024;
   // realista: sombras de borda suave; saindo dele, os materiais Lambert voltam
   const st=q===3?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;
