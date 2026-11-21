@@ -238,17 +238,20 @@ export function drawTitle(){
   const lx=Math.round(CW*0.07);
   // logo
   const ls=Math.round(118*s);
+  // "MARESIA 97" numa linha só: o 97 vem logo depois do nome
   impact(g,'MARESIA',lx,bar+ls*1.05,ls,null,'left',HEAT_GRAD);
-  impact(g,'97',lx+ls*0.12,bar+ls*1.95,ls,C97.sodio,'left');
+  g.font=lf(ls);const mw=g.measureText('MARESIA').width;
+  impact(g,'97',lx+mw+ls*0.28,bar+ls*1.05,ls,C97.sodio,'left');
+  const logoB=bar+ls*1.45; // embaixo do logo
   g.save();g.font=pf(20*s);const sub='SOL, SAL E SIRENE  ·  ',yr='1997';
-  let sx=lx+ls*0.1;const sy=bar+ls*2.35;
+  let sx=lx+ls*0.1;const sy=logoB;
   for(const ch of sub){ptxt(g,ch,sx,sy,20*s,C97.cal);g.font=pf(20*s);sx+=g.measureText(ch).width+6*s;}
   for(const ch of yr){ptxt(g,ch,sx,sy,20*s,C97.sodio);g.font=pf(20*s);sx+=g.measureText(ch).width+6*s;}
   g.restore();
   if(TM.sub==='controles'){drawControls(g,s,bar);return;}
   // menu
   const items=titleItems();if(TM.sel>=items.length)TM.sel=0;
-  const fs=Math.round(26*s),lh=Math.round(fs*1.32);let my=Math.round(bar+ls*2.35+lh*1.6);
+  const fs=Math.round(26*s),lh=Math.round(fs*1.32);let my=Math.round(logoB+lh*1.6);
   TM.rects=[];
   if(S.paused){ptxt(g,'PAUSADO',lx+4,my,fs*0.8,C97.sodio);my+=lh;}
   items.forEach((it,i)=>{const sel=i===TM.sel,x=lx+fs*1.2;
