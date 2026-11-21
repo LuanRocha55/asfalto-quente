@@ -5,6 +5,10 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.10.2 — 21/11/2026
+**Logo numa linha só**
+- Na tela de título, o "97" fica do lado de MARESIA (antes ficava embaixo); o subtítulo e o menu subiram
+
 ## 1.10.1 — 21/11/2026
 **3D realista mais leve**
 - O reflexo do céu era refeito quase todo quadro (a cor do céu muda um pouquinho conforme a hora anda) e recompilava shaders. Agora é refeito no máximo a cada 1,5 s, sem alocar nada de novo. Os quadros mais lentos caíram de ~28 ms pra ~21 ms, igual ao 3D alta

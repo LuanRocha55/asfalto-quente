@@ -1,6 +1,6 @@
 # Documentação do Maresia 97
 
-Jogo de mundo aberto em Vila Maresia, cidade litorânea inventada (inspirada em Fortaleza, em 1997). Feito em JavaScript, com gráficos 3D em Three.js e um modo clássico visto de cima. Documentação da versão **1.10.1**.
+Jogo de mundo aberto em Vila Maresia, cidade litorânea inventada (inspirada em Fortaleza, em 1997). Feito em JavaScript, com gráficos 3D em Three.js e um modo clássico visto de cima. Documentação da versão **1.10.2**.
 
 | Documento | Pra quem | O que tem |
 |---|---|---|
