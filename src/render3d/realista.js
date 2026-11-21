@@ -2,6 +2,7 @@
 //  - materiais com reflexo (PBR): lataria com verniz, vidro e mar refletindo o céu, asfalto fosco
 //  - o céu da hora do dia vira um mapa de ambiente (ilumina e aparece nos reflexos, do sol do meio-dia à noite)
 //  - sombras de borda suave
+//  - texturas fotográficas (Poly Haven, CC0) no chão e nas paredes: grão e relevo por cima do desenho do jogo
 //  - brilho (bloom) em neon, faróis e postes à noite, e tone mapping de cinema (ACES)
 // Os outros níveis de qualidade não passam por aqui: os materiais Lambert originais ficam guardados
 // e voltam quando sai do realista.
@@ -12,7 +13,8 @@ import { UnrealBloomPass } from '../../vendor/three/addons/postprocessing/Unreal
 import { OutputPass } from '../../vendor/three/addons/postprocessing/OutputPass.js';
 
 // ---------- materiais: Lambert/Phong -> Standard (ou Physical com verniz, na lataria) ----------
-// Quem cria o material pode marcar userData.pbr = { r: rugosidade, m: metal } ou { car: true }.
+// Quem cria o material pode marcar userData.pbr = { r: rugosidade, m: metal } ou { car: true },
+// e tex: 'chao' ou 'parede' pra ganhar as texturas fotográficas.
 const DEF = { r: 0.85, m: 0 };
 const conv = new WeakMap(), live = new Set();
 const COPY = ['map', 'vertexColors', 'transparent', 'opacity', 'alphaTest', 'depthWrite', 'depthTest', 'side', 'flatShading', 'fog', 'alphaMap', 'emissiveMap',
@@ -27,7 +29,8 @@ function toPBR(src) {
   m.color.copy(src.color); m.emissive.copy(src.emissive); m.emissiveIntensity = src.emissiveIntensity;
   if (p.env !== undefined) m.envMapIntensity = p.env;
   // shader modificado (o mar): os mesmos trechos existem no shader PBR
-  if (Object.prototype.hasOwnProperty.call(src, 'onBeforeCompile')) { m.onBeforeCompile = src.onBeforeCompile; m.customProgramCacheKey = () => 'pbr-' + src.uuid; }
+  if (p.tex) { m.onBeforeCompile = TEX_SHADER[p.tex]; m.customProgramCacheKey = () => 'tex-' + p.tex; }
+  else if (Object.prototype.hasOwnProperty.call(src, 'onBeforeCompile')) { m.onBeforeCompile = src.onBeforeCompile; m.customProgramCacheKey = () => 'pbr-' + src.uuid; }
   m.userData.src = src; conv.set(src, m); live.add(m);
   return m;
 }
@@ -44,6 +47,92 @@ export function swapScene(scene, on) {
   // o que muda com a hora/eventos no material original passa pra cópia
   if (on) for (const m of live) { const s = m.userData.src; m.color.copy(s.color); m.emissiveIntensity = s.emissiveIntensity; m.opacity = s.opacity; m.visible = s.visible; }
 }
+
+// ---------- texturas fotográficas ----------
+// Dois atlas 4 x 2 (cor e normal map) viram texturas em camadas (sampler2DArray). O desenho do jogo continua
+// sendo a cor de base (faixas, cores dos bairros, marcas de pneu); a foto entra como variação de cor em volta
+// da média dela (grão, rachaduras, juntas) e o normal map dá relevo, que pega a luz do sol baixo.
+// Camadas: 0 asfalto, 1 calçada, 2 paralelepípedo, 3 areia, 4 grama, 5 terra, 6 reboco, 7 reserva.
+const TEX_DIR = 'assets/textures/polyhaven/';
+const LAYERS = 8, TS = 512;
+// tamanho de uma repetição da foto em unidades do jogo (1 tile = 1 unidade, uns 3 m)
+const SCALE = [1.6, 0.6, 0.65, 1.3, 0.7, 1.0, 1.0, 1.0];
+const NORMAL = [1.0, 0.9, 1.3, 0.8, 0.8, 0.9, 1.4, 1.0];   // força do relevo
+const TU = {
+  uSurf: { value: null }, uMapSize: { value: new THREE.Vector2(1, 1) },
+  uAlb: { value: null }, uNor: { value: null }, uMean: { value: Array.from({ length: LAYERS }, () => new THREE.Vector3(1, 1, 1)) },
+  uScale: { value: SCALE }, uNk: { value: NORMAL }, uStr: { value: 0 },
+};
+// tipo de superfície por tile (surfaceMap em chunks.js) e carrega os atlas em segundo plano
+export function initTextures(surf, w, h) {
+  const st = new THREE.DataTexture(surf, w, h, THREE.RedFormat, THREE.UnsignedByteType);
+  st.magFilter = st.minFilter = THREE.NearestFilter; st.needsUpdate = true;
+  TU.uSurf.value = st; TU.uMapSize.value.set(w, h);
+  Promise.all(['chao_cor.jpg', 'chao_normal.jpg'].map(n => new THREE.ImageLoader().loadAsync(TEX_DIR + n)))
+    .then(([cor, nor]) => {
+      TU.uAlb.value = toArray(cor, TU.uMean.value); TU.uNor.value = toArray(nor);
+      TU.uStr.value = 1; // até aqui o chão fica só com o desenho
+    }).catch(e => console.warn('Texturas do realista:', e));
+}
+// atlas 4 x 2 -> textura em camadas (com a cor média de cada camada, se pedir)
+function toArray(img, means) {
+  const c = document.createElement('canvas'); c.width = TS * 4; c.height = TS * 2;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, c.width, c.height);
+  const data = new Uint8Array(TS * TS * 4 * LAYERS);
+  for (let k = 0; k < LAYERS; k++) {
+    const px = g.getImageData((k % 4) * TS, Math.floor(k / 4) * TS, TS, TS).data;
+    data.set(px, k * TS * TS * 4);
+    if (means) { let r = 0, gg = 0, b = 0; for (let i = 0; i < px.length; i += 4) { r += px[i]; gg += px[i + 1]; b += px[i + 2]; }
+      const n = px.length / 4 * 255; means[k].set(r / n, gg / n, b / n); }
+  }
+  const t = new THREE.DataArrayTexture(data, TS, TS, LAYERS);
+  t.format = THREE.RGBAFormat; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = true; t.anisotropy = 8;
+  t.needsUpdate = true; return t;
+}
+const TEX_HEAD = `precision highp sampler2DArray;
+uniform sampler2D uSurf;uniform vec2 uMapSize;uniform sampler2DArray uAlb,uNor;uniform vec3 uMean[8];uniform float uScale[8],uNk[8],uStr;
+varying vec3 vGW;
+// a foto repetida em grade dá listras (as rachaduras do asfalto se alinham): mistura com uma cópia
+// girada e maior, que quebra a repetição
+const mat2 RT2=mat2(.788,-.616,.616,.788);
+vec2 uv2(vec2 uv){return RT2*uv*.43+vec2(.37,.71);}
+// variação da foto em volta da média dela, meio dessaturada (a cor de verdade vem do desenho)
+vec3 detailCol(vec2 uv,int li){
+  vec3 d=(texture(uAlb,vec3(uv,float(li))).rgb+texture(uAlb,vec3(uv2(uv),float(li))).rgb)*.5/uMean[li];
+  d=1.+(d-1.)*1.5; // a média de duas amostras tira contraste: devolve
+  return max(mix(vec3(dot(d,vec3(.333))),d,.55),0.);}
+vec3 detailNor(vec2 uv,int li){
+  vec3 n=texture(uNor,vec3(uv,float(li))).rgb+texture(uNor,vec3(uv2(uv),float(li))).rgb-1.;n.xy*=uNk[li];return n;}
+`;
+const VERT = sh => { sh.vertexShader = 'varying vec3 vGW;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+  '#include <begin_vertex>\nvec4 gw=vec4(transformed,1.);\n#ifdef USE_INSTANCING\ngw=instanceMatrix*gw;\n#endif\nvGW=(modelMatrix*gw).xyz;'); };
+const TEX_SHADER = {
+  // chão: a camada sai do tipo do tile embaixo do pixel
+  chao: sh => { Object.assign(sh.uniforms, TU); VERT(sh);
+    sh.fragmentShader = TEX_HEAD + sh.fragmentShader
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        float lay=texture2D(uSurf,(floor(vGW.xz)+.5)/uMapSize).r*255.;
+        float dk=lay<7.5?1.:(lay<15.5?.35:0.);int li=int(mod(lay,8.)+.5);
+        vec2 duv=vGW.xz/uScale[li];
+        diffuseColor.rgb*=mix(vec3(1.),detailCol(duv,li),uStr*dk);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        if(uStr*dk>0.){vec3 tn=detailNor(duv,li);tn.xy*=dk;
+          normal=normalize((viewMatrix*vec4(normalize(vec3(tn.x,tn.z,-tn.y)),0.)).xyz);}`); },
+  // paredes: projeta a foto do reboco no plano da parede (os telhados ficam como estão)
+  parede: sh => { Object.assign(sh.uniforms, TU); VERT(sh);
+    sh.fragmentShader = TEX_HEAD + sh.fragmentShader
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        vec3 wn=normalize((vec4(vNormal,0.)*viewMatrix).xyz);float wall=uStr*step(abs(wn.y),.5);
+        bool alongX=abs(wn.z)>abs(wn.x);
+        vec2 wuv=vec2(alongX?vGW.x:vGW.z,vGW.y)/uScale[6];
+        diffuseColor.rgb*=mix(vec3(1.),detailCol(wuv,6),wall);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        if(wall>0.){vec3 tn=detailNor(wuv,6);
+          vec3 T=alongX?vec3(sign(wn.z),0.,0.):vec3(0.,0.,-sign(wn.x));
+          vec3 nw=normalize(T*tn.x+vec3(0.,1.,0.)*tn.y+wn*tn.z);
+          normal=normalize((viewMatrix*vec4(nw,0.)).xyz);}`); },
+};
 
 // ---------- céu como mapa de ambiente ----------
 let pmrem = null, envRT = null, envScene = null, envU = null, lastKey = '';

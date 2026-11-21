@@ -5,6 +5,12 @@ O número segue o padrão `MAIOR.MENOR.CORREÇÃO`:
 - **MENOR** — novidade (sistema, missão, veículo, reorganização)
 - **CORREÇÃO** — conserto de bug ou ajuste pequeno
 
+## 1.10.0 — 21/11/2026
+**Texturas de verdade e mapa mais fácil de ler**
+- **3D realista com texturas fotográficas** (Poly Haven, licença CC0): asfalto com grão e rachaduras, paralelepípedo com pedras em relevo, areia, grama, terra, placas de concreto nas calçadas e reboco nas paredes. As faixas, as cores de cada bairro e as marcas de pneu continuam as mesmas; a foto entra por cima como grão e relevo, que pega a luz do sol
+- As calçadas com desenho próprio (ondas da Orla, tijolo da Vila Velha) ganham só um grão leve
+- **Mapa (M)**: o índice e a legenda mostram o mesmo símbolo que aparece no mapa ao lado de cada nome. Entraram no índice o Terminal de ônibus e o Ponto de táxi, e na legenda o seu marcador
+
 ## 1.9.0 — 21/11/2026
 **Mais modelos 3D e gráficos realistas**
 - **Árvores, coqueiros, postes e casas com modelos 3D** do Kenney (Nature Kit, City Kit Roads e City Kit Suburban, licença CC0). As casas do Jardim e as mansões do Alto da Maresia ficam de frente pra rua, e os postes viram o braço pra rua mais perto
